@@ -3,9 +3,38 @@
 // first version Dr Anton Gerdelan, 8 May 2015
 //
 
+//
+// TODO
+// * linearise/unlinearise function
+// * ascii or unicode fetcher/printer thing
+// * string manip/trim
+
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <stdint.h>
+
+//
+// replacement for the deprecated min/max functions from original C spec
+// was going to have a series of GL-like functions but it was a lot of
+// fiddly code/alternatives, so I'm just copying from stb.h here, as much as I
+// dislike pre-processor directives, this makes sense. I believe the trick is
+// to have all the parentheses. same deal for clamp
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define CLAMP(x ,lo, hi) (MIN (hi, MAX (lo, x)))
+
+// C99 removed M_PI
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define TAU 2.0 * M_PI
+
+// unit conversions
+#define DEG2RAD(a) ((a)*(M_PI/180.0))
+#define RAD2DEG(a) ((a)*(180.0/M_PI))
 
 //
 // shorthand types for byte and bit manipulation (I don't like the _t suffix)
@@ -19,93 +48,3 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 typedef unsigned int uint;
-
-//
-// replacement for the deprecated min/max functions from original C spec
-//
-uint maxu (int a, int b);
-int maxi (int a, int b);
-float maxf (float a, float b);
-double maxd (double a, double b);
-long double maxld (long double a, long double b);
-uint minu (int a, int b);
-int mini (int a, int b);
-float minf (float a, float b);
-double mind (double a, double b);
-long double minld (long double a, long double b);
-
-//
-// generic domain-clamping functions
-//
-int clampu (int x, int min, int max);
-int clampi (int x, int min, int max);
-float clampf (float x, float min, float max);
-double clampd (double x, double min, double max);
-long double clampld (long double x, long double min, long double max);
-
-/****************************************************************************/
-/****************************** IMPLEMENTATION ******************************/
-/****************************************************************************/
-
-inline uint maxu (int a, int b) { return a > b ? a : b; }
-inline int maxi (int a, int b) { return a > b ? a : b; }
-inline float maxf (float a, float b) { return a > b ? a : b; }
-inline double maxd (double a, double b) { return a > b ? a : b; }
-inline long double maxld (long double a, long double b) {
-	return a > b ? a : b; }
-inline uint minu (int a, int b) { return a > b ? a : b; }
-inline int mini (int a, int b) { return a > b ? a : b; }
-inline float minf (float a, float b) { return a > b ? a : b; }
-inline double mind (double a, double b) { return a > b ? a : b; }
-inline long double minld (long double a, long double b) {
-	return a > b ? a : b; }
-
-inline int clampu (int x, int min, int max) {
-	if (x < min) {
-		return min;
-	}
-	if (x > max) {
-		return max;
-	}
-	return x;
-}
-
-inline int clampi (int x, int min, int max) {
-	if (x < min) {
-		return min;
-	}
-	if (x > max) {
-		return max;
-	}
-	return x;
-}
-
-inline float clampf (float x, float min, float max) {
-	if (x < min) {
-		return min;
-	}
-	if (x > max) {
-		return max;
-	}
-	return x;
-}
-
-inline double clampd (double x, double min, double max) {
-	if (x < min) {
-		return min;
-	}
-	if (x > max) {
-		return max;
-	}
-	return x;
-}
-
-inline long double clampld (long double x, long double min, long double max) {
-	if (x < min) {
-		return min;
-	}
-	if (x > max) {
-		return max;
-	}
-	return x;
-}
