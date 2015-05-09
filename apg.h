@@ -18,7 +18,7 @@
 //
 // replacement for the deprecated min/max functions from original C spec
 // was going to have a series of GL-like functions but it was a lot of
-// fiddly code/alternatives, so I'm just copying from stb.h here, as much as I
+// fiddly code/alternatives, so I'm just copying from stb.h here. as much as I
 // dislike pre-processor directives, this makes sense. I believe the trick is
 // to have all the parentheses. same deal for clamp
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
