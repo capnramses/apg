@@ -6,4 +6,6 @@ Probably won't suit anyone else.
 ##to add##
 
 * string manipulation/trimming utils
-* log file writer
+* maybe a generic KEY VALUE settings file parser
+that can be queried for KEY to get VALUE
+* swap. everyone has a swap in their utils file

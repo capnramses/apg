@@ -22,5 +22,15 @@ int main (int argc, char** argv) {
 
 	apg_log_err ("ERROR: this is a fake error\n");
 
+	double T = 0.0;
+	double prev = apg_time_linux ();
+	while (T < 30.0) {
+		double curr = apg_time_linux ();
+		double elapsed = curr - prev;
+		prev = curr;
+		T += elapsed;
+		printf ("T= %lf\n", T);
+	}
+
 	return 0;
 }

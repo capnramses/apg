@@ -11,6 +11,7 @@
 
 #pragma once
 
+#define _POSIX_C_SOURCE 199309L // for the timer on linux
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdint.h>
@@ -90,6 +91,11 @@ bool restart_apg_log ();
 bool apg_log (const char* message, ...);
 // write a log entry and print to stderr
 bool apg_log_err (const char* message, ...);
+
+//
+// get a monotonic time value in nanoseconds (linux only)
+// value is some arbitrary system time but is invulnerable to clock changes
+double apg_time_linux ();
 
 /*****************************************************************************
 GLOBAL VAR DECLARATIONS (implement these in main.c)
@@ -195,3 +201,23 @@ inline bool apg_log_err (const char* message, ...) {
   return true;
 }
 
+//
+// get a monotonic time value in seconds w/ nanosecond precision (linux only)
+// value is some arbitrary system time but is invulnerable to clock changes
+// CLOCK_MONOTONIC -- vulnerable to adjtime() and NTP changes
+// CLOCK_MONOTONIC_RAW -- vulnerable to voltage and heat changes
+inline double apg_time_linux () {
+	struct timespec t;
+	static double prev_value = 0.0;
+	int r = clock_gettime (CLOCK_MONOTONIC, &t);
+	if (r < 0) {
+		fprintf (stderr, "WARNING: could not get time value\n");
+		return prev_value;
+	}
+	double ns = t.tv_nsec;
+	double s = ns * 0.000000001;
+	time_t tts = t.tv_sec;
+	s += difftime (tts, 0);
+	prev_value = s;
+	return s;
+}
