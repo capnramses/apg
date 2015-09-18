@@ -8,14 +8,11 @@ to time.
 
 The maths library is probably the most generally useful for graphics / games.
 
-|-sub-project-|-description-|-languages-|
+| sub-project | description | languages |
 |---------|-------------------|-------------|
 | apg       | generic C programming utils | C |
+| apg_assman | experimental asset manager  | C |
 | apg_data_structs | light-weight data structures library  | C |
 | apg_interp | interpolation / "tweening" library | C, JavaScript |
 | apg_malloc | memory functions leak checker | C |
-
-##not here
-
-My 3d maths library apg_maths is in a stand-alone repository, as is my mesh
-format apg_mesh.
+| apg_maths | 3d maths for graphics/games | C, C++, JavaScript |
