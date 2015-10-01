@@ -11,7 +11,8 @@
 // * ascii or unicode fetcher/printer thing
 // * string manip/trim
 
-#pragma once
+#ifndef _APG_H_
+#define _APG_H_
 
 #define _POSIX_C_SOURCE 199309L // for the timer on linux
 #define _USE_MATH_DEFINES
@@ -105,6 +106,48 @@ extern int g_argc;
 extern char** g_argv;
 
 /*****************************************************************************
+IMPLEMENTATION
+*****************************************************************************/
+#ifdef APG_IMPLEMENTATION
+#undef APG_IMPLEMENTATION
+
+int g_argc;
+char** g_argv;
+
+// Checks for given parameter in main's command-line arguments
+// returns the argument number if present (1 to argc - 1)
+// otherwise returns 0
+int check_param (const char* check) {
+	for (int i = 1; i < g_argc; i++) {
+		// NOTE: the original used strcasecmp() here which is the case insenstive
+		// version, but it might require strings.h instead, depending on compiler
+		// it makes sense to ignore case on multi-plat command line
+		if (strcasecmp (check, g_argv[i]) == 0) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+// open/refresh a new log file and print timestamp and OS
+// returns false if could not open file
+bool restart_apg_log () {
+	FILE* file = fopen (APG_LOG_FN, "w");
+	if (!file) {
+		fprintf (stderr,
+			"ERROR: could not open APG_LOG_FN log file %s for writing\n",
+			APG_LOG_FN);
+		return false;
+	}
+	time_t now = time (NULL);
+	char* date = ctime (&now);
+	fprintf (file, "APG_LOG_FN log. local time %s\n", date);
+	fprintf (file, "build version: %s %s %s\n", BUILD_PLAT, __DATE__, __TIME__);
+	fclose (file);
+	return true;
+}
+
+/*****************************************************************************
 INLINED
 *****************************************************************************/
 
@@ -170,31 +213,23 @@ inline bool apg_log_err (const char* message, ...) {
 // get string from file
 // does not do any malloc - fills existing buffer up to length max_len
 // returns false on error
-inline bool apg_file_to_str (const char* file_name, size_t max_len, char* str) {
+bool apg_file_to_str (const char* file_name, size_t max_len, char* str) {
 	FILE* fp = fopen (file_name, "r");
 	if (!fp) {
 		fprintf (stderr, "ERROR: opening file %s\n", file_name);
 		return false;
 	}
-	// get length of file
-	fseek (fp, 0, SEEK_END);
-	size_t sz = ftell (fp);
-	if (sz >= max_len - 1) {
-		fprintf (stderr,
-			"WARNING: file %s is too big (%li) for buffer (%li). truncating\n",
-		file_name, sz, max_len);
+	size_t cnt = fread (str, 1, max_len - 1, fp);
+	if (cnt >= max_len - 1) {
+		fprintf (stderr, "WARNING: file %s too big - truncated.\n", file_name);
 	}
-	rewind (fp);
-	// truncate if file longer than max_len
-	size_t scan_len = MIN (max_len - 1, sz);
-	size_t cnt = fread (str, 1, scan_len, fp);
-	if (cnt == 0) {
+	if (ferror (fp)) {
 		fprintf (stderr, "ERROR: reading shader file %s\n", file_name);
 		fclose (fp);
 		return false;
 	}
 	// append \0 to end of file string
-	str[scan_len] = 0;
+	str[cnt] = 0;
 	fclose (fp);
 	return true;
 }
@@ -220,47 +255,6 @@ inline double apg_time_linux () {
 	return s;
 }
 #endif // APPLE
+#endif // APG_IMPLEMENTATION
+#endif // _APG_H_
 
-/*****************************************************************************
-IMPLEMENTATION
-*****************************************************************************/
-#ifdef APG_IMPLEMENTATION
-
-int g_argc;
-char** g_argv;
-
-// Checks for given parameter in main's command-line arguments
-// returns the argument number if present (1 to argc - 1)
-// otherwise returns 0
-int check_param (const char* check) {
-	for (int i = 1; i < g_argc; i++) {
-		// NOTE: the original used strcasecmp() here which is the case insenstive
-		// version, but it might require strings.h instead, depending on compiler
-		// it makes sense to ignore case on multi-plat command line
-		if (strcasecmp (check, g_argv[i]) == 0) {
-			return i;
-		}
-	}
-	return 0;
-}
-
-// open/refresh a new log file and print timestamp and OS
-// returns false if could not open file
-bool restart_apg_log () {
-	FILE* file = fopen (APG_LOG_FN, "w");
-	if (!file) {
-		fprintf (stderr,
-			"ERROR: could not open APG_LOG_FN log file %s for writing\n",
-			APG_LOG_FN);
-		return false;
-	}
-	time_t now = time (NULL);
-	char* date = ctime (&now);
-	fprintf (file, "APG_LOG_FN log. local time %s\n", date);
-	fprintf (file, "build version: %s %s %s\n", BUILD_PLAT, __DATE__, __TIME__);
-	fclose (file);
-	return true;
-}
-
-#endif
-#undef APG_IMPLEMENTATION

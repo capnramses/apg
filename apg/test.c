@@ -1,3 +1,4 @@
+#include "two.h"
 #define APG_IMPLEMENTATION
 #include "apg.h"
 #include <stdio.h>
@@ -10,6 +11,10 @@ int main (int argc, char** argv) {
 
 	int pn = check_param ("hello");
 	printf ("the user param 'hello' was found at arg num %i\n", pn);
+	if (pn > 0) {
+		return 0;
+	}
+
 
 	uint uval = MAX (110, 120);
 	printf ("uval = %u\n", uval);
@@ -23,7 +28,7 @@ int main (int argc, char** argv) {
 #ifndef APPLE
 	double T = 0.0;
 	double prev = apg_time_linux ();
-	while (T < 30.0) {
+	while (T < 1.0) {
 		double curr = apg_time_linux ();
 		double elapsed = curr - prev;
 		prev = curr;
@@ -31,6 +36,8 @@ int main (int argc, char** argv) {
 		printf ("T= %lf\n", T);
 	}
 #endif
+
+	two ();
 
 	return 0;
 }
