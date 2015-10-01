@@ -22,6 +22,7 @@ int main (int argc, char** argv) {
 
 	apg_log_err ("ERROR: this is a fake error\n");
 
+#ifndef APPLE
 	double T = 0.0;
 	double prev = apg_time_linux ();
 	while (T < 30.0) {
@@ -31,6 +32,7 @@ int main (int argc, char** argv) {
 		T += elapsed;
 		printf ("T= %lf\n", T);
 	}
+#endif
 
 	return 0;
 }

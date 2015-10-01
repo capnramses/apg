@@ -201,11 +201,43 @@ inline bool apg_log_err (const char* message, ...) {
   return true;
 }
 
+// get string from file
+// does not do any malloc - fills existing buffer up to length max_len
+// returns false on error
+inline bool apg_file_to_str (const char* file_name, size_t max_len, char* str) {
+  FILE* fp = fopen (file_name, "r");
+  if (!fp) {
+    fprintf (stderr, "ERROR: opening file %s\n", file_name);
+    return false;
+  }
+	// get length of file
+  fseek (fp, 0, SEEK_END);
+  size_t sz = ftell (fp);
+	if (sz >= max_len - 1) {
+		fprintf (stderr, "WARNING: file %s is too big (%li) for buffer (%li). truncating\n",
+		file_name, sz, max_len);
+	}
+  rewind (fp);
+	// truncate if file longer than max_len
+	size_t scan_len = MIN (max_len - 1, sz);
+  size_t cnt = fread (str, 1, scan_len, fp);
+  if (cnt == 0) {
+    fprintf (stderr, "ERROR: reading shader file %s\n", file_name);
+    fclose (fp);
+    return false;
+  }
+  // append \0 to end of file string
+  str[scan_len] = 0;
+  fclose (fp);
+	return true;
+}
+
 //
 // get a monotonic time value in seconds w/ nanosecond precision (linux only)
 // value is some arbitrary system time but is invulnerable to clock changes
 // CLOCK_MONOTONIC -- vulnerable to adjtime() and NTP changes
 // CLOCK_MONOTONIC_RAW -- vulnerable to voltage and heat changes
+#ifndef APPLE
 inline double apg_time_linux () {
 	struct timespec t;
 	static double prev_value = 0.0;
@@ -221,3 +253,4 @@ inline double apg_time_linux () {
 	prev_value = s;
 	return s;
 }
+#endif
