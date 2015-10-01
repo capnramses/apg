@@ -1,3 +1,4 @@
+#define APG_IMPLEMENTATION
 #include "apg.h"
 #include <stdio.h>
 
