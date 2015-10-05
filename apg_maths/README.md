@@ -56,7 +56,8 @@ I've mostly made these improvements in the new C99 version.
 practice it's almost always a pointless multiplication with an identity matrix
 * replace vector memory array with `.x` `.y` `.z` and `.w` - downside is that passing
 whole vector memory blocks assumes contiguous memory order, which may not
-always be true on some compilers. A `return_mem()` function could address this. Alternatively, could add `.x()` functions in C++.
+always be true on some compilers (should be fine in C99 though according to spec).
+A `return_mem()` function could address this. Alternatively, could add `.x()` functions in C++.
 * remove matrix constructors, because memory order there is a point of confusion
 * a matrix function that returns an element given a specified row and column
 (rather than using the 1d index number)
