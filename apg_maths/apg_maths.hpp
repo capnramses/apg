@@ -11,8 +11,7 @@
 | A versor is the proper name for a unit quaternion.                          |
 | This is C++ because it's convenient to be able to overload operators        |
 \*****************************************************************************/
-#ifndef _APG_MATHS_H_
-#define _APG_MATHS_H_
+#pragma once
 
 #include <stdio.h>
 #define _USE_MATH_DEFINES
@@ -73,43 +72,34 @@ versor slerp (const versor& q, const versor& r);
 // stupid overloading wouldn't let me use const
 versor normalise (versor& q);
 versor slerp (versor& q, versor& r, float t);
-
 //
 struct vec2 {
 	float v[2];
-
+	vec2 ();
 	//
 	vec2 (float x, float y) {
 		v[0] = x;
 		v[1] = y;
 	}
 };
-
-// putting method definitions in the header inside the struct forces them to
-// be inlined http://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Inline.html
-// as far as i can tell from that rambling discourse, to get them to inline
-// otherwise we leave the cpp definition as is, but put a SECOND COPY with both
-// keywords "extern inline" beforehand. thanks stallman
+//
 struct vec3 {
 	float v[3];
-	
+	vec3 ();
 	//
 	vec3 (const vec4& vv);
-	
 	// create from 3 scalars
 	vec3 (float x, float y, float z) {
 		v[0] = x;
 		v[1] = y;
 		v[2] = z;
 	}
-	
 	// create from vec2 and a scalar
 	vec3 (const vec2& vv, float z) {
 		v[0] = vv.v[0];
 		v[1] = vv.v[1];
 		v[2] = z;
 	}
-	
 	//
 	vec3 operator+ (const vec3& rhs) {
 		vec3 vc;
@@ -118,7 +108,6 @@ struct vec3 {
 		vc.v[2] = v[2] + rhs.v[2];
 		return vc;
 	}
-
 	//
 	vec3& operator+= (const vec3& rhs) {
 		v[0] += rhs.v[0];
@@ -126,7 +115,6 @@ struct vec3 {
 		v[2] += rhs.v[2];
 		return *this; // return self
 	}
-
 	//
 	vec3 operator- (const vec3& rhs) {
 		vec3 vc;
@@ -135,7 +123,6 @@ struct vec3 {
 		vc.v[2] = v[2] - rhs.v[2];
 		return vc;
 	}
-
 	//
 	vec3& operator-= (const vec3& rhs) {
 		v[0] -= rhs.v[0];
@@ -143,7 +130,6 @@ struct vec3 {
 		v[2] -= rhs.v[2];
 		return *this;
 	}
-
 	//
 	vec3 operator+ (float rhs) {
 		vec3 vc;
@@ -152,7 +138,6 @@ struct vec3 {
 		vc.v[2] = v[2] + rhs;
 		return vc;
 	}
-
 	//
 	vec3 operator- (float rhs) {
 		vec3 vc;
@@ -161,7 +146,6 @@ struct vec3 {
 		vc.v[2] = v[2] - rhs;
 		return vc;
 	}
-
 	//
 	vec3 operator* (float rhs) {
 		vec3 vc;
@@ -170,7 +154,6 @@ struct vec3 {
 		vc.v[2] = v[2] * rhs;
 		return vc;
 	}
-
 	//
 	vec3 operator/ (float rhs) {
 		vec3 vc;
@@ -179,7 +162,6 @@ struct vec3 {
 		vc.v[2] = v[2] / rhs;
 		return vc;
 	}
-
 	//
 	vec3& operator*= (float rhs) {
 		v[0] = v[0] * rhs;
@@ -187,7 +169,6 @@ struct vec3 {
 		v[2] = v[2] * rhs;
 		return *this;
 	}
-
 	//
 	vec3& operator= (const vec3& rhs) {
 		v[0] = rhs.v[0];
@@ -200,7 +181,7 @@ struct vec3 {
 //
 struct vec4 {
 	float v[4];
-
+	vec4 ();
 	//
 	vec4 (float x, float y, float z, float w) {
 		v[0] = x;
@@ -208,7 +189,6 @@ struct vec4 {
 		v[2] = z;
 		v[3] = w;
 	}
-	
 	//
 	vec4 (const vec2& vv, float z, float w) {
 		v[0] = vv.v[0];
@@ -216,7 +196,6 @@ struct vec4 {
 		v[2] = z;
 		v[3] = w;
 	}
-	
 	//
 	vec4 (const vec3& vv, float w) {
 		v[0] = vv.v[0];
@@ -297,7 +276,6 @@ struct mat4 {
 // a unit quaternion used for rotation
 struct versor {
 	float q[4];
-	
 	//
 	versor operator/ (float rhs) {
 		versor result;
@@ -307,7 +285,6 @@ struct versor {
 		result.q[3] = q[3] / rhs;
 		return result;
 	}
-	
 	//
 	versor operator* (float rhs) {
 		versor result;
@@ -317,7 +294,6 @@ struct versor {
 		result.q[3] = q[3] * rhs;
 		return result;
 	}
-	
 	//
 	versor operator* (const versor& rhs) {
 		versor result;
@@ -332,7 +308,6 @@ struct versor {
 		// re-normalise in case of mangling
 		return normalise (result);
 	}
-	
 	//
 	versor operator+ (const versor& rhs) {
 		versor result;
@@ -432,7 +407,7 @@ inline vec3 cross (const vec3& a, const vec3& b) {
 // NB i suspect that the z is backwards here but i've used in in
 // several places like this. d'oh!
 inline float direction_to_heading (vec3 d) {
-	return atan2 (-d.v[0], -d.v[2]) * ONE_RAD_IN_DEG;
+	return (float)(atan2 (-d.v[0], -d.v[2]) * ONE_RAD_IN_DEG);
 }
 
 // very informal function to convert a heading (e.g. y-axis orientation) into
@@ -443,50 +418,29 @@ inline vec3 heading_to_direction (float degrees) {
 }
 
 /*-----------------------------MATRIX FUNCTIONS------------------------------*/
-//
 inline mat3 zero_mat3 () {
-	return mat3 (
-		0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f
-	);
+	mat3 M;
+	memset (M.m, 0, 9 * sizeof (float));
+	return M;
 }
 
-//
 inline mat3 identity_mat3 () {
-	return mat3 (
-		1.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 1.0f
-	);
+	mat3 M = zero_mat3 ();
+	M.m[0] = M.m[4] = M.m[8] = 1.0f;
+	return M;
 }
 
-//
 inline mat4 zero_mat4 () {
-	return mat4 (
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f
-	);
+	mat4 M;
+	memset (M.m, 0, 16 * sizeof(float));
+	return M;
 }
 
-//
 inline mat4 identity_mat4 () {
-	return mat4 (
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	);
+	mat4 M = zero_mat4 ();
+	M.m[0] = M.m[5] = M.m[10] = M.m[15] = 1.0f;
+	return M;
 }
-
-/* mat4 array layout
- 0  4  8 12
- 1  5  9 13
- 2  6 10 14
- 3  7 11 15
-*/
 
 // returns a scalar value with the determinant for a 4x4 matrix
 // see http://www.euclideanspace.com/maths/algebra/matrix/functions/determinant/fourD/index.htm
@@ -531,98 +485,97 @@ inline mat4 inverse (const mat4& mm) {
 	}
 	float inv_det = 1.0f / det;
 	
-	return mat4 (
-		inv_det * (
-			mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] +
-			mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
-			mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] -
-			mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
-			mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] +
-			mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
-			mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] -
-			mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
-			mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]
-		),
-		inv_det * (
-			mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] -
-			mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
-			mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] +
-			mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
-			mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] -
-			mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
-			mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] +
-			mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
-			mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]
-		),
-		inv_det * (
-			mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] +
-			mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
-			mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] -
-			mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
-			mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] +
-			mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
-			mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]
-		),
-		inv_det * (
-			mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] -
-			mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
-			mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]
-		),
-		inv_det * (
-			mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] -
-			mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
-			mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]
-		),
-		inv_det * (
-			mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] +
-			mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
-			mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]
-		),
-		inv_det * (
-			mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] -
-			mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
-			mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]
-		),
-		inv_det * (
-			mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] +
-			mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
-			mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
-		)
+	mat4 R;
+	R.m[0] = inv_det * (
+		mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] +
+		mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
+		mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]
+	);
+	R.m[1] = inv_det * (
+		mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] -
+		mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
+		mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]
+	);
+	R.m[2] = inv_det * (
+		mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] +
+		mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
+		mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]
+	);
+	R.m[3] = inv_det * (
+		mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] -
+		mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
+		mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]
+	);
+	R.m[4] = inv_det * (
+		mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] -
+		mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
+		mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]
+	);
+	R.m[5] = inv_det * (
+		mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] +
+		mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
+		mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]
+	);
+	R.m[6] = inv_det * (
+		mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] -
+		mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
+		mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]
+	);
+	R.m[7] = inv_det * (
+		mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] +
+		mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
+		mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]
+	);
+	R.m[8] = inv_det * (
+		mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] +
+		mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
+		mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]
+	);
+	R.m[9] = inv_det * (
+		mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] -
+		mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
+		mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]
+	);
+	R.m[10] = inv_det * (
+		mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] +
+		mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
+		mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]
+	);
+	R.m[11] = inv_det * (
+		mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] -
+		mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
+		mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]
+	);
+	R.m[12] = inv_det * (
+		mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] -
+		mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
+		mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]
+	);
+	R.m[13] = inv_det * (
+		mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] +
+		mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
+		mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]
+	);
+	R.m[14] = inv_det * (
+		mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] -
+		mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
+		mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]
+	);
+	R.m[15] = inv_det * (
+		mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] +
+		mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
+		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
 	);
 }
 
 // returns a 16-element array flipped on the main diagonal
 inline mat4 transpose (const mat4& mm) {
-	return mat4 (
-		mm.m[0], mm.m[4], mm.m[8], mm.m[12],
-		mm.m[1], mm.m[5], mm.m[9], mm.m[13],
-		mm.m[2], mm.m[6], mm.m[10], mm.m[14],
-		mm.m[3], mm.m[7], mm.m[11], mm.m[15]
-	);
+	mat4 M;
+	M.m[0] = mm.m[0]; M.m[4] = mm.m[1]; M.m[8] = mm.m[2]; M.m[12] = mm.m[3];
+	M.m[1] = mm.m[4]; M.m[5] = mm.m[5]; M.m[9] = mm.m[6]; M.m[13] = mm.m[7];
+	M.m[2] = mm.m[8]; M.m[6] = mm.m[9]; M.m[10] = mm.m[10]; M.m[14] = mm.m[11];
+	M.m[3] = mm.m[12]; M.m[7] = mm.m[13]; M.m[11] = mm.m[14]; M.m[15] = mm.m[15];
+	return M;
 }
 
 /*--------------------------AFFINE MATRIX FUNCTIONS--------------------------*/
@@ -710,13 +663,13 @@ inline mat4 look_at (const vec3& cam_pos, vec3 targ_pos, const vec3& up) {
 
 // returns a perspective matrix mimicking the opengl projection style
 // remeber if calculating aspect to do floating point division, not integer
-inline mat4 perspective (float fovy, float aspect, float near, float far) {
+inline mat4 perspective (float fovy, float aspect, float nr, float fr) {
 	float fov_rad = fovy * ONE_DEG_IN_RAD;
-	float range = tan (fov_rad / 2.0f) * near;
-	float sx = (2.0f * near) / (range * aspect + range * aspect);
-	float sy = near / range;
-	float sz = -(far + near) / (far - near);
-	float pz = -(2.0f * far * near) / (far - near);
+	float range = tan (fov_rad / 2.0f) * nr;
+	float sx = (2.0f * nr) / (range * aspect + range * aspect);
+	float sy = nr / range;
+	float sz = -(fr + nr) / (fr - nr);
+	float pz = -(2.0f * fr * nr) / (fr - nr);
 	mat4 m = zero_mat4 (); // make sure bottom-right corner is zero
 	m.m[0] = sx;
 	m.m[5] = sy;
@@ -730,10 +683,10 @@ inline mat4 perspective (float fovy, float aspect, float near, float far) {
 // create quaternion from normalised axis and angle in radians around axis
 inline versor quat_from_axis_rad (float radians, float x, float y, float z) {
 	versor result;
-	result.q[0] = cos (radians / 2.0);
-	result.q[1] = sin (radians / 2.0) * x;
-	result.q[2] = sin (radians / 2.0) * y;
-	result.q[3] = sin (radians / 2.0) * z;
+	result.q[0] = cosf (radians / 2.0f);
+	result.q[1] = sinf (radians / 2.0f) * x;
+	result.q[2] = sinf (radians / 2.0f) * y;
+	result.q[3] = sinf (radians / 2.0f) * z;
 	return result;
 }
 
@@ -748,24 +701,24 @@ inline mat4 quat_to_mat4 (const versor& q) {
 	float x = q.q[1];
 	float y = q.q[2];
 	float z = q.q[3];
-	return mat4 (
-		1.0f - 2.0f * y * y - 2.0f * z * z,
-		2.0f * x * y + 2.0f * w * z,
-		2.0f * x * z - 2.0f * w * y,
-		0.0f,
-		2.0f * x * y - 2.0f * w * z,
-		1.0f - 2.0f * x * x - 2.0f * z * z,
-		2.0f * y * z + 2.0f * w * x,
-		0.0f,
-		2.0f * x * z + 2.0f * w * y,
-		2.0f * y * z - 2.0f * w * x,
-		1.0f - 2.0f * x * x - 2.0f * y * y,
-		0.0f,
-		0.0f,
-		0.0f,
-		0.0f,
-		1.0f
-	);
+	mat4 R;
+	R.m[0] = 1.0f - 2.0f * y * y - 2.0f * z * z;
+	R.m[1] = 2.0f * x * y + 2.0f * w * z;
+	R.m[2] = 2.0f * x * z - 2.0f * w * y;
+	R.m[3] = 0.0f;
+	R.m[4] = 2.0f * x * y - 2.0f * w * z;
+	R.m[5] = 1.0f - 2.0f * x * x - 2.0f * z * z;
+	R.m[6] = 2.0f * y * z + 2.0f * w * x;
+	R.m[7] = 0.0f;
+	R.m[8] = 2.0f * x * z + 2.0f * w * y;
+	R.m[9] = 2.0f * y * z - 2.0f * w * x;
+	R.m[10] = 1.0f - 2.0f * x * x - 2.0f * y * y;
+	R.m[11] = 0.0f;
+	R.m[12] = 0.0f;
+	R.m[13] = 0.0f;
+	R.m[14] = 0.0f;
+	R.m[15] = 1.0f;
+	return R;
 }
 
 // normalise a quaternion into a unit quaternion (versor) for use in rotation
@@ -829,5 +782,3 @@ inline versor slerp (versor& q, versor& r, float t) {
 	}
 	return result;
 }
-
-#endif
