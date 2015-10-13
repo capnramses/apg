@@ -29,7 +29,6 @@ struct vec4;
 struct mat3;
 struct mat4;
 struct versor;
-
 // print functions
 void print (const vec2& v);
 void print (const vec3& v);
@@ -43,9 +42,9 @@ float length2 (const vec3& v);
 vec3 normalise (const vec3& v);
 float dot (const vec3& a, const vec3& b);
 inline vec3 cross (const vec3& a, const vec3& b);
-inline float get_squared_dist (vec3 from, vec3 to);
 float direction_to_heading (vec3 d);
 vec3 heading_to_direction (float degrees);
+vec3 lerp (vec3 a, vec3 b, float t);
 // matrix functions
 mat3 zero_mat3 ();
 mat3 identity_mat3 ();
@@ -130,12 +129,49 @@ struct vec3 {
 		return *this;
 	}
 	//
+	vec3 operator* (const vec3& rhs) {
+		vec3 vc;
+		vc.v[0] = v[0] * rhs.v[0];
+		vc.v[1] = v[1] * rhs.v[1];
+		vc.v[2] = v[2] * rhs.v[2];
+		return vc;
+	}
+	//
+	vec3& operator*= (const vec3& rhs) {
+		v[0] *= rhs.v[0];
+		v[1] *= rhs.v[1];
+		v[2] *= rhs.v[2];
+		return *this;
+	}
+	//
+	vec3 operator/ (const vec3& rhs) {
+		vec3 vc;
+		vc.v[0] = v[0] / rhs.v[0];
+		vc.v[1] = v[1] / rhs.v[1];
+		vc.v[2] = v[2] / rhs.v[2];
+		return vc;
+	}
+	//
+	vec3& operator/= (const vec3& rhs) {
+		v[0] /= rhs.v[0];
+		v[1] /= rhs.v[1];
+		v[2] /= rhs.v[2];
+		return *this;
+	}
+	//
 	vec3 operator+ (float rhs) {
 		vec3 vc;
 		vc.v[0] = v[0] + rhs;
 		vc.v[1] = v[1] + rhs;
 		vc.v[2] = v[2] + rhs;
 		return vc;
+	}
+	//
+	vec3& operator+= (float rhs) {
+		v[0] += rhs;
+		v[1] += rhs;
+		v[2] += rhs;
+		return *this;
 	}
 	//
 	vec3 operator- (float rhs) {
@@ -146,12 +182,26 @@ struct vec3 {
 		return vc;
 	}
 	//
+	vec3& operator-= (float rhs) {
+		v[0] -= rhs;
+		v[1] -= rhs;
+		v[2] -= rhs;
+		return *this;
+	}
+	//
 	vec3 operator* (float rhs) {
 		vec3 vc;
 		vc.v[0] = v[0] * rhs;
 		vc.v[1] = v[1] * rhs;
 		vc.v[2] = v[2] * rhs;
 		return vc;
+	}
+	//
+	vec3& operator*= (float rhs) {
+		v[0] *= rhs;
+		v[1] *= rhs;
+		v[2] *= rhs;
+		return *this;
 	}
 	//
 	vec3 operator/ (float rhs) {
@@ -162,10 +212,10 @@ struct vec3 {
 		return vc;
 	}
 	//
-	vec3& operator*= (float rhs) {
-		v[0] = v[0] * rhs;
-		v[1] = v[1] * rhs;
-		v[2] = v[2] * rhs;
+	vec3& operator/= (float rhs) {
+		v[0] /= rhs;
+		v[1] /= rhs;
+		v[2] /= rhs;
 		return *this;
 	}
 	//
@@ -391,6 +441,9 @@ inline float direction_to_heading (vec3 d) {
 inline vec3 heading_to_direction (float degrees) {
 	float rad = degrees * ONE_DEG_IN_RAD;
 	return vec3 (-sinf (rad), 0.0f, -cosf (rad));
+}
+inline vec3 lerp (vec3 a, vec3 b, float t) {
+	return a * t + b * (1.0f - t);
 }
 /*-----------------------------MATRIX FUNCTIONS------------------------------*/
 inline mat3 zero_mat3 () {
