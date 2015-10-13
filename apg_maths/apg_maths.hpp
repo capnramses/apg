@@ -2,20 +2,20 @@
 | Anton's Maths Library                                                       |
 | Email: anton at antongerdelan dot net                                       |
 | Revised and inlined into a header file: 16 Jun 2014                         |
-| Copyright Dr Anton Gerdelan                                                 |
+| Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland                |
 |*****************************************************************************|
 | Commonly-used maths structures and functions                                |
-| Simple-as-possible. No disgusting templates.                                |
+| Simple-as-possible. No templates.                                           |
 | Structs vec3, mat4, versor. just hold arrays of floats called "v","m","q",  |
 | respectively. So, for example, to get values from a mat4 do: my_mat.m       |
 | A versor is the proper name for a unit quaternion.                          |
-| This is C++ because it's convenient to be able to overload operators        |
+| This is the C++ version with operator overloading                           |
 \*****************************************************************************/
 #pragma once
-
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <string.h>
 
 // const used to convert degrees into radians
 #define TAU 2.0 * M_PI
@@ -75,7 +75,7 @@ versor slerp (versor& q, versor& r, float t);
 //
 struct vec2 {
 	float v[2];
-	vec2 ();
+	vec2 () {}
 	//
 	vec2 (float x, float y) {
 		v[0] = x;
@@ -85,8 +85,7 @@ struct vec2 {
 //
 struct vec3 {
 	float v[3];
-	vec3 ();
-	//
+	vec3 () {}
 	vec3 (const vec4& vv);
 	// create from 3 scalars
 	vec3 (float x, float y, float z) {
@@ -181,7 +180,7 @@ struct vec3 {
 //
 struct vec4 {
 	float v[4];
-	vec4 ();
+	vec4 () {}
 	//
 	vec4 (float x, float y, float z, float w) {
 		v[0] = x;
@@ -220,33 +219,22 @@ struct mat3 {
 // 03 07 11 15
 struct mat4 {
 	float m[16];
-
 	//
 	vec4 operator* (const vec4& rhs) {
 		// 0x + 4y + 8z + 12w
-		float x =
-			m[0] * rhs.v[0] +
-			m[4] * rhs.v[1] +
-			m[8] * rhs.v[2] +
-			m[12] * rhs.v[3];
+		float x = m[0] * rhs.v[0] + m[4] * rhs.v[1] + m[8] * rhs.v[2] + m[12] *
+			rhs.v[3];
 		// 1x + 5y + 9z + 13w
-		float y = m[1] * rhs.v[0] +
-			m[5] * rhs.v[1] +
-			m[9] * rhs.v[2] +
-			m[13] * rhs.v[3];
+		float y = m[1] * rhs.v[0] + m[5] * rhs.v[1] + m[9] * rhs.v[2] + m[13] *
+			rhs.v[3];
 		// 2x + 6y + 10z + 14w
-		float z = m[2] * rhs.v[0] +
-			m[6] * rhs.v[1] +
-			m[10] * rhs.v[2] +
-			m[14] * rhs.v[3];
+		float z = m[2] * rhs.v[0] + m[6] * rhs.v[1] + m[10] * rhs.v[2] + m[14] *
+			rhs.v[3];
 		// 3x + 7y + 11z + 15w
-		float w = m[3] * rhs.v[0] +
-			m[7] * rhs.v[1] +
-			m[11] * rhs.v[2] +
-			m[15] * rhs.v[3];
+		float w = m[3] * rhs.v[0] + m[7] * rhs.v[1] + m[11] * rhs.v[2] + m[15] *
+			rhs.v[3];
 		return vec4 (x, y, z, w);
 	}
-
 	//
 	mat4 operator* (const mat4& rhs) {
 		mat4 r = zero_mat4 ();
@@ -263,7 +251,6 @@ struct mat4 {
 		}
 		return r;
 	}
-
 	//
 	mat4& operator= (const mat4& rhs) {
 		for (int i = 0; i < 16; i++) {
@@ -325,17 +312,14 @@ struct versor {
 inline void print (const vec2& v) {
 	printf ("[%.2f, %.2f]\n", v.v[0], v.v[1]);
 }
-
 //
 inline void print (const vec3& v) {
 	printf ("[%.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2]);
 }
-
 //
 inline void print (const vec4& v) {
 	printf ("[%.2f, %.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2], v.v[3]);
 }
-
 //
 inline void print (const mat3& m) {
 	printf("\n");
@@ -343,7 +327,6 @@ inline void print (const mat3& m) {
 	printf ("[%.2f][%.2f][%.2f]\n", m.m[1], m.m[4], m.m[7]);
 	printf ("[%.2f][%.2f][%.2f]\n", m.m[2], m.m[5], m.m[8]);
 }
-
 //
 inline void print (const mat4& m) {
 	printf("\n");
@@ -352,12 +335,10 @@ inline void print (const mat4& m) {
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[2], m.m[6], m.m[10], m.m[14]);
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[3], m.m[7], m.m[11], m.m[15]);
 }
-
 //
 inline void print (const versor& q) {
 	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.q[0], q.q[1], q.q[2], q.q[3]);
 }
-
 /*------------------------------VECTOR FUNCTIONS-----------------------------*/
 // create vec3 by truncating vec4
 inline vec3::vec3 (const vec4& vv) {
@@ -365,12 +346,10 @@ inline vec3::vec3 (const vec4& vv) {
 	v[1] = vv.v[1];
 	v[2] = vv.v[2];
 }
-
 //
 inline float length (const vec3& v) {
 	return sqrt (v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2]);
 }
-
 // squared length
 inline float length2 (const vec3& v) {
 	return v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2];
@@ -393,7 +372,6 @@ inline vec3 normalise (const vec3& v) {
 inline float dot (const vec3& a, const vec3& b) {
 	return a.v[0] * b.v[0] + a.v[1] * b.v[1] + a.v[2] * b.v[2];
 }
-
 //
 inline vec3 cross (const vec3& a, const vec3& b) {
 	float x = a.v[1] * b.v[2] - a.v[2] * b.v[1];
@@ -401,7 +379,6 @@ inline vec3 cross (const vec3& a, const vec3& b) {
 	float z = a.v[0] * b.v[1] - a.v[1] * b.v[0];
 	return vec3 (x, y, z);
 }
-
 // converts an un-normalised direction vector's X,Z components into a heading
 // in degrees
 // NB i suspect that the z is backwards here but i've used in in
@@ -409,39 +386,33 @@ inline vec3 cross (const vec3& a, const vec3& b) {
 inline float direction_to_heading (vec3 d) {
 	return (float)(atan2 (-d.v[0], -d.v[2]) * ONE_RAD_IN_DEG);
 }
-
 // very informal function to convert a heading (e.g. y-axis orientation) into
 // a 3d vector with components in x and z axes
 inline vec3 heading_to_direction (float degrees) {
 	float rad = degrees * ONE_DEG_IN_RAD;
 	return vec3 (-sinf (rad), 0.0f, -cosf (rad));
 }
-
 /*-----------------------------MATRIX FUNCTIONS------------------------------*/
 inline mat3 zero_mat3 () {
 	mat3 M;
 	memset (M.m, 0, 9 * sizeof (float));
 	return M;
 }
-
 inline mat3 identity_mat3 () {
 	mat3 M = zero_mat3 ();
 	M.m[0] = M.m[4] = M.m[8] = 1.0f;
 	return M;
 }
-
 inline mat4 zero_mat4 () {
 	mat4 M;
 	memset (M.m, 0, 16 * sizeof(float));
 	return M;
 }
-
 inline mat4 identity_mat4 () {
 	mat4 M = zero_mat4 ();
 	M.m[0] = M.m[5] = M.m[10] = M.m[15] = 1.0f;
 	return M;
 }
-
 // returns a scalar value with the determinant for a 4x4 matrix
 // see http://www.euclideanspace.com/maths/algebra/matrix/functions/determinant/fourD/index.htm
 inline float determinant (const mat4& mm) {
@@ -471,7 +442,6 @@ inline float determinant (const mat4& mm) {
 		mm.m[4] * mm.m[1] * mm.m[10] * mm.m[15] +
 		mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
 }
-
 // returns a 16-element array that is the inverse of a 16-element array (4x4
 // matrix).
 // see http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
@@ -484,7 +454,7 @@ inline mat4 inverse (const mat4& mm) {
 		return mm;
 	}
 	float inv_det = 1.0f / det;
-	
+
 	mat4 R;
 	R.m[0] = inv_det * (
 		mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] +
@@ -567,7 +537,6 @@ inline mat4 inverse (const mat4& mm) {
 		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
 	);
 }
-
 // returns a 16-element array flipped on the main diagonal
 inline mat4 transpose (const mat4& mm) {
 	mat4 M;
@@ -577,7 +546,6 @@ inline mat4 transpose (const mat4& mm) {
 	M.m[3] = mm.m[12]; M.m[7] = mm.m[13]; M.m[11] = mm.m[14]; M.m[15] = mm.m[15];
 	return M;
 }
-
 /*--------------------------AFFINE MATRIX FUNCTIONS--------------------------*/
 // translate a 4d matrix with xyz array
 inline mat4 translate (const mat4& m, const vec3& v) {
@@ -587,7 +555,6 @@ inline mat4 translate (const mat4& m, const vec3& v) {
 	m_t.m[14] = v.v[2];
 	return m_t * m;
 }
-
 // rotate around x axis by an angle in degrees
 inline mat4 rotate_x_deg (const mat4& m, float deg) {
 	// convert to radians
@@ -599,7 +566,6 @@ inline mat4 rotate_x_deg (const mat4& m, float deg) {
 	m_r.m[10] = cos (rad);
 	return m_r * m;
 }
-
 // rotate around y axis by an angle in degrees
 inline mat4 rotate_y_deg (const mat4& m, float deg) {
 	// convert to radians
@@ -611,7 +577,6 @@ inline mat4 rotate_y_deg (const mat4& m, float deg) {
 	m_r.m[10] = cos (rad);
 	return m_r * m;
 }
-
 // rotate around z axis by an angle in degrees
 inline mat4 rotate_z_deg (const mat4& m, float deg) {
 	// convert to radians
@@ -623,7 +588,6 @@ inline mat4 rotate_z_deg (const mat4& m, float deg) {
 	m_r.m[5] = cos (rad);
 	return m_r * m;
 }
-
 // scale a matrix by [x, y, z]
 inline mat4 scale (const mat4& m, const vec3& v) {
 	mat4 a = identity_mat4 ();
@@ -632,7 +596,6 @@ inline mat4 scale (const mat4& m, const vec3& v) {
 	a.m[10] = v.v[2];
 	return a * m;
 }
-
 /*-----------------------VIRTUAL CAMERA MATRIX FUNCTIONS---------------------*/
 // returns a view matrix using the GLU lookAt style.
 inline mat4 look_at (const vec3& cam_pos, vec3 targ_pos, const vec3& up) {
@@ -657,10 +620,8 @@ inline mat4 look_at (const vec3& cam_pos, vec3 targ_pos, const vec3& up) {
 	ori.m[2] = -f.v[0];
 	ori.m[6] = -f.v[1];
 	ori.m[10] = -f.v[2];
-	
 	return ori * p;//p * ori;
 }
-
 // returns a perspective matrix mimicking the opengl projection style
 // remeber if calculating aspect to do floating point division, not integer
 inline mat4 perspective (float fovy, float aspect, float nr, float fr) {
@@ -678,7 +639,6 @@ inline mat4 perspective (float fovy, float aspect, float nr, float fr) {
 	m.m[11] = -1.0f;
 	return m;
 }
-
 /*----------------------------HAMILTON IN DA HOUSE!--------------------------*/
 // create quaternion from normalised axis and angle in radians around axis
 inline versor quat_from_axis_rad (float radians, float x, float y, float z) {
@@ -689,12 +649,10 @@ inline versor quat_from_axis_rad (float radians, float x, float y, float z) {
 	result.q[3] = sinf (radians / 2.0f) * z;
 	return result;
 }
-
 // create quaternion from normalised axis and angle in degrees around axis
 inline versor quat_from_axis_deg (float degrees, float x, float y, float z) {
 	return quat_from_axis_rad (ONE_DEG_IN_RAD * degrees, x, y, z);
 }
-
 // convert versor to rotation matrix
 inline mat4 quat_to_mat4 (const versor& q) {
 	float w = q.q[0];
@@ -720,7 +678,6 @@ inline mat4 quat_to_mat4 (const versor& q) {
 	R.m[15] = 1.0f;
 	return R;
 }
-
 // normalise a quaternion into a unit quaternion (versor) for use in rotation
 inline versor normalise (versor& q) {
 	// norm(q) = q / magnitude (q)
@@ -737,12 +694,10 @@ inline versor normalise (versor& q) {
 	float mag = sqrt (sum);
 	return q / mag;
 }
-
 // dot product of two quaternions
 inline float dot (const versor& q, const versor& r) {
 	return q.q[0] * r.q[0] + q.q[1] * r.q[1] + q.q[2] * r.q[2] + q.q[3] * r.q[3];
 }
-
 // spherical linear interpolation between two quaternions
 // factor t between 0.0 and 1.0
 // returns interpolated versor
