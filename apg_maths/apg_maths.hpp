@@ -536,6 +536,7 @@ inline mat4 inverse (const mat4& mm) {
 		mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
 		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
 	);
+	return R;
 }
 // returns a 16-element array flipped on the main diagonal
 inline mat4 transpose (const mat4& mm) {
