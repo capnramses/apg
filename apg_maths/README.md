@@ -61,3 +61,5 @@ A `return_mem()` function could address this. Alternatively, could add `.x()` fu
 * remove matrix constructors, because memory order there is a point of confusion
 * a matrix function that returns an element given a specified row and column
 (rather than using the 1d index number)
+* function to project a vector orthogonally onto another vector (dot prod etc)
+* double check C matrix multiplications - argument order seems backward
