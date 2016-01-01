@@ -374,7 +374,7 @@ bool dll_recursive_delete (DLL_Node** ptr) {
 //
 // k is size of hash table
 //
-unsigned int hash_index (const char* str, int k) {
+inline unsigned int hash_index (const char* str, int k) {
 	unsigned int len = strlen (str);
 	unsigned int sum = 0;
 	unsigned int p = UINT_MAX;

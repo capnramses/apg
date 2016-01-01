@@ -134,6 +134,7 @@ mat4 mat4_from_mat4 (mat4 mm);
 
 // matrix functions -- linear algebra
 mat4 mult_mat4_mat4 (mat4 a, mat4 b);
+mat4 mult_mat4_vec4 (mat4 m, vec4 v);
 // determinant
 float det_mat4 (mat4 mm);
 mat4 inverse_mat4 (mat4 mm);
@@ -438,6 +439,18 @@ inline mat4 mult_mat4_mat4 (mat4 a, mat4 b) {
 		}
 	}
 	return r;
+}
+
+inline vec4 mult_mat4_vec4 (mat4 m, vec4 v) {
+	float x = m.m[0] * v.v[0] + m.m[4] * v.v[1] + m.m[8] * v.v[2] + m.m[12] *
+		v.v[3];
+	float y = m.m[1] * v.v[0] + m.m[5] * v.v[1] + m.m[9] * v.v[2] + m.m[13] *
+		v.v[3];
+	float z = m.m[2] * v.v[0] + m.m[6] * v.v[1] + m.m[10] * v.v[2] + m.m[14] *
+		v.v[3];
+	float w = m.m[3] * v.v[0] + m.m[7] * v.v[1] + m.m[11] * v.v[2] + m.m[15] *
+		v.v[3];
+	return vec4_from_4f (x, y, z, w);
 }
 
 // returns a scalar value with the determinant for a 4x4 matrix
