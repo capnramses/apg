@@ -134,7 +134,7 @@ mat4 mat4_from_mat4 (mat4 mm);
 
 // matrix functions -- linear algebra
 mat4 mult_mat4_mat4 (mat4 a, mat4 b);
-mat4 mult_mat4_vec4 (mat4 m, vec4 v);
+vec4 mult_mat4_vec4 (mat4 m, vec4 v);
 // determinant
 float det_mat4 (mat4 mm);
 mat4 inverse_mat4 (mat4 mm);
