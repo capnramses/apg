@@ -173,7 +173,6 @@ float dot_quat (versor q, versor r);
 versor normalise_quat (versor q);
 
 // quaternion functions -- interpolation
-versor slerp (versor q, versor r);
 versor slerp_quat (versor q, versor r, float t);
 
 /*-----------------------------PRINT FUNCTIONS-------------------------------*/
