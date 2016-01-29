@@ -67,4 +67,4 @@ A `return_mem()` function could address this. Alternatively, could add `.x()` fu
 ##design ideas
 
 * it would also be a good idea to make a much leaner library using using arrays of floats for vectors, matrices and no custom structures, but I didn't beacause it doesn't read as nicely, you lose type protection, you can't return an array from a function as nicely as one in a struct, and passing arrays as function parameters is a very messy business in C/C++.
-* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicity style of functions are extremely tedious.
+* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicity style of functions are extremel tedious, and in fact this is the number 1 argument for choosing C++ over C in a 3d graphics programme, which is a shame.
