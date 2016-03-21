@@ -7,7 +7,8 @@ Column-major matrix operations and memory layout.
 * `apg_maths.hpp` - the C++ original
 * `apg_maths.js` - mostly complete port to JavaScript for use with WebGL
 * `apg_maths.h` - new C99 port with slightly revised interface
-* `test.c` - test for the C99 header
+* `test.c` - tests for the C99 header
+* `test.cpp` - tests for the C++ header
 
 The C++ version is the easiest to use because of operator overloading.
 
@@ -20,19 +21,10 @@ The C++ version is the easiest to use because of operator overloading.
 * `mat4` 4x4 matrix - memory stored in column-major order
 * `versor` quaternion
 
-Data is stored in simple 1d arrays of floats inside data types. I didn't bother
-with messy recreation of myvector.x access.
+See inside top of file for instructions on usage (differs a little between
+ports).
 
-To access the x component of a vector:
-
-    vec3 v = vec3 (1.0f, 0.0f, 0.0f);
-    float x = v.v[0];
-
-To access the row 0, col 1 of a 4X4 matrix:
-
-    float f = my_matrix.m[4];
-
-##functions##
+##functions
 
 * overloaded basic mathematical and assignment operators for data types
 * print() for each data type (contents)
@@ -46,20 +38,8 @@ To access the row 0, col 1 of a 4X4 matrix:
 * versor to matrix
 * slerp (spherical interpolation)
 
-Matrix functions assume column-major layouts
+##future improvements
 
-##future improvements##
+##design ideas
 
-I've mostly made these improvements in the new C99 version.
-
-* remove matrix parameters from matrix construction functions, because in
-practice it's almost always a pointless multiplication with an identity matrix
-* replace vector memory array with `.x` `.y` `.z` and `.w` - downside is that passing
-whole vector memory blocks assumes contiguous memory order, which may not
-always be true on some compilers (should be fine in C99 though according to spec).
-A `return_mem()` function could address this. Alternatively, could add `.x()` functions in C++.
-* remove matrix constructors, because memory order there is a point of confusion
-* a matrix function that returns an element given a specified row and column
-(rather than using the 1d index number)
-* function to project a vector orthogonally onto another vector (dot prod etc)
-* double check C matrix multiplications - argument order seems backward
+* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicit style of functions are extremely tedious, and in fact this is the number 1 argument for choosing C++ over C in a 3d graphics programme, which is a shame.
