@@ -58,6 +58,9 @@ int main () {
 	v3 = sub_vec3_vec3 (v3, v3b);
 	print_vec3 (v3);
 
+	mat4 la = look_at (vec3_from_3f (0.0, 7.0f, 0.0), vec3_from_3f (0.0f, 0.0f, 0.0f), vec3_from_3f (0,0,-1));
+	print_mat4 (la);
+
 	//add_vec3_f
 	//sub_vec3_f
 	//mult_vec3_f
