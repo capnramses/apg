@@ -5,7 +5,6 @@ First v. branched from C++ original 5 May 2015
 Compacted 11 April 2016
 \*****************************************************************************/
 #pragma once
-
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -23,13 +22,18 @@ typedef struct mat4 { float m[16]; } mat4;
 typedef struct versor { float q[4]; } versor;
 
 /*-----------------------------PRINT FUNCTIONS-------------------------------*/
-static inline void print_vec2 (vec2 v) { printf ("[%.2f, %.2f]\n", v.v[0], v.v[1]); }
+static inline void print_vec2 (vec2 v) {
+	printf ("[%.2f, %.2f]\n", v.v[0], v.v[1]);
+}
+
 static inline void print_vec3 (vec3 v) {
 	printf ("[%.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2]);
 }
+
 static inline void print_vec4 (vec4 v) {
 	printf ("[%.2f, %.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2], v.v[3]);
 }
+
 static inline void print_mat4 (mat4 m) {
 	printf("\n");
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[0], m.m[4], m.m[8], m.m[12]);
@@ -37,122 +41,42 @@ static inline void print_mat4 (mat4 m) {
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[2], m.m[6], m.m[10], m.m[14]);
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[3], m.m[7], m.m[11], m.m[15]);
 }
+
 static inline void print_quat (versor q) {
 	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.q[0], q.q[1], q.q[2], q.q[3]);
 }
 
 /*------------------------------VECTOR FUNCTIONS-----------------------------*/
-static inline vec2 vec2_from_2f (float x, float y) {
-	vec2 r;
-	r.v[0] = x;
-	r.v[1] = y;
-	return r;
-}
-
-static inline vec3 vec3_from_3f (float x, float y, float z) {
-	vec3 r;
-	r.v[0] = x;
-	r.v[1] = y;
-	r.v[2] = z;
-	return r;
-}
-
-static inline vec3 vec3_from_vec2_f (vec2 vv, float z) {
-	vec3 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	r.v[2] = z;
-	return r;
-}
-
-static inline vec3 vec3_from_vec4 (vec4 vv) {
-	vec3 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	r.v[2] = vv.v[2];
-	return r;
-}
-
-static inline vec3 add_vec3_vec3 (vec3 a, vec3 b) {
-	vec3 r;
-	r.v[0] = a.v[0] + b.v[0];
-	r.v[1] = a.v[1] + b.v[1];
-	r.v[2] = a.v[2] + b.v[2];
-	return r;
-}
-
-static inline vec3 sub_vec3_vec3 (vec3 a, vec3 b) {
-	vec3 r;
-	r.v[0] = a.v[0] - b.v[0];
-	r.v[1] = a.v[1] - b.v[1];
-	r.v[2] = a.v[2] - b.v[2];
-	return r;
-}
-
 static inline vec3 add_vec3_f (vec3 a, float b) {
-	vec3 r;
-	r.v[0] = a.v[0] + b;
-	r.v[1] = a.v[1] + b;
-	r.v[2] = a.v[2] + b;
-	return r;
+	return (vec3){ .v = { a.v[0] + b, a.v[1] + b, a.v[2] + b } };
 }
 
 static inline vec3 sub_vec3_f (vec3 a, float b) {
-	vec3 r;
-	r.v[0] = a.v[0] - b;
-	r.v[1] = a.v[1] - b;
-	r.v[2] = a.v[2] - b;
-	return r;
+	return (vec3){ .v = { a.v[0] - b, a.v[1] - b, a.v[2] - b } };
 }
 
 static inline vec3 mult_vec3_f (vec3 a, float b) {
-	vec3 r;
-	r.v[0] = a.v[0] * b;
-	r.v[1] = a.v[1] * b;
-	r.v[2] = a.v[2] * b;
-	return r;
+	return (vec3){ .v = { a.v[0] * b, a.v[1] * b, a.v[2] * b } };
 }
 
 static inline vec3 div_vec3_f (vec3 a, float b) {
-	vec3 r;
-	r.v[0] = a.v[0] / b;
-	r.v[1] = a.v[1] / b;
-	r.v[2] = a.v[2] / b;
-	return r;
+	return (vec3){ .v = { a.v[0] / b, a.v[1] / b, a.v[2] / b } };
+}
+
+static inline vec3 add_vec3_vec3 (vec3 a, vec3 b) {
+	return (vec3){ .v = { a.v[0] + b.v[0], a.v[1] + b.v[1], a.v[2] + b.v[2] } };
+}
+
+static inline vec3 sub_vec3_vec3 (vec3 a, vec3 b) {
+	return (vec3){ .v = { a.v[0] - b.v[0], a.v[1] - b.v[1], a.v[2] - b.v[2] } };
 }
 
 static inline vec3 mult_vec3_vec3 (vec3 a, vec3 b) {
-	vec3 r;
-	r.v[0] = a.v[0] * b.v[0];
-	r.v[1] = a.v[1] * b.v[1];
-	r.v[2] = a.v[2] * b.v[2];
-	return r;
+	return (vec3){ .v = { a.v[0] * b.v[0], a.v[1] * b.v[1], a.v[2] * b.v[2] } };
 }
 
 static inline vec3 div_vec3_vec3 (vec3 a, vec3 b) {
-	vec3 r;
-	r.v[0] = a.v[0] / b.v[0];
-	r.v[1] = a.v[1] / b.v[1];
-	r.v[2] = a.v[2] / b.v[2];
-	return r;
-}
-
-static inline vec4 vec4_from_4f (float x, float y, float z, float w) {
-	vec4 r;
-	r.v[0] = x;
-	r.v[1] = y;
-	r.v[2] = z;
-	r.v[3] = w;
-	return r;
-}
-
-static inline vec4 vec4_from_vec3_f (vec3 vv, float w) {
-	vec4 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	r.v[2] = vv.v[2];
-	r.v[3] = w;
-	return r;
+	return (vec3){ .v = { a.v[0] / b.v[0], a.v[1] / b.v[1], a.v[2] / b.v[2] } };
 }
 
 static inline float length_vec3 (vec3 v) {
@@ -166,7 +90,7 @@ static inline float length2_vec3 (vec3 v) {
 static inline vec3 normalise_vec3 (vec3 v) {
 	vec3 vb;
 	float l = length_vec3 (v);
-	if (0.0f == l) { return vec3_from_3f (0.0f, 0.0f, 0.0f); }
+	if (0.0f == l) { return (vec3){ .v = {0.0f, 0.0f, 0.0f} }; }
 	vb.v[0] = v.v[0] / l;
 	vb.v[1] = v.v[1] / l;
 	vb.v[2] = v.v[2] / l;
@@ -178,10 +102,11 @@ static inline float dot_vec3 (vec3 a, vec3 b) {
 }
 
 static inline vec3 cross_vec3 (vec3 a, vec3 b) {
-	float x = a.v[1] * b.v[2] - a.v[2] * b.v[1];
-	float y = a.v[2] * b.v[0] - a.v[0] * b.v[2];
-	float z = a.v[0] * b.v[1] - a.v[1] * b.v[0];
-	return vec3_from_3f (x, y, z);
+	return (vec3) { .v = {
+		a.v[1] * b.v[2] - a.v[2] * b.v[1],
+		a.v[2] * b.v[0] - a.v[0] * b.v[2],
+		a.v[0] * b.v[1] - a.v[1] * b.v[0]
+	} };
 }
 
 // converts an un-normalised direction vector's X,Z components into a heading
@@ -196,7 +121,7 @@ static inline float vec3_to_heading (vec3 d) {
 // a 3d vector with components in x and z axes
 static inline vec3 heading_to_vec3 (float degrees) {
 	float rad = degrees * ONE_DEG_IN_RAD;
-	return vec3_from_3f (-sinf (rad), 0.0f, -cosf (rad));
+	return (vec3) { .v = {-sinf (rad), 0.0f, -cosf (rad) } };
 }
 
 /*-----------------------------MATRIX FUNCTIONS------------------------------*/
@@ -240,7 +165,7 @@ static inline vec4 mult_mat4_vec4 (mat4 m, vec4 v) {
 		m.m[14] * v.v[3];
 	float w = m.m[3] * v.v[0] + m.m[7] * v.v[1] + m.m[11] * v.v[2] +
 		m.m[15] * v.v[3];
-	return vec4_from_4f (x, y, z, w);
+	return (vec4){ .v = { x, y, z, w } };
 }
 
 static inline float det_mat4 (mat4 mm) {
@@ -433,8 +358,8 @@ static inline mat4 scale_mat4 (vec3 v) {
 
 /*-----------------------VIRTUAL CAMERA MATRIX FUNCTIONS---------------------*/
 static inline mat4 look_at (vec3 cam_pos, vec3 targ_pos, vec3 up) {
-	mat4 p = translate_mat4 (vec3_from_3f (-cam_pos.v[0], -cam_pos.v[1],
-		-cam_pos.v[2]));
+	mat4 p = translate_mat4 ((vec3){ .v = {-cam_pos.v[0], -cam_pos.v[1],
+		-cam_pos.v[2]}});
 	vec3 d = sub_vec3_vec3 (targ_pos, cam_pos);
 	vec3 f = normalise_vec3 (d);
 	vec3 r = normalise_vec3 (cross_vec3 (f, up));
@@ -469,31 +394,14 @@ static inline mat4 perspective (float fovy, float aspect, float near, float far)
 }
 
 /*----------------------------HAMILTON IN DA HOUSE!--------------------------*/
-static inline versor versor_from_4f (float x, float y, float z, float w) {
-	versor r;
-	r.q[0] = x;
-	r.q[1] = y;
-	r.q[2] = z;
-	r.q[3] = w;
-	return r;
-}
-
 static inline versor div_quat_f (versor qq, float s) {
-	versor result;
-	result.q[0] = qq.q[0] / s;
-	result.q[1] = qq.q[1] / s;
-	result.q[2] = qq.q[2] / s;
-	result.q[3] = qq.q[3] / s;
-	return result;
+	return (versor) {
+		.q = { qq.q[0] / s, qq.q[1] / s, qq.q[2] / s, qq.q[3] / s } };
 }
 
 static inline versor mult_quat_f (versor qq, float s) {
-	versor result;
-	result.q[0] = qq.q[0] * s;
-	result.q[1] = qq.q[1] * s;
-	result.q[2] = qq.q[2] * s;
-	result.q[3] = qq.q[3] * s;
-	return result;
+	return (versor) {
+		.q = { qq.q[0] * s, qq.q[1] * s, qq.q[2] * s, qq.q[3] * s } };
 }
 
 static inline versor normalise_quat (versor q) {
