@@ -16,16 +16,11 @@ Compacted 11 April 2016
 #define ONE_DEG_IN_RAD (2.0 * M_PI) / 360.0 // 0.017444444
 #define ONE_RAD_IN_DEG 360.0 / (2.0 * M_PI) //57.2957795
 
-struct vec2 { float v[2]; };
-typedef struct vec2 vec2;
-struct vec3 { float v[3]; };
-typedef struct vec3 vec3;
-struct vec4 { float v[4]; };
-typedef struct vec4 vec4;
-struct mat4 { float m[16]; };
-typedef struct mat4 mat4;
-struct versor { float q[4]; };
-typedef struct versor versor;
+typedef struct vec2 { float v[2]; } vec2;
+typedef struct vec3 { float v[3]; } vec3;
+typedef struct vec4 { float v[4]; } vec4;
+typedef struct mat4 { float m[16]; } mat4;
+typedef struct versor { float q[4]; } versor;
 
 /*-----------------------------PRINT FUNCTIONS-------------------------------*/
 static inline void print_vec2 (vec2 v) { printf ("[%.2f, %.2f]\n", v.v[0], v.v[1]); }
