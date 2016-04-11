@@ -105,8 +105,7 @@ static inline vec3 cross_vec3 (vec3 a, vec3 b) {
 	return (vec3) { .v = {
 		a.v[1] * b.v[2] - a.v[2] * b.v[1],
 		a.v[2] * b.v[0] - a.v[0] * b.v[2],
-		a.v[0] * b.v[1] - a.v[1] * b.v[0]
-	} };
+		a.v[0] * b.v[1] - a.v[1] * b.v[0] } };
 }
 
 // converts an un-normalised direction vector's X,Z components into a heading
@@ -133,10 +132,7 @@ static inline mat4 zero_mat4 () {
 
 static inline mat4 identity_mat4 () {
 	mat4 r = zero_mat4 ();
-	r.m[0] = 1.0f;
-	r.m[5] = 1.0f;
-	r.m[10] = 1.0f;
-	r.m[15] = 1.0f;
+	r.m[0] = 1.0f; r.m[5] = 1.0f; r.m[10] = 1.0f; r.m[15] = 1.0f;
 	return r;
 }
 
@@ -198,161 +194,122 @@ static inline float det_mat4 (mat4 mm) {
 
 static inline mat4 inverse_mat4 (mat4 mm) {
 	float det = det_mat4 (mm);
-	if (0.0f == det) {
-		fprintf (stderr, "WARNING. matrix has no determinant. can not invert\n");
-		return mm;
-	}
+	if (0.0f == det) { return mm; }
 	float inv_det = 1.0f / det;
 	mat4 r;
 	r.m[0] = inv_det * (
 		mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] +
 		mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
-		mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]
-	);
+		mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]);
 	r.m[1] = inv_det * (
 		mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] -
 		mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
-		mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]
-	);
+		mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]);
 	r.m[2] = inv_det * (
 		mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] +
 		mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
-		mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]
-	);
+		mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]);
 	r.m[3] = inv_det * (
 		mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] -
 		mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
-		mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]
-	);
+		mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]);
 	r.m[4] = inv_det * (
 		mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] -
 		mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
-		mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]
-	);
+		mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]);
 	r.m[5] = inv_det * (
 		mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] +
 		mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
-		mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]
-	);
+		mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]);
 	r.m[6] = inv_det * (
 		mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] -
 		mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
-		mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]
-	);
+		mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]);
 	r.m[7] = inv_det * (
 		mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] +
 		mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
-		mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]
-	);
+		mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]);
 	r.m[8] = inv_det * (
 		mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] +
 		mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
-		mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]
-	);
+		mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]);
 	r.m[9] = inv_det * (
 		mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] -
 		mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
-		mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]
-	);
+		mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]);
 	r.m[10] = inv_det * (
 		mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] +
 		mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
-		mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]
-	);
+		mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]);
 	r.m[11] = inv_det * (
 		mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] -
 		mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
-		mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]
-	);
+		mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]);
 	r.m[12] = inv_det * (
 		mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] -
 		mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
-		mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]
-	);
+		mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]);
 	r.m[13] = inv_det * (
 		mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] +
 		mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
-		mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]
-	);
+		mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]);
 	r.m[14] = inv_det * (
 		mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] -
 		mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
-		mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]
-	);
+		mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]);
 	r.m[15] = inv_det * (
 		mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] +
 		mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
-		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
-	);
+		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]);
 	return r;
 }
 
-// returns a 16-element array flipped on the main diagonal
 static inline mat4 transpose_mat4 (mat4 mm) {
 	mat4 r;
-	r.m[0] = mm.m[0];
-	r.m[1] = mm.m[4];
-	r.m[2] = mm.m[8];
-	r.m[3] = mm.m[12];
-	r.m[4] = mm.m[1];
-	r.m[5] = mm.m[5];
-	r.m[6] = mm.m[9];
-	r.m[7] = mm.m[13];
-	r.m[8] = mm.m[2];
-	r.m[9] = mm.m[6];
-	r.m[10] = mm.m[10];
-	r.m[11] = mm.m[14];
-	r.m[12] = mm.m[3];
-	r.m[13] = mm.m[7];
-	r.m[14] = mm.m[11];
-	r.m[15] = mm.m[15];
+	r.m[0] = mm.m[0];  r.m[4] = mm.m[1];  r.m[8] = mm.m[2];   r.m[12] = mm.m[3];
+	r.m[1] = mm.m[4];  r.m[5] = mm.m[5];  r.m[9] = mm.m[6];   r.m[13] = mm.m[7];
+	r.m[2] = mm.m[8];  r.m[6] = mm.m[9];  r.m[10] = mm.m[10]; r.m[14] = mm.m[11];
+	r.m[3] = mm.m[12]; r.m[7] = mm.m[13]; r.m[11] = mm.m[14]; r.m[15] = mm.m[15];
 	return r;
 }
 
 /*--------------------------AFFINE MATRIX FUNCTIONS--------------------------*/
 static inline mat4 translate_mat4 (vec3 vv) {
 	mat4 r = identity_mat4 ();
-	r.m[12] = vv.v[0];
-	r.m[13] = vv.v[1];
-	r.m[14] = vv.v[2];
+	r.m[12] = vv.v[0]; r.m[13] = vv.v[1]; r.m[14] = vv.v[2];
 	return r;
 }
 
 static inline mat4 rot_x_deg_mat4 (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 r = identity_mat4 ();
-	r.m[5] = cos (rad);
+	r.m[5] = r.m[10] = cos (rad); 
 	r.m[9] = -sin (rad);
 	r.m[6] = sin (rad);
-	r.m[10] = cos (rad);
 	return r;
 }
 
 static inline mat4 rot_y_deg_mat4 (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 r = identity_mat4 ();
-	r.m[0] = cos (rad);
+	r.m[0] = r.m[10] = cos (rad);
 	r.m[8] = sin (rad);
 	r.m[2] = -sin (rad);
-	r.m[10] = cos (rad);
 	return r;
 }
 
 static inline mat4 rot_z_deg_mat4 (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 r = identity_mat4 ();
-	r.m[0] = cos (rad);
+	r.m[0] = r.m[5] = cos (rad);
 	r.m[4] = -sin (rad);
 	r.m[1] = sin (rad);
-	r.m[5] = cos (rad);
 	return r;
 }
 
 static inline mat4 scale_mat4 (vec3 v) {
 	mat4 r = identity_mat4 ();
-	r.m[0] = v.v[0];
-	r.m[5] = v.v[1];
-	r.m[10] = v.v[2];
+	r.m[0] = v.v[0]; r.m[5] = v.v[1]; r.m[10] = v.v[2];
 	return r;
 }
 
@@ -449,10 +406,7 @@ static inline versor quat_from_axis_deg (float degrees, vec3 axis) {
 }
 
 static inline mat4 quat_to_mat4 (versor q) {
-	float w = q.q[0];
-	float x = q.q[1];
-	float y = q.q[2];
-	float z = q.q[3];
+	float w = q.q[0]; float x = q.q[1]; float y = q.q[2]; float z = q.q[3];
 	mat4 r;
 	r.m[0] = 1.0f - 2.0f * y * y - 2.0f * z * z;
 	r.m[1] = 2.0f * x * y + 2.0f * w * z;
@@ -465,10 +419,7 @@ static inline mat4 quat_to_mat4 (versor q) {
 	r.m[8] = 2.0f * x * z + 2.0f * w * y;
 	r.m[9] = 2.0f * y * z - 2.0f * w * x;
 	r.m[10] = 1.0f - 2.0f * x * x - 2.0f * y * y;
-	r.m[11] = 0.0f;
-	r.m[12] = 0.0f;
-	r.m[13] = 0.0f;
-	r.m[14] = 0.0f;
+	r.m[11] = r.m[12] = r.m[13] = r.m[14] = 0.0f;
 	r.m[15] = 1.0f;
 	return r;
 }
@@ -487,7 +438,7 @@ static inline versor slerp_quat (versor q, versor r, float t) {
 	float sin_half_theta = sqrt (1.0f - cos_half_theta * cos_half_theta);
 	versor result;
 	if (fabs (sin_half_theta) < 0.001f) {
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 4; i++) { 
 			result.q[i] = (1.0f - t) * q.q[i] + t * r.q[i];
 		}
 		return result;
