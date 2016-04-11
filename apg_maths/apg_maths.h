@@ -54,13 +54,6 @@ static inline vec2 vec2_from_2f (float x, float y) {
 	return r;
 }
 
-static inline vec2 vec2_from_vec2 (vec2 vv) {
-	vec2 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	return r;
-}
-
 static inline vec3 vec3_from_3f (float x, float y, float z) {
 	vec3 r;
 	r.v[0] = x;
@@ -74,14 +67,6 @@ static inline vec3 vec3_from_vec2_f (vec2 vv, float z) {
 	r.v[0] = vv.v[0];
 	r.v[1] = vv.v[1];
 	r.v[2] = z;
-	return r;
-}
-
-static inline vec3 vec3_from_vec3 (vec3 vv) {
-	vec3 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	r.v[2] = vv.v[2];
 	return r;
 }
 
@@ -175,15 +160,6 @@ static inline vec4 vec4_from_vec3_f (vec3 vv, float w) {
 	return r;
 }
 
-static inline vec4 vec4_from_vec4 (vec4 vv) {
-	vec4 r;
-	r.v[0] = vv.v[0];
-	r.v[1] = vv.v[1];
-	r.v[2] = vv.v[2];
-	r.v[3] = vv.v[3];
-	return r;
-}
-
 static inline float length_vec3 (vec3 v) {
 	return sqrt (v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2]);
 }
@@ -241,12 +217,6 @@ static inline mat4 identity_mat4 () {
 	r.m[5] = 1.0f;
 	r.m[10] = 1.0f;
 	r.m[15] = 1.0f;
-	return r;
-}
-
-static inline mat4 mat4_from_mat4 (mat4 mm) {
-	mat4 r;
-	memcpy (r.m, mm.m, 16 * sizeof (float)); 
 	return r;
 }
 
@@ -510,12 +480,6 @@ static inline versor versor_from_4f (float x, float y, float z, float w) {
 	r.q[1] = y;
 	r.q[2] = z;
 	r.q[3] = w;
-	return r;
-}
-
-static inline versor versor_from_versor (versor qq) {
-	versor r;
-	memcpy (r.q, qq.q, 4 * sizeof (float));
 	return r;
 }
 
