@@ -2,7 +2,8 @@
 Anton's Maths Library - C99 version
 Anton Gerdelan <antonofnote at gmail>
 First v. branched from C++ original 5 May 2015
-Compacted 11 April 2016
+11 April 2016 - compacted 
+12 April 2016 - switched to .x .y .z notation for vectors and quaternions
 \*****************************************************************************/
 #pragma once
 #include <stdio.h>
@@ -15,23 +16,22 @@ Compacted 11 April 2016
 #define ONE_DEG_IN_RAD (2.0 * M_PI) / 360.0 // 0.017444444
 #define ONE_RAD_IN_DEG 360.0 / (2.0 * M_PI) //57.2957795
 
-typedef struct vec2 { float v[2]; } vec2;
-typedef struct vec3 { float v[3]; } vec3;
-typedef struct vec4 { float v[4]; } vec4;
+typedef struct vec2 { float x, y; } vec2;
+typedef struct vec3 { float x, y, z; } vec3;
+typedef struct vec4 { float x, y, z, w; } vec4;
 typedef struct mat4 { float m[16]; } mat4;
-typedef struct versor { float q[4]; } versor;
+typedef struct versor { float w, x, y, z; } versor;
 
-/*-----------------------------PRINT FUNCTIONS-------------------------------*/
 static inline void print_vec2 (vec2 v) {
-	printf ("[%.2f, %.2f]\n", v.v[0], v.v[1]);
+	printf ("[%.2f, %.2f]\n", v.x, v.y);
 }
 
 static inline void print_vec3 (vec3 v) {
-	printf ("[%.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2]);
+	printf ("[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z);
 }
 
 static inline void print_vec4 (vec4 v) {
-	printf ("[%.2f, %.2f, %.2f, %.2f]\n", v.v[0], v.v[1], v.v[2], v.v[3]);
+	printf ("[%.2f, %.2f, %.2f, %.2f]\n", v.x, v.y, v.z, v.w);
 }
 
 static inline void print_mat4 (mat4 m) {
@@ -43,73 +43,72 @@ static inline void print_mat4 (mat4 m) {
 }
 
 static inline void print_quat (versor q) {
-	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.q[0], q.q[1], q.q[2], q.q[3]);
+	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z);
 }
 
-/*------------------------------VECTOR FUNCTIONS-----------------------------*/
 static inline vec3 v3_v4 (vec4 v) {
-	return (vec3){ .v = { v.v[0], v.v[1], v.v[2] } };
+	return (vec3){ .x = v.x, .y = v.y, .z = v.z };
 }
 
 static inline vec3 add_vec3_f (vec3 a, float b) {
-	return (vec3){ .v = { a.v[0] + b, a.v[1] + b, a.v[2] + b } };
+	return (vec3){ .x = a.x + b, .y = a.y + b, .z = a.z + b };
 }
 
 static inline vec3 sub_vec3_f (vec3 a, float b) {
-	return (vec3){ .v = { a.v[0] - b, a.v[1] - b, a.v[2] - b } };
+	return (vec3){ .x = a.x - b, .y = a.y - b, .z = a.z - b };
 }
 
 static inline vec3 mult_vec3_f (vec3 a, float b) {
-	return (vec3){ .v = { a.v[0] * b, a.v[1] * b, a.v[2] * b } };
+	return (vec3){ .x = a.x * b, .y = a.y * b, .z = a.z * b };
 }
 
 static inline vec3 div_vec3_f (vec3 a, float b) {
-	return (vec3){ .v = { a.v[0] / b, a.v[1] / b, a.v[2] / b } };
+	return (vec3){ .x = a.x / b, .y = a.y / b, .z = a.z / b };
 }
 
 static inline vec3 add_vec3_vec3 (vec3 a, vec3 b) {
-	return (vec3){ .v = { a.v[0] + b.v[0], a.v[1] + b.v[1], a.v[2] + b.v[2] } };
+	return (vec3){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z };
 }
 
 static inline vec3 sub_vec3_vec3 (vec3 a, vec3 b) {
-	return (vec3){ .v = { a.v[0] - b.v[0], a.v[1] - b.v[1], a.v[2] - b.v[2] } };
+	return (vec3){ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z };
 }
 
 static inline vec3 mult_vec3_vec3 (vec3 a, vec3 b) {
-	return (vec3){ .v = { a.v[0] * b.v[0], a.v[1] * b.v[1], a.v[2] * b.v[2] } };
+	return (vec3){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z };
 }
 
 static inline vec3 div_vec3_vec3 (vec3 a, vec3 b) {
-	return (vec3){ .v = { a.v[0] / b.v[0], a.v[1] / b.v[1], a.v[2] / b.v[2] } };
+	return (vec3){ .x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z };
 }
 
 static inline float length_vec3 (vec3 v) {
-	return sqrt (v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2]);
+	return sqrt (v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
 static inline float length2_vec3 (vec3 v) {
-	return v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2];
+	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
 static inline vec3 normalise_vec3 (vec3 v) {
 	vec3 vb;
 	float l = length_vec3 (v);
-	if (0.0f == l) { return (vec3){ .v = {0.0f, 0.0f, 0.0f} }; }
-	vb.v[0] = v.v[0] / l;
-	vb.v[1] = v.v[1] / l;
-	vb.v[2] = v.v[2] / l;
+	if (0.0f == l) { return (vec3){.x = 0.0f, .y = 0.0f, .z = 0.0f}; }
+	vb.x = v.x / l;
+	vb.y = v.y / l;
+	vb.z = v.z / l;
 	return vb;
 }
 
 static inline float dot_vec3 (vec3 a, vec3 b) {
-	return a.v[0] * b.v[0] + a.v[1] * b.v[1] + a.v[2] * b.v[2];
+	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 static inline vec3 cross_vec3 (vec3 a, vec3 b) {
-	return (vec3) { .v = {
-		a.v[1] * b.v[2] - a.v[2] * b.v[1],
-		a.v[2] * b.v[0] - a.v[0] * b.v[2],
-		a.v[0] * b.v[1] - a.v[1] * b.v[0] } };
+	return (vec3){
+		.x = a.y * b.z - a.z * b.y,
+		.y = a.z * b.x - a.x * b.z,
+		.z = a.x * b.y - a.y * b.x};
 }
 
 // converts an un-normalised direction vector's X,Z components into a heading
@@ -117,21 +116,20 @@ static inline vec3 cross_vec3 (vec3 a, vec3 b) {
 // NB i suspect that the z is backwards here but i've used in in
 // several places like this. d'oh!
 static inline float vec3_to_heading (vec3 d) {
-	return atan2 (-d.v[0], -d.v[2]) * ONE_RAD_IN_DEG;
+	return atan2 (-d.x, -d.z) * ONE_RAD_IN_DEG;
 }
 
 // very informal function to convert a heading (e.g. y-axis orientation) into
 // a 3d vector with components in x and z axes
 static inline vec3 heading_to_vec3 (float degrees) {
 	float rad = degrees * ONE_DEG_IN_RAD;
-	return (vec3) { .v = {-sinf (rad), 0.0f, -cosf (rad) } };
+	return (vec3){.x = -sinf (rad), .y = 0.0f, .z = -cosf (rad)};
 }
 
 static inline vec4 v4_v3f (vec3 v, float f) {
-	return (vec4){ .v = {v.v[0], v.v[1], v.v[2], f} };
+	return (vec4){.x = v.x, .y = v.y, .z = v.z, .w = f};
 }
 
-/*-----------------------------MATRIX FUNCTIONS------------------------------*/
 static inline mat4 zero_mat4 () {
 	mat4 r;
 	memset (r.m, 0, 16 * sizeof (float));
@@ -161,15 +159,11 @@ static inline mat4 mult_mat4_mat4 (mat4 a, mat4 b) {
 }
 
 static inline vec4 mult_mat4_vec4 (mat4 m, vec4 v) {
-	float x = m.m[0] * v.v[0] + m.m[4] * v.v[1] + m.m[8] * v.v[2] +
-		m.m[12] * v.v[3];
-	float y = m.m[1] * v.v[0] + m.m[5] * v.v[1] + m.m[9] * v.v[2] +
-		m.m[13] * v.v[3];
-	float z = m.m[2] * v.v[0] + m.m[6] * v.v[1] + m.m[10] * v.v[2] +
-		m.m[14] * v.v[3];
-	float w = m.m[3] * v.v[0] + m.m[7] * v.v[1] + m.m[11] * v.v[2] +
-		m.m[15] * v.v[3];
-	return (vec4){ .v = { x, y, z, w } };
+	float x = m.m[0] * v.x + m.m[4] * v.y + m.m[8] * v.z + m.m[12] * v.w;
+	float y = m.m[1] * v.x + m.m[5] * v.y + m.m[9] * v.z + m.m[13] * v.w;
+	float z = m.m[2] * v.x + m.m[6] * v.y + m.m[10] * v.z + m.m[14] * v.w;
+	float w = m.m[3] * v.x + m.m[7] * v.y + m.m[11] * v.z + m.m[15] * v.w;
+	return (vec4){.x = x, .y = y, .z = z, .w = w};
 }
 
 static inline float det_mat4 (mat4 mm) {
@@ -281,10 +275,9 @@ static inline mat4 transpose_mat4 (mat4 mm) {
 	return r;
 }
 
-/*--------------------------AFFINE MATRIX FUNCTIONS--------------------------*/
 static inline mat4 translate_mat4 (vec3 vv) {
 	mat4 r = identity_mat4 ();
-	r.m[12] = vv.v[0]; r.m[13] = vv.v[1]; r.m[14] = vv.v[2];
+	r.m[12] = vv.x; r.m[13] = vv.y; r.m[14] = vv.z;
 	return r;
 }
 
@@ -317,28 +310,27 @@ static inline mat4 rot_z_deg_mat4 (float deg) {
 
 static inline mat4 scale_mat4 (vec3 v) {
 	mat4 r = identity_mat4 ();
-	r.m[0] = v.v[0]; r.m[5] = v.v[1]; r.m[10] = v.v[2];
+	r.m[0] = v.x; r.m[5] = v.y; r.m[10] = v.z;
 	return r;
 }
 
-/*-----------------------VIRTUAL CAMERA MATRIX FUNCTIONS---------------------*/
 static inline mat4 look_at (vec3 cam_pos, vec3 targ_pos, vec3 up) {
-	mat4 p = translate_mat4 ((vec3){ .v = {-cam_pos.v[0], -cam_pos.v[1],
-		-cam_pos.v[2]}});
+	mat4 p = translate_mat4 (
+		(vec3){.x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z});
 	vec3 d = sub_vec3_vec3 (targ_pos, cam_pos);
 	vec3 f = normalise_vec3 (d);
 	vec3 r = normalise_vec3 (cross_vec3 (f, up));
 	vec3 u = normalise_vec3 (cross_vec3 (r, f));
 	mat4 ori = identity_mat4 ();
-	ori.m[0] = r.v[0];
-	ori.m[4] = r.v[1];
-	ori.m[8] = r.v[2];
-	ori.m[1] = u.v[0];
-	ori.m[5] = u.v[1];
-	ori.m[9] = u.v[2];
-	ori.m[2] = -f.v[0];
-	ori.m[6] = -f.v[1];
-	ori.m[10] = -f.v[2];
+	ori.m[0] = r.x;
+	ori.m[4] = r.y;
+	ori.m[8] = r.z;
+	ori.m[1] = u.x;
+	ori.m[5] = u.y;
+	ori.m[9] = u.z;
+	ori.m[2] = -f.x;
+	ori.m[6] = -f.y;
+	ori.m[10] = -f.z;
 	return mult_mat4_mat4 (ori, p);
 }
 
@@ -358,20 +350,16 @@ static inline mat4 perspective (float fovy, float aspect, float near, float far)
 	return m;
 }
 
-/*----------------------------HAMILTON IN DA HOUSE!--------------------------*/
 static inline versor div_quat_f (versor qq, float s) {
-	return (versor) {
-		.q = { qq.q[0] / s, qq.q[1] / s, qq.q[2] / s, qq.q[3] / s } };
+	return (versor){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s};
 }
 
 static inline versor mult_quat_f (versor qq, float s) {
-	return (versor) {
-		.q = { qq.q[0] * s, qq.q[1] * s, qq.q[2] * s, qq.q[3] * s } };
+	return (versor){.w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s};
 }
 
 static inline versor normalise_quat (versor q) {
-	float sum = q.q[0] * q.q[0] + q.q[1] * q.q[1] +
-		q.q[2] * q.q[2] + q.q[3] * q.q[3];
+	float sum = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
 	const float thresh = 0.0001f;
 	if (fabs (1.0f - sum) < thresh) { return q; }
 	float mag = sqrt (sum);
@@ -380,32 +368,28 @@ static inline versor normalise_quat (versor q) {
 
 static inline versor mult_quat_quat (versor a, versor b) {
 	versor result;
-	result.q[0] = b.q[0] * a.q[0] - b.q[1] * a.q[1] -
-		b.q[2] * a.q[2] - b.q[3] * a.q[3];
-	result.q[1] = b.q[0] * a.q[1] + b.q[1] * a.q[0] -
-		b.q[2] * a.q[3] + b.q[3] * a.q[2];
-	result.q[2] = b.q[0] * a.q[2] + b.q[1] * a.q[3] +
-		b.q[2] * a.q[0] - b.q[3] * a.q[1];
-	result.q[3] = b.q[0] * a.q[3] - b.q[1] * a.q[2] +
-		b.q[2] * a.q[1] + b.q[3] * a.q[0];
+	result.w = b.w * a.w - b.x * a.x - b.y * a.y - b.z * a.z;
+	result.x = b.w * a.x + b.x * a.w - b.y * a.z + b.z * a.y;
+	result.y = b.w * a.y + b.x * a.z + b.y * a.w - b.z * a.x;
+	result.z = b.w * a.z - b.x * a.y + b.y * a.x + b.z * a.w;
 	return normalise_quat (result);
 }
 
 static inline versor add_quat_quat (versor a, versor b) {
 	versor result;
-	result.q[0] = b.q[0] + a.q[0];
-	result.q[1] = b.q[1] + a.q[1];
-	result.q[2] = b.q[2] + a.q[2];
-	result.q[3] = b.q[3] + a.q[3];
+	result.w = b.w + a.w;
+	result.x = b.x + a.x;
+	result.y = b.y + a.y;
+	result.z = b.z + a.z;
 	return normalise_quat (result);
 }
 
 static inline versor quat_from_axis_rad (float radians, vec3 axis) {
 	versor result;
-	result.q[0] = cos (radians / 2.0);
-	result.q[1] = sin (radians / 2.0) * axis.v[0];
-	result.q[2] = sin (radians / 2.0) * axis.v[1];
-	result.q[3] = sin (radians / 2.0) * axis.v[2];
+	result.w = cos (radians / 2.0);
+	result.x = sin (radians / 2.0) * axis.x;
+	result.y = sin (radians / 2.0) * axis.y;
+	result.z = sin (radians / 2.0) * axis.z;
 	return result;
 }
 
@@ -414,7 +398,7 @@ static inline versor quat_from_axis_deg (float degrees, vec3 axis) {
 }
 
 static inline mat4 quat_to_mat4 (versor q) {
-	float w = q.q[0]; float x = q.q[1]; float y = q.q[2]; float z = q.q[3];
+	float w = q.w; float x = q.x; float y = q.y; float z = q.z;
 	mat4 r;
 	r.m[0] = 1.0f - 2.0f * y * y - 2.0f * z * z;
 	r.m[1] = 2.0f * x * y + 2.0f * w * z;
@@ -433,27 +417,31 @@ static inline mat4 quat_to_mat4 (versor q) {
 }
 
 static inline float dot_quat (versor q, versor r) {
-	return q.q[0] * r.q[0] + q.q[1] * r.q[1] + q.q[2] * r.q[2] + q.q[3] * r.q[3];
+	return q.w * r.w + q.x * r.x + q.y * r.y + q.z * r.z;
 }
 
 static inline versor slerp_quat (versor q, versor r, float t) {
 	float cos_half_theta = dot_quat (q, r);
 	if (cos_half_theta < 0.0f) {
-		for (int i = 0; i < 4; i++) { q.q[i] *= -1.0f; }
+		q = mult_quat_f (q, -1.0f);
 		cos_half_theta = dot_quat (q, r);
 	}
 	if (fabs (cos_half_theta) >= 1.0f) { return q; }
 	float sin_half_theta = sqrt (1.0f - cos_half_theta * cos_half_theta);
 	versor result;
 	if (fabs (sin_half_theta) < 0.001f) {
-		for (int i = 0; i < 4; i++) { 
-			result.q[i] = (1.0f - t) * q.q[i] + t * r.q[i];
-		}
+		result.w = (1.0f - t) * q.w + t * r.w;
+		result.x = (1.0f - t) * q.x + t * r.x;
+		result.y = (1.0f - t) * q.y + t * r.y;
+		result.z = (1.0f - t) * q.z + t * r.z;
 		return result;
 	}
 	float half_theta = acos (cos_half_theta);
 	float a = sin ((1.0f - t) * half_theta) / sin_half_theta;
 	float b = sin (t * half_theta) / sin_half_theta;
-	for (int i = 0; i < 4; i++) { result.q[i] = q.q[i] * a + r.q[i] * b; }
+	result.w = q.w * a + r.w * b;
+	result.x = q.x * a + r.x * b;
+	result.y = q.y * a + r.y * b;
+	result.z = q.z * a + r.z * b;
 	return result;
 }
