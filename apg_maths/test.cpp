@@ -1,4 +1,4 @@
-#include "apg_maths_2016.hpp"
+#include "apg_maths.hpp"
 
 int main () {
 	printf ("hello maths\n");

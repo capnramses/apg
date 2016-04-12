@@ -22,7 +22,7 @@ glUniform3f (location, c.x, c.y, c.z); // access data in vector
 -----------
 16 Jun 2014 - revised and inlined into a header file
 29 January 2016 - replaced internal arrays with .x .y .z etc.
-12 April 2016 - tidied, removed const reference arguments, and compacted
+12 April 2016 - removed unnecessary const& args, assignment ops, compacted
 \*****************************************************************************/
 #pragma once
 #include <stdio.h>
@@ -99,7 +99,7 @@ struct vec2 {
 	float x, y;
 	vec2 () {}
 	vec2 (float _x, float _y) { x = _x; y = _y; }
-	vec2 (vec2 v) { x = v.x; y = v.y; }
+	vec2 (const vec2& v) { x = v.x; y = v.y; }
 	vec2 (vec3 v);
 	vec2 (vec4 v);
 };
@@ -109,7 +109,7 @@ struct vec3 {
 	vec3 () {}
 	vec3 (float _x, float _y, float _z) { x = _x; y = _y; z = _z; }
 	vec3 (vec2 v, float _z) { x = v.x; y = v.y; z = _z; }
-	vec3 (vec3 v) { x = v.x; y = v.y; z = v.z; }
+	vec3 (const vec3& v) { x = v.x; y = v.y; z = v.z; }
 	vec3 (vec4 v);
 	vec3 operator+ (vec3 rhs) {
 		vec3 vc;
@@ -195,7 +195,6 @@ struct vec3 {
 		return vc;
 	}
 	vec3& operator/= (float rhs) { x /= rhs; y /= rhs; z /= rhs; return *this; }
-	vec3& operator= (vec3 rhs) { x = rhs.x; y = rhs.y; z = rhs.z; return *this; }
 };
 
 struct vec4 {
@@ -209,7 +208,7 @@ struct vec4 {
 	}
 	vec4 (vec2 v, float _z, float _w) { x = v.x; y = v.y; z = _z; w = _w; }
 	vec4 (vec3 v, float _w) { x = v.x; y = v.y; z = v.z; w = _w; }
-	vec4 (vec4 v) { x = v.x; y = v.y; z = v.z; w = v.w; }
+	vec4 (const vec4& v) { x = v.x; y = v.y; z = v.z; w = v.w; }
 	// NOTE: i deliberately didn't overload arithmetic operators for the vec4,
 	// because it's usually a mistake when you do piece-wise arithmetic with
 	// vec4s in graphics as the 4th channel is not part of the vector proper
@@ -228,7 +227,7 @@ struct mat3 {
 		int index = col * 3 + row;
 		return m[index];
 	}
-	float set_el (int col, int row, float val) {
+	void set_el (int col, int row, float val) {
 		assert (row >= 0 && row <= 2 && col >= 0 && col <= 2);
 		int index = col * 3 + row;
 		m[index] = val;
@@ -249,7 +248,7 @@ struct mat4 {
 		int index = col * 4 + row;
 		return m[index];
 	}
-	float set_el (int col, int row, float val) {
+	void set_el (int col, int row, float val) {
 		assert (row >= 0 && row <= 3 && col >= 0 && col <= 3);
 		int index = col * 4 + row;
 		m[index] = val;
@@ -275,10 +274,6 @@ struct mat4 {
 			}
 		}
 		return r;
-	}
-	mat4& operator= (mat4 rhs) {
-		for (int i = 0; i < 16; i++) { m[i] = rhs.m[i]; }
-		return *this;
 	}
 };
 
