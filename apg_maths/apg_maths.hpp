@@ -1,205 +1,163 @@
 /*****************************************************************************\
-| Anton's Maths Library - https://github.com/capnramses/apg                   |
-| This is the C++ version with operator overloading.                          |
-| e-mail: anton at antongerdelan dot net                                      |
-| Revised and inlined into a header file: 16 Jun 2014                         |
-| Replaced internal arrays with .x .y .z etc: 29 January 2016                 |
-| Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland                |
-|*****************************************************************************|
-| Commonly-used maths structures and functions for 3d graphics                |
-|                                                                             |
-| #Use#                                                                       |
-| Just include this header file, you don't need to put any macro junk.        |
-| Declare variables of type: vec2, vec3, vec4, mat3, mat4, versor.            |
-| A versor is the proper name for a unit quaternion.                          |
-| vec3 a = vec3 (0.0f, 1.0f, 2.0f); // constructors similar to GLSL           |
-| vec3 b = a; // copy constructor                                             |
-| vec3 c = a - b; // overloaded operators                                     |
-| print (c); // helper functions                                              |
-| mat4 R = rotate_y_deg (10.0f); // affine and virtual camera builders        |
-| vec4 d = R * vec4 (c, 1.0); // works like you'd expect                      |
-| glUniformMatrix4fv (location, 1, GL_FALSE, R.m); // access data in matrix   |
-| glUniform3f (location, c.x, c.y, c.z); // access data in vector             |
-|                                                                             |
-| #Design#                                                                    |
-| ##(1) Functionality / Familiarity / Error Protection##                      |
-| The functions and data types resemble GLSL and also the old glu interface.  |
-| e.g. normalise (my_vec3) rather than my_vec3.normalise().                   |
-| I did insist on Imperial Standard English though.                           |
-| I only add functions when I actually use them more than once.               |
-| Some are deliberately left out to avoid common mistakes e.g. component-wise |
-| operations on vec4s. If you really want to vec4*vec4 then I would code it   |
-| manually each time, just to be on the safe side.                            |
-| I considered just using arrays of floats instead of vec3 etc. to satisfy (3)|
-| but the type safety and similarity to GLSL were more important.             |
-| I changed internal memory from an array to .x .y etc. for vectors, but not  |
-| matrices. Experience shows this is less confusing to read than i.e.         |
-| my_vector.v[1]. I didn't go the way of GLM to have both because it violates |
-| (2) and (3).                                                                |
-| We can assume struct contents are always ordered as expected in memory in   |
-| C++ so we can get away with it here, but this is not so in C before C99!    |
-| ##(2) Readability##                                                         |
-| I want students to be able to follow most of it, so I don't use any         |
-| short-hands that might make sense to more experienced graphics people and   |
-| try to add lots of appropriate comments                                     |
-| ##(3) Simplicity##                                                          |
-| Just one plain header file, no library linkage required, no build system.   |
-| No external docs needed. No templates. No scary C++ OOP bits.               |
-| ##(4) Efficiency##                                                          |
-| Mostly inlined, simple, cache-friendly code. I might add SIMD intrinsics    |
-| if it doesn't impact (2) and (3) much, and/or is educational.               |
+                  Anton's Maths Library - original C++ version
+                      https://github.com/capnramses/apg
+                   Dr Anton Gerdelan  <antonofnote at gmail>
+                       Trinity College Dublin, Ireland
+
+ Usage
+-------
+Include header file.
+Declare variables of type: vec2, vec3, vec4, mat3, mat4, versor.
+A versor is the proper name for a unit quaternion.
+vec3 a = vec3 (0.0f, 1.0f, 2.0f); // constructors similar to GLSL
+vec3 b = a; // copy constructor
+vec3 c = a - b; // overloaded operators
+print (c); // helper functions
+mat4 R = rotate_y_deg (10.0f); // affine and virtual camera matrix builders
+vec4 d = R * vec4 (c, 1.0); // works like you'd expect
+glUniformMatrix4fv (location, 1, GL_FALSE, R.m); // access data in matrix
+glUniform3f (location, c.x, c.y, c.z); // access data in vector
+
+ Revisions
+-----------
+16 Jun 2014 - revised and inlined into a header file
+29 January 2016 - replaced internal arrays with .x .y .z etc.
+12 April 2016 - tidied, removed const reference arguments, and compacted
 \*****************************************************************************/
 #pragma once
 #include <stdio.h>
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES // "please give me M_PI"
 #include <math.h>
 #include <string.h>
 #include <assert.h>
-// some implementations of math.h removed M_PI
-#ifndef M_PI
+
+#ifndef M_PI // some implementations of math.h removed M_PI
 #define M_PI 3.14159265358979323846
 #endif
-// const used to convert degrees into radians
 #define ONE_DEG_IN_RAD (2.0 * M_PI) / 360.0 // 0.017444444
 #define ONE_RAD_IN_DEG 360.0 / (2.0 * M_PI) //57.2957795
-// ----------------------------------------------------------------------------
-// -------------------------------- declaration -------------------------------
-// ----------------------------------------------------------------------------
-// ------------------------------ data structures -----------------------------
+
 struct vec2;
 struct vec3;
 struct vec4;
 struct versor;
 struct mat3;
 struct mat4;
-// ------------------------------ print functions -----------------------------
-void print (const vec2& v);
-void print (const vec3& v);
-void print (const vec4& v);
-void print (const mat3& m);
-void print (const mat4& m);
-void print (const versor& q);
+
+void print (vec2 v);
+void print (vec3 v);
+void print (vec4 v);
+void print (mat3 m);
+void print (mat4 m);
+void print (versor q);
+
 // ----------------------------- vector functions -----------------------------
-float length (const vec2& v);
-float length2 (const vec2& v);
-vec2 normalise (const vec2& v);
-float length (const vec3& v);
-float length2 (const vec3& v);
-vec3 normalise (const vec3& v);
-float dot (const vec3& a, const vec3& b);
-inline vec3 cross (const vec3& a, const vec3& b);
-float direction_to_heading (const vec3& d);
+float length (vec2 v);
+float length2 (vec2 v);
+vec2 normalise (vec2 v);
+float length (vec3 v);
+float length2 (vec3 v);
+vec3 normalise (vec3 v);
+float dot (vec3 a, vec3 b);
+inline vec3 cross (vec3 a, vec3 b);
+float direction_to_heading (vec3 d);
 vec3 heading_to_direction (float degrees);
-vec3 lerp (const vec3& a, const vec3& b, float t);
+vec3 lerp (vec3 a, vec3 b, float t);
+
 // ----------------------------- matrix functions -----------------------------
 mat3 zero_mat3 ();
 mat3 identity_mat3 ();
 mat4 zero_mat4 ();
 mat4 identity_mat4 ();
-float determinant (const mat4& mm);
-mat4 inverse (const mat4& mm);
-mat4 transpose (const mat4& mm);
+float determinant (mat4 mm);
+mat4 inverse (mat4 mm);
+mat4 transpose (mat4 mm);
+
 // ----------------------------- affine functions -----------------------------
-mat4 translate (const vec3& v);
+mat4 translate (vec3 v);
 mat4 rot_x_deg (float deg);
 mat4 rot_y_deg (float deg);
 mat4 rot_z_deg (float deg);
-mat4 scale (const vec3& v);
+mat4 scale (vec3 v);
+
 // ---------------------------- camera functions ------------------------------
-mat4 look_at (const vec3& cam_pos, vec3 targ_pos, const vec3& up);
+mat4 look_at (vec3 cam_pos, vec3 targ_pos, vec3 up);
 mat4 perspective (float fovy, float aspect, float near, float far);
+
 // --------------------------- quaternion functions ---------------------------
-versor quat_from_axis_rad (float radians, const vec3& axis);
-versor quat_from_axis_deg (float degrees, const vec3& axis);
-mat4 quat_to_mat4 (const versor& q);
-float dot (const versor& q, const versor& r);
-// stupid overloading wouldn't let me use const
+versor quat_from_axis_rad (float radians, vec3 axis);
+versor quat_from_axis_deg (float degrees, vec3 axis);
+mat4 quat_to_mat4 (versor q);
+float dot (versor q, versor r);
 versor normalise (versor q);
 versor slerp (versor q, versor r, float t);
-// ----------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // ----------------------------- implementation ------------------------------
-// ----------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 struct vec2 {
 	float x, y;
 	vec2 () {}
-	vec2 (float _x, float _y) {
-		x = _x;
-		y = _y;
-	}
-	vec2 (const vec2& v) {
-		x = v.x;
-		y = v.y;
-	}
-	vec2 (const vec3& v);
-	vec2 (const vec4& v);
+	vec2 (float _x, float _y) { x = _x; y = _y; }
+	vec2 (vec2 v) { x = v.x; y = v.y; }
+	vec2 (vec3 v);
+	vec2 (vec4 v);
 };
 
 struct vec3 {
 	float x, y, z;
 	vec3 () {}
-	vec3 (float _x, float _y, float _z) {
-		x = _x;
-		y = _y;
-		z = _z;
-	}
-	vec3 (const vec2& v, float _z) {
-		x = v.x;
-		y = v.y;
-		z = _z;
-	}
-	vec3 (const vec3& v) {
-		x = v.x;
-		y = v.y;
-		z = v.z;
-	}
-	vec3 (const vec4& v);
-	vec3 operator+ (const vec3& rhs) {
+	vec3 (float _x, float _y, float _z) { x = _x; y = _y; z = _z; }
+	vec3 (vec2 v, float _z) { x = v.x; y = v.y; z = _z; }
+	vec3 (vec3 v) { x = v.x; y = v.y; z = v.z; }
+	vec3 (vec4 v);
+	vec3 operator+ (vec3 rhs) {
 		vec3 vc;
 		vc.x = x + rhs.x;
 		vc.y = y + rhs.y;
 		vc.z = z + rhs.z;
 		return vc;
 	}
-	vec3& operator+= (const vec3& rhs) {
+	vec3& operator+= (vec3 rhs) {
 		x += rhs.x;
 		y += rhs.y;
 		z += rhs.z;
-		return *this; // return self
+		return *this;
 	}
-	vec3 operator- (const vec3& rhs) {
+	vec3 operator- (vec3 rhs) {
 		vec3 vc;
 		vc.x = x - rhs.x;
 		vc.y = y - rhs.y;
 		vc.z = z - rhs.z;
 		return vc;
 	}
-	vec3& operator-= (const vec3& rhs) {
+	vec3& operator-= (vec3 rhs) {
 		x -= rhs.x;
 		y -= rhs.y;
 		z -= rhs.z;
 		return *this;
 	}
-	vec3 operator* (const vec3& rhs) {
+	vec3 operator* (vec3 rhs) {
 		vec3 vc;
 		vc.x = x * rhs.x;
 		vc.y = y * rhs.y;
 		vc.z = z * rhs.z;
 		return vc;
 	}
-	vec3& operator*= (const vec3& rhs) {
+	vec3& operator*= (vec3 rhs) {
 		x *= rhs.x;
 		y *= rhs.y;
 		z *= rhs.z;
 		return *this;
 	}
-	vec3 operator/ (const vec3& rhs) {
+	vec3 operator/ (vec3 rhs) {
 		vec3 vc;
 		vc.x = x / rhs.x;
 		vc.y = y / rhs.y;
 		vc.z = z / rhs.z;
 		return vc;
 	}
-	vec3& operator/= (const vec3& rhs) {
+	vec3& operator/= (vec3 rhs) {
 		x /= rhs.x;
 		y /= rhs.y;
 		z /= rhs.z;
@@ -212,12 +170,7 @@ struct vec3 {
 		vc.z = z + rhs;
 		return vc;
 	}
-	vec3& operator+= (float rhs) {
-		x += rhs;
-		y += rhs;
-		z += rhs;
-		return *this;
-	}
+	vec3& operator+= (float rhs) { x += rhs; y += rhs; z += rhs; return *this; }
 	vec3 operator- (float rhs) {
 		vec3 vc;
 		vc.x = x - rhs;
@@ -225,12 +178,7 @@ struct vec3 {
 		vc.z = z - rhs;
 		return vc;
 	}
-	vec3& operator-= (float rhs) {
-		x -= rhs;
-		y -= rhs;
-		z -= rhs;
-		return *this;
-	}
+	vec3& operator-= (float rhs) { x -= rhs; y -= rhs; z -= rhs; return *this; }
 	vec3 operator* (float rhs) {
 		vec3 vc;
 		vc.x = x * rhs;
@@ -238,12 +186,7 @@ struct vec3 {
 		vc.z = z * rhs;
 		return vc;
 	}
-	vec3& operator*= (float rhs) {
-		x *= rhs;
-		y *= rhs;
-		z *= rhs;
-		return *this;
-	}
+	vec3& operator*= (float rhs) { x *= rhs; y *= rhs; z *= rhs; return *this; }
 	vec3 operator/ (float rhs) {
 		vec3 vc;
 		vc.x = x / rhs;
@@ -251,18 +194,8 @@ struct vec3 {
 		vc.z = z / rhs;
 		return vc;
 	}
-	vec3& operator/= (float rhs) {
-		x /= rhs;
-		y /= rhs;
-		z /= rhs;
-		return *this;
-	}
-	vec3& operator= (const vec3& rhs) {
-		x = rhs.x;
-		y = rhs.y;
-		z = rhs.z;
-		return *this;
-	}
+	vec3& operator/= (float rhs) { x /= rhs; y /= rhs; z /= rhs; return *this; }
+	vec3& operator= (vec3 rhs) { x = rhs.x; y = rhs.y; z = rhs.z; return *this; }
 };
 
 struct vec4 {
@@ -274,24 +207,9 @@ struct vec4 {
 		z = _z;
 		w = _w;
 	}
-	vec4 (const vec2& v, float _z, float _w) {
-		x = v.x;
-		y = v.y;
-		z = _z;
-		w = _w;
-	}
-	vec4 (const vec3& v, float _w) {
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = _w;
-	}
-	vec4 (const vec4& v) {
-		x = v.x;
-		y = v.y;
-		z = v.z;
-		w = v.w;
-	}
+	vec4 (vec2 v, float _z, float _w) { x = v.x; y = v.y; z = _z; w = _w; }
+	vec4 (vec3 v, float _w) { x = v.x; y = v.y; z = v.z; w = _w; }
+	vec4 (vec4 v) { x = v.x; y = v.y; z = v.z; w = v.w; }
 	// NOTE: i deliberately didn't overload arithmetic operators for the vec4,
 	// because it's usually a mistake when you do piece-wise arithmetic with
 	// vec4s in graphics as the 4th channel is not part of the vector proper
@@ -336,18 +254,14 @@ struct mat4 {
 		int index = col * 4 + row;
 		m[index] = val;
 	}
-	vec4 operator* (const vec4& rhs) {
-		// 0x + 4y + 8z + 12w
+	vec4 operator* (vec4 rhs) {
 		float x = m[0] * rhs.x + m[4] * rhs.y + m[8] * rhs.z + m[12] * rhs.w;
-		// 1x + 5y + 9z + 13w
 		float y = m[1] * rhs.x + m[5] * rhs.y + m[9] * rhs.z + m[13] * rhs.w;
-		// 2x + 6y + 10z + 14w
 		float z = m[2] * rhs.x + m[6] * rhs.y + m[10] * rhs.z + m[14] * rhs.w;
-		// 3x + 7y + 11z + 15w
 		float w = m[3] * rhs.x + m[7] * rhs.y + m[11] * rhs.z + m[15] * rhs.w;
 		return vec4 (x, y, z, w);
 	}
-	mat4 operator* (const mat4& rhs) {
+	mat4 operator* (mat4 rhs) {
 		mat4 r = zero_mat4 ();
 		int r_index = 0;
 		for (int col = 0; col < 4; col++) {
@@ -362,17 +276,14 @@ struct mat4 {
 		}
 		return r;
 	}
-	mat4& operator= (const mat4& rhs) {
-		for (int i = 0; i < 16; i++) {
-			m[i] = rhs.m[i];
-		}
+	mat4& operator= (mat4 rhs) {
+		for (int i = 0; i < 16; i++) { m[i] = rhs.m[i]; }
 		return *this;
 	}
 };
 
-// a unit quaternion used for rotation
 struct versor {
-	float w, x, y, z; // NOTE: 'w' is q[0] here, not position [3] as in vec4
+	float w, x, y, z;
 	versor operator/ (float rhs) {
 		versor result;
 		result.w = w / rhs;
@@ -389,122 +300,90 @@ struct versor {
 		result.z = z * rhs;
 		return result;
 	}
-	versor operator* (const versor& rhs) {
+	versor operator* (versor rhs) {
 		versor result;
-		result.w = rhs.w * w - rhs.x * x -
-			rhs.y * y - rhs.z * z;
-		result.x = rhs.w * x + rhs.x * w -
-			rhs.y * z + rhs.z * y;
-		result.y = rhs.w * y + rhs.x * z +
-			rhs.y * w - rhs.z * x;
-		result.z = rhs.w * z - rhs.x * y +
-			rhs.y * x + rhs.z * w;
-		// re-normalise in case of mangling
-		return normalise (result);
+		result.w = rhs.w * w - rhs.x * x - rhs.y * y - rhs.z * z;
+		result.x = rhs.w * x + rhs.x * w - rhs.y * z + rhs.z * y;
+		result.y = rhs.w * y + rhs.x * z + rhs.y * w - rhs.z * x;
+		result.z = rhs.w * z - rhs.x * y + rhs.y * x + rhs.z * w;
+		return normalise (result); // re-normalise in case of mangling
 	}
-	versor operator+ (const versor& rhs) {
+	versor operator+ (versor rhs) {
 		versor result;
 		result.w = rhs.w + w;
 		result.x = rhs.x + x;
 		result.y = rhs.y + y;
 		result.z = rhs.z + z;
-		// re-normalise in case of mangling
-		return normalise (result);
+		return normalise (result); // re-normalise in case of mangling
 	}
 };
 
-/*-----------------------------PRINT FUNCTIONS-------------------------------*/
-inline void print (const vec2& v) {
-	printf ("[%.2f, %.2f]\n", v.x, v.y);
-}
-inline void print (const vec3& v) {
-	printf ("[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z);
-}
-inline void print (const vec4& v) {
+inline void print (vec2 v) { printf ("[%.2f, %.2f]\n", v.x, v.y); }
+
+inline void print (vec3 v) { printf ("[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z); }
+
+inline void print (vec4 v) {
 	printf ("[%.2f, %.2f, %.2f, %.2f]\n", v.x, v.y, v.z, v.w);
 }
-inline void print (const mat3& m) {
+
+inline void print (mat3 m) {
 	printf("\n");
 	printf ("[%.2f][%.2f][%.2f]\n", m.m[0], m.m[3], m.m[6]);
 	printf ("[%.2f][%.2f][%.2f]\n", m.m[1], m.m[4], m.m[7]);
 	printf ("[%.2f][%.2f][%.2f]\n", m.m[2], m.m[5], m.m[8]);
 }
-inline void print (const mat4& m) {
+
+inline void print (mat4 m) {
 	printf("\n");
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[0], m.m[4], m.m[8], m.m[12]);
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[1], m.m[5], m.m[9], m.m[13]);
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[2], m.m[6], m.m[10], m.m[14]);
 	printf ("[%.2f][%.2f][%.2f][%.2f]\n", m.m[3], m.m[7], m.m[11], m.m[15]);
 }
-inline void print (const versor& q) {
+
+inline void print (versor q) {
 	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z);
 }
-/*------------------------------VECTOR FUNCTIONS-----------------------------*/
+
 // these are out here because compiler complains about incomplete type usage
-inline vec2::vec2 (const vec3& v) {
-	x = v.x;
-	y = v.y;
-}
+inline vec2::vec2 (vec3 v) { x = v.x; y = v.y; }
 
-inline vec2::vec2 (const vec4& v) {
-	x = v.x;
-	y = v.y;
-}
+inline vec2::vec2 (vec4 v) { x = v.x; y = v.y; }
 
-inline vec3::vec3 (const vec4& v) {
-	x = v.x;
-	y = v.y;
-	z = v.z;
-}
+inline vec3::vec3 (vec4 v) { x = v.x; y = v.y; z = v.z; }
 
-inline float length (const vec2& v) {
-	return sqrt (v.x * v.x + v.y * v.y);
-}
+inline float length (vec2 v) { return sqrt (v.x * v.x + v.y * v.y); }
 
-// squared length
-inline float length2 (const vec2& v) {
-	return v.x * v.x + v.y * v.y;
-}
+inline float length2 (vec2 v) { return v.x * v.x + v.y * v.y; }
 
-// NOTE: proper spelling (hehe)
-inline vec2 normalise (const vec2& v) {
+inline vec2 normalise (vec2 v) {
 	vec2 vb;
 	float l = length (v);
-	if (0.0f == l) {
-		return vec2 (0.0f, 0.0f);
-	}
+	if (0.0f == l) { return vec2 (0.0f, 0.0f); }
 	vb.x = v.x / l;
 	vb.y = v.y / l;
 	return vb;
 }
 
-inline float length (const vec3& v) {
+inline float length (vec3 v) {
 	return sqrt (v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-// squared length
-inline float length2 (const vec3& v) {
-	return v.x * v.x + v.y * v.y + v.z * v.z;
-}
+inline float length2 (vec3 v) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 
-// NOTE: proper spelling (hehe)
-inline vec3 normalise (const vec3& v) {
+inline vec3 normalise (vec3 v) {
 	vec3 vb;
 	float l = length (v);
-	if (0.0f == l) {
-		return vec3 (0.0f, 0.0f, 0.0f);
-	}
+	if (0.0f == l) { return vec3 (0.0f, 0.0f, 0.0f); }
 	vb.x = v.x / l;
 	vb.y = v.y / l;
 	vb.z = v.z / l;
 	return vb;
 }
 
-inline float dot (const vec3& a, const vec3& b) {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
+inline float dot (vec3 a, vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-inline vec3 cross (const vec3& a, const vec3& b) {
+inline vec3 cross (vec3 a, vec3 b) {
 	float x = a.y * b.z - a.z * b.y;
 	float y = a.z * b.x - a.x * b.z;
 	float z = a.x * b.y - a.y * b.x;
@@ -526,10 +405,8 @@ inline vec3 heading_to_direction (float degrees) {
 	return vec3 (-sinf (rad), 0.0f, -cosf (rad));
 }
 
-inline vec3 lerp (vec3 a, vec3 b, float t) {
-	return a * t + b * (1.0f - t);
-}
-/*-----------------------------MATRIX FUNCTIONS------------------------------*/
+inline vec3 lerp (vec3 a, vec3 b, float t) { return a * t + b * (1.0f - t); }
+
 inline mat3 zero_mat3 () {
 	mat3 M;
 	memset (M.m, 0, 9 * sizeof (float));
@@ -554,9 +431,7 @@ inline mat4 identity_mat4 () {
 	return M;
 }
 
-// returns a scalar value with the determinant for a 4x4 matrix
-// see http://www.euclideanspace.com/maths/algebra/matrix/functions/determinant/fourD/index.htm
-inline float determinant (const mat4& mm) {
+inline float determinant (mat4 mm) {
 	return
 		mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] -
 		mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] -
@@ -584,174 +459,135 @@ inline float determinant (const mat4& mm) {
 		mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
 }
 
-// see http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
-inline mat4 inverse (const mat4& mm) {
+inline mat4 inverse (mat4 mm) {
 	float det = determinant (mm);
-	/* there is no inverse if determinant is zero (not likely unless scale is
-	broken) */
-	if (0.0f == det) {
-		fprintf (stderr, "WARNING. matrix has no determinant. can not invert.\n");
-		return mm;
-	}
+	// there is no inverse if determinant is zero (not likely unless scale is broken)
+	if (0.0f == det) { return mm; }
 	float inv_det = 1.0f / det;
 	mat4 R;
 	R.m[0] = inv_det * (
 		mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] +
 		mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
-		mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]
-	);
+		mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15]);
 	R.m[1] = inv_det * (
 		mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] -
 		mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
-		mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]
-	);
+		mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15]);
 	R.m[2] = inv_det * (
 		mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] +
 		mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
-		mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]
-	);
+		mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15]);
 	R.m[3] = inv_det * (
 		mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] -
 		mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
-		mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]
-	);
+		mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11]);
 	R.m[4] = inv_det * (
 		mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] -
 		mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
-		mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]
-	);
+		mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15]);
 	R.m[5] = inv_det * (
 		mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] +
 		mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
-		mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]
-	);
+		mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15]);
 	R.m[6] = inv_det * (
 		mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] -
 		mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
-		mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]
-	);
+		mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15]);
 	R.m[7] = inv_det * (
 		mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] +
 		mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
-		mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]
-	);
+		mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11]);
 	R.m[8] = inv_det * (
 		mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] +
 		mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
-		mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]
-	);
+		mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15]);
 	R.m[9] = inv_det * (
 		mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] -
 		mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
-		mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]
-	);
+		mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15]);
 	R.m[10] = inv_det * (
 		mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] +
 		mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
-		mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]
-	);
+		mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15]);
 	R.m[11] = inv_det * (
 		mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] -
 		mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
-		mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]
-	);
+		mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11]);
 	R.m[12] = inv_det * (
 		mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] -
 		mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
-		mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]
-	);
+		mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14]);
 	R.m[13] = inv_det * (
 		mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] +
 		mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
-		mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]
-	);
+		mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14]);
 	R.m[14] = inv_det * (
 		mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] -
 		mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
-		mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]
-	);
+		mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14]);
 	R.m[15] = inv_det * (
 		mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] +
 		mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
-		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]
-	);
+		mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10]);
 	return R;
 }
 
-inline mat4 transpose (const mat4& mm) {
+inline mat4 transpose (mat4 mm) {
 	mat4 M;
-	M.m[0] = mm.m[0]; M.m[4] = mm.m[1]; M.m[8] = mm.m[2]; M.m[12] = mm.m[3];
-	M.m[1] = mm.m[4]; M.m[5] = mm.m[5]; M.m[9] = mm.m[6]; M.m[13] = mm.m[7];
-	M.m[2] = mm.m[8]; M.m[6] = mm.m[9]; M.m[10] = mm.m[10]; M.m[14] = mm.m[11];
+	M.m[0] = mm.m[0];  M.m[4] = mm.m[1];  M.m[8] = mm.m[2];   M.m[12] = mm.m[3];
+	M.m[1] = mm.m[4];  M.m[5] = mm.m[5];  M.m[9] = mm.m[6];   M.m[13] = mm.m[7];
+	M.m[2] = mm.m[8];  M.m[6] = mm.m[9];  M.m[10] = mm.m[10]; M.m[14] = mm.m[11];
 	M.m[3] = mm.m[12]; M.m[7] = mm.m[13]; M.m[11] = mm.m[14]; M.m[15] = mm.m[15];
 	return M;
 }
-/*--------------------------AFFINE MATRIX FUNCTIONS--------------------------*/
-inline mat4 translate (const vec3& v) {
+
+inline mat4 translate (vec3 v) {
 	mat4 m_t = identity_mat4 ();
-	m_t.m[12] = v.x;
-	m_t.m[13] = v.y;
-	m_t.m[14] = v.z;
+	m_t.m[12] = v.x; m_t.m[13] = v.y; m_t.m[14] = v.z;
 	return m_t;
 }
 
 inline mat4 rotate_x_deg (float deg) {
-	// convert to radians
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
-	m_r.m[5] = cos (rad);
+	m_r.m[5] = m_r.m[10] = cos (rad);
 	m_r.m[9] = -sin (rad);
 	m_r.m[6] = sin (rad);
-	m_r.m[10] = cos (rad);
 	return m_r;
 }
 
 inline mat4 rotate_y_deg (float deg) {
-	// convert to radians
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
-	m_r.m[0] = cos (rad);
+	m_r.m[0] = m_r.m[10] = cos (rad);
 	m_r.m[8] = sin (rad);
 	m_r.m[2] = -sin (rad);
-	m_r.m[10] = cos (rad);
 	return m_r;
 }
 
 inline mat4 rotate_z_deg (float deg) {
-	// convert to radians
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
-	m_r.m[0] = cos (rad);
+	m_r.m[0] = m_r.m[5] = cos (rad);
 	m_r.m[4] = -sin (rad);
 	m_r.m[1] = sin (rad);
-	m_r.m[5] = cos (rad);
 	return m_r;
 }
 
-inline mat4 scale (const vec3& v) {
+inline mat4 scale (vec3 v) {
 	mat4 a = identity_mat4 ();
-	a.m[0] = v.x;
-	a.m[5] = v.y;
-	a.m[10] = v.z;
+	a.m[0] = v.x; a.m[5] = v.y; a.m[10] = v.z;
 	return a;
 }
 
-/*-----------------------VIRTUAL CAMERA MATRIX FUNCTIONS---------------------*/
 // returns a view matrix using the GLU lookAt style.
-// NOTE: targ_pos is not const& because using the overloaded "-" in here makes
-// the compiler barf
-inline mat4 look_at (const vec3& cam_pos, vec3 targ_pos, const vec3& up) {
-	// inverse translation
+inline mat4 look_at (vec3 cam_pos, vec3 targ_pos, vec3 up) {
 	mat4 p = identity_mat4 ();
 	p = translate (vec3 (-cam_pos.x, -cam_pos.y, -cam_pos.z));
-	// distance vector
-	vec3 d = targ_pos - cam_pos;
-	// forward vector
-	vec3 f = normalise (d);
-	// right vector
-	vec3 r = normalise (cross (f, up));
-	// real up vector
-	vec3 u = normalise (cross (r, f));
+	vec3 d = targ_pos - cam_pos; // distance vector
+	vec3 f = normalise (d); // forward vector
+	vec3 r = normalise (cross (f, up)); // right vector
+	vec3 u = normalise (cross (r, f)); // real up vector
 	mat4 ori = identity_mat4 ();
 	ori.m[0] = r.x;
 	ori.m[4] = r.y;
@@ -782,9 +618,9 @@ inline mat4 perspective (float fovy, float aspect, float nr, float fr) {
 	m.m[11] = -1.0f;
 	return m;
 }
-/*----------------------------HAMILTON IN DA HOUSE!--------------------------*/
+
 // create quaternion from normalised axis and angle in radians around axis
-inline versor quat_from_axis_rad (float radians, const vec3& axis) {
+inline versor quat_from_axis_rad (float radians, vec3 axis) {
 	versor result;
 	result.w = cosf (radians / 2.0f);
 	result.x = sinf (radians / 2.0f) * axis.x;
@@ -794,12 +630,12 @@ inline versor quat_from_axis_rad (float radians, const vec3& axis) {
 }
 
 // create quaternion from normalised axis and angle in degrees around axis
-inline versor quat_from_axis_deg (float degrees, const vec3& axis) {
+inline versor quat_from_axis_deg (float degrees, vec3 axis) {
 	return quat_from_axis_rad (ONE_DEG_IN_RAD * degrees, axis);
 }
 
 // convert versor to rotation matrix
-inline mat4 quat_to_mat4 (const versor& q) {
+inline mat4 quat_to_mat4 (versor q) {
 	float w = q.w;
 	float x = q.x;
 	float y = q.y;
@@ -833,40 +669,31 @@ inline versor normalise (versor q) {
 		q.y * q.y + q.z * q.z;
 	// NB: floats have min 6 digits of precision
 	const float thresh = 0.0001f;
-	if (fabs (1.0f - sum) < thresh) {
-		return q;
-	}
+	if (fabs (1.0f - sum) < thresh) { return q; }
 	float mag = sqrt (sum);
 	return q / mag;
 }
 
 // dot product of two quaternions
-inline float dot (const versor& q, const versor& r) {
+inline float dot (versor q, versor r) {
 	return q.w * r.w + q.x * r.x + q.y * r.y + q.z * r.z;
 }
 
 // spherical linear interpolation between two quaternions
 // factor t between 0.0 and 1.0
 // returns interpolated versor
-// NOTE: q is not const& here because i want a copy that i can modify
 inline versor slerp (versor q, versor r, float t) {
 	// angle between q0-q1
 	float cos_half_theta = dot (q, r);
-	// as found here http://stackoverflow.com/questions/2886606/flipping-issue-when-interpolating-rotations-using-quaternions
 	// if dot product is negative then one quaternion should be negated, to make
 	// it take the short way around, rather than the long way
 	// yeah! and furthermore Susan, I had to recalculate the d.p. after this
 	if (cos_half_theta < 0.0f) {
-		q.w *= -1.0f;
-		q.x *= -1.0f;
-		q.y *= -1.0f;
-		q.z *= -1.0f;
+		q.w *= -1.0f; q.x *= -1.0f; q.y *= -1.0f; q.z *= -1.0f;
 		cos_half_theta = dot (q, r);
 	}
 	// if qa=qb or qa=-qb then theta = 0 and we can return qa
-	if (fabs (cos_half_theta) >= 1.0f) {
-		return q;
-	}
+	if (fabs (cos_half_theta) >= 1.0f) { return q; }
 	// calculate temporary values
 	float sin_half_theta = sqrt (1.0f - cos_half_theta * cos_half_theta);
 	// if theta = 180 degrees then result is not fully defined

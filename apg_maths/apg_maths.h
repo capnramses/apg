@@ -47,6 +47,10 @@ static inline void print_quat (versor q) {
 }
 
 /*------------------------------VECTOR FUNCTIONS-----------------------------*/
+static inline vec3 v3_v4 (vec4 v) {
+	return (vec3){ .v = { v.v[0], v.v[1], v.v[2] } };
+}
+
 static inline vec3 add_vec3_f (vec3 a, float b) {
 	return (vec3){ .v = { a.v[0] + b, a.v[1] + b, a.v[2] + b } };
 }
@@ -121,6 +125,10 @@ static inline float vec3_to_heading (vec3 d) {
 static inline vec3 heading_to_vec3 (float degrees) {
 	float rad = degrees * ONE_DEG_IN_RAD;
 	return (vec3) { .v = {-sinf (rad), 0.0f, -cosf (rad) } };
+}
+
+static inline vec4 v4_v3f (vec3 v, float f) {
+	return (vec4){ .v = {v.v[0], v.v[1], v.v[2], f} };
 }
 
 /*-----------------------------MATRIX FUNCTIONS------------------------------*/
