@@ -542,7 +542,7 @@ inline mat4 translate (vec3 v) {
 	return m_t;
 }
 
-inline mat4 rotate_x_deg (float deg) {
+inline mat4 rot_x_deg (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
 	m_r.m[5] = m_r.m[10] = cos (rad);
@@ -551,7 +551,7 @@ inline mat4 rotate_x_deg (float deg) {
 	return m_r;
 }
 
-inline mat4 rotate_y_deg (float deg) {
+inline mat4 rot_y_deg (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
 	m_r.m[0] = m_r.m[10] = cos (rad);
@@ -560,7 +560,7 @@ inline mat4 rotate_y_deg (float deg) {
 	return m_r;
 }
 
-inline mat4 rotate_z_deg (float deg) {
+inline mat4 rot_z_deg (float deg) {
 	float rad = deg * ONE_DEG_IN_RAD;
 	mat4 m_r = identity_mat4 ();
 	m_r.m[0] = m_r.m[5] = cos (rad);
