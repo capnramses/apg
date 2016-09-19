@@ -6,7 +6,7 @@
 // gerdela AT scss DOT tcd DOT ie
 //
 
-#include "apg_data_structures.h"
+#include "apg_data_structs.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -135,6 +135,11 @@ int main () {
 		printf ("it = %i\n", hash_index ("it", k));
 		printf ("sprang = %i\n", hash_index ("sprang", k));
 		printf ("from = %i\n", hash_index ("from", k));
+	}
+	{
+		int u = 1000, v = 250;
+		reduce_frac( &u, &v );
+		printf("1000/250 reduces to %i/%i\n", u, v);
 	}
 	return 0;
 }

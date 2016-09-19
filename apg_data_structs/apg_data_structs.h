@@ -19,6 +19,7 @@ with existing malloc'd blocks
 #include <stdio.h>
 #include <string.h>
 #include <limits.h> // UINT_MAX
+#include <assert.h>
 
 //
 // size in bytes of all memory so far allocated with this library
@@ -392,6 +393,25 @@ inline unsigned int hash_index (const char* str, int k) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// Euclid's algorithm to find greatest common denominator of fraction
+inline int gcd( int u, int v ){ 
+	if ( u < 0 ){ u = -u; } // doesn't play well with negatives so convert
+	if ( v < 0 ){ v = -v; }
+	if ( u == 0 || v == 0 ) { return 0; }
+  int t;
+  while (u > 0) {
+  	if ( u < v ){ t = u; u = v; v = t; }
+  	u = u % v;
+  }
+  return v;
+}
 
+// reduce a fraction to smallest terms. e.g 10/20 -> 1/2
+void reduce_frac( int* u, int* v ){
+	assert( u && v );
+	int div = gcd( *u, *v );
+	*u /= div;
+	*v /= div;
+}
 
 #endif
