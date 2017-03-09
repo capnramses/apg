@@ -1,6 +1,29 @@
 /*****************************************************************************\
 Anton's Maths Library - C99 version
 Anton Gerdelan <antonofnote at gmail>
+
+Contents:
+-Macros and data structures
+-Printing-Out
+-Vector
+TODO project and reject vectors
+-Matrix
+TODO arbitrary axis rot
+-Virtual Camera
+TODO orthographic
+-Quaternions
+TODO conjugates
+TODO quat * vect directly
+-Geometry
+TODO distance point to line
+TODO distance line to line
+TODO distance point to plane
+~plane reflection matrix
+TODO line-plane intersect
+TODO line-sphere intersect
+TODO line-OBB intersect
+TODO line-AABB intersect
+
 First v. branched from C++ original 5 May 2015
 11 April 2016 - compacted 
 12 April 2016 - switched to .x .y .z notation for vectors and quaternions
@@ -21,6 +44,8 @@ typedef struct vec3 { float x, y, z; } vec3;
 typedef struct vec4 { float x, y, z, w; } vec4;
 typedef struct mat4 { float m[16]; } mat4;
 typedef struct versor { float w, x, y, z; } versor;
+
+// ----------------------------- Print Funcs -----------------------------
 
 static inline void print_vec2 (vec2 v) {
 	printf ("[%.2f, %.2f]\n", v.x, v.y);
@@ -45,6 +70,9 @@ static inline void print_mat4 (mat4 m) {
 static inline void print_quat (versor q) {
 	printf ("[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z);
 }
+
+
+// ----------------------------- Vector Funcs -----------------------------
 
 static inline vec3 v3_v4 (vec4 v) {
 	return (vec3){ .x = v.x, .y = v.y, .z = v.z };
@@ -129,6 +157,8 @@ static inline vec3 heading_to_vec3 (float degrees) {
 static inline vec4 v4_v3f (vec3 v, float f) {
 	return (vec4){.x = v.x, .y = v.y, .z = v.z, .w = f};
 }
+
+// ----------------------------- Matrix Funcs -----------------------------
 
 static inline mat4 zero_mat4 () {
 	mat4 r;
@@ -314,6 +344,9 @@ static inline mat4 scale_mat4 (vec3 v) {
 	return r;
 }
 
+
+// ----------------------------- Virtual Camera -----------------------------
+
 static inline mat4 look_at (vec3 cam_pos, vec3 targ_pos, vec3 up) {
 	mat4 p = translate_mat4 (
 		(vec3){.x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z});
@@ -349,6 +382,8 @@ static inline mat4 perspective (float fovy, float aspect, float near, float far)
 	m.m[11] = -1.0f;
 	return m;
 }
+
+// ----------------------------- Quaternions -----------------------------
 
 static inline versor div_quat_f (versor qq, float s) {
 	return (versor){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s};
@@ -445,3 +480,6 @@ static inline versor slerp_quat (versor q, versor r, float t) {
 	result.z = q.z * a + r.z * b;
 	return result;
 }
+
+// ----------------------------- Geometric Intersection Tests -----------------------------
+
