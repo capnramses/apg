@@ -1,10 +1,8 @@
-//
 // apg_data_structures test
 // https://github.com/capnramses/apg_data_structures
 // First version 13 April 2015, by Anton Gerdelan
 // Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland
 // gerdela AT scss DOT tcd DOT ie
-//
 
 #include "apg_data_structs.h"
 #include <stdio.h>
@@ -12,29 +10,29 @@
 
 int main () {
 	printf ("apg_data_structures test\n");
-	printf ("sizeof SLL_Node %i\nsizeof DLL_Node %i\n", (int)sizeof (SLL_Node),
-		(int)sizeof (DLL_Node));
+	printf ("sizeof llist_node_t %i\nsizeof dllist_node_t %i\n", (int)sizeof (llist_node_t),
+		(int)sizeof (dllist_node_t));
 	{
 		printf ("\n0) linked list:\n");
-		SLL_Node* sll_list_ptr = NULL;
+		llist_node_t* llist_list_ptr = NULL;
 		// add nodes
 		char data = 'a';
-		sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_add_to_front (&llist_list_ptr, &data, 1);
 		data = 'b';
-		sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_add_to_front (&llist_list_ptr, &data, 1);
 		data = 'c';
-		sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_add_to_front (&llist_list_ptr, &data, 1);
 		data = 'd';
-		SLL_Node* d_ptr = sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_node_t* d_ptr = llist_add_to_front (&llist_list_ptr, &data, 1);
 		data = 'e';
-		sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_add_to_front (&llist_list_ptr, &data, 1);
 		data = 'f';
-		sll_add_to_front (&sll_list_ptr, &data, 1);
+		llist_add_to_front (&llist_list_ptr, &data, 1);
 		// add g 'after' d
 		data = 'g';
-		SLL_Node* g_ptr = sll_insert_after (d_ptr, &data, 1);
+		llist_node_t* g_ptr = llist_insert_after (d_ptr, &data, 1);
 		printf ("contents of list:\n");
-		SLL_Node* p = sll_list_ptr;
+		llist_node_t* p = llist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
@@ -42,23 +40,23 @@ int main () {
 		print_mem_allocd ();
 		// remove a node from front, end, middle
 		// delete 'f'
-		assert (sll_delete_node (&sll_list_ptr, sll_list_ptr));
+		assert (llist_delete_node (&llist_list_ptr, llist_list_ptr));
 		// delete 'a'
-		SLL_Node* end_ptr = sll_find_end_node (sll_list_ptr);
-		assert (sll_delete_node (&sll_list_ptr, end_ptr));
+		llist_node_t* end_ptr = llist_find_end_node (llist_list_ptr);
+		assert (llist_delete_node (&llist_list_ptr, end_ptr));
 		// delete 'd'
-		assert (sll_delete_node (&sll_list_ptr, d_ptr));
+		assert (llist_delete_node (&llist_list_ptr, d_ptr));
 		printf ("contents of list:\n");
-		p = sll_list_ptr;
+		p = llist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
 		}
 		print_mem_allocd ();
 		// delete the entire list
-		assert (sll_recursive_delete (&sll_list_ptr));
+		assert (llist_recursive_delete (&llist_list_ptr));
 		printf ("contents of list:\n");
-		p = sll_list_ptr;
+		p = llist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
@@ -68,25 +66,25 @@ int main () {
 	///////////////////////////////////////////////////////////////////////////
 	{
 		printf ("\n1) doubly-linked list:\n");
-		DLL_Node* dll_list_ptr = NULL;
+		dllist_node_t* dllist_list_ptr = NULL;
 		// add nodes
 		char data = 'a';
-		dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		data = 'b';
-		dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		data = 'c';
-		dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		data = 'd';
-		DLL_Node* d_ptr = dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_node_t* d_ptr = dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		data = 'e';
-		dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		data = 'f';
-		dll_add_to_front (&dll_list_ptr, &data, 1);
+		dllist_add_to_front (&dllist_list_ptr, &data, 1);
 		// add g 'after' d
 		data = 'g';
-		DLL_Node* g_ptr = dll_insert_after (d_ptr, &data, 1);
+		dllist_node_t* g_ptr = dllist_insert_after (d_ptr, &data, 1);
 		printf ("contents of list:\n");
-		DLL_Node* p = dll_list_ptr;
+		dllist_node_t* p = dllist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
@@ -94,23 +92,23 @@ int main () {
 		print_mem_allocd ();
 		// remove a node from front, end, middle
 		// delete 'f'
-		assert (dll_delete_node (&dll_list_ptr, dll_list_ptr));
+		assert (dllist_delete_node (&dllist_list_ptr, dllist_list_ptr));
 		// delete 'a'
-		DLL_Node* end_ptr = dll_find_end_node (dll_list_ptr);
-		assert (dll_delete_node (&dll_list_ptr, end_ptr));
+		dllist_node_t* end_ptr = dllist_find_end_node (dllist_list_ptr);
+		assert (dllist_delete_node (&dllist_list_ptr, end_ptr));
 		// delete 'd'
-		assert (dll_delete_node (&dll_list_ptr, d_ptr));
+		assert (dllist_delete_node (&dllist_list_ptr, d_ptr));
 		printf ("contents of list:\n");
-		p = dll_list_ptr;
+		p = dllist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
 		}
 		print_mem_allocd ();
 		// delete the entire list
-		assert (dll_recursive_delete (&dll_list_ptr));
+		assert (dllist_recursive_delete (&dllist_list_ptr));
 		printf ("contents of list:\n");
-		p = dll_list_ptr;
+		p = dllist_list_ptr;
 		while (p) {
 			printf ("  %c\n", *(char*)p->data);
 			p = p->next;
@@ -118,6 +116,7 @@ int main () {
 		print_mem_allocd ();
 	}
 	///////////////////////////////////////////////////////////////////////////
+#if 0
 	{
 		printf ("\n2) hash table length 16:\n");
 		int k = 16;
@@ -136,6 +135,7 @@ int main () {
 		printf ("sprang = %i\n", hash_index ("sprang", k));
 		printf ("from = %i\n", hash_index ("from", k));
 	}
+#endif
 	{
 		int u = 1000, v = 250;
 		reduce_frac( &u, &v );

@@ -1,11 +1,9 @@
-#apg_data_structures#
+# apg_data_structures #
 
-I don't like STL data structures for several reasons, so I'm writing my own
-light-weight data structures library for C. I figured this was a fairly
-common case for code re-use; most likely use being 'starter' code for more
-project-specific data structures.
+A place for manually writing data structures from time to time to refresh my
+memory or to copy-paste as starter code into new projects.
 
-##Motivation##
+## Motivation ##
 
 * supports C99
 * reliable run-time dynamic deletion (e.g. delete item whilst still traversing
@@ -14,28 +12,26 @@ data structure in a loop)
 * validation and safety checks
 * debugging hooks
 
-##Current Features##
+## Current Features ##
 
-* singly linked list
+* singly-linked list
     * add node to front
-    * insert node
+    * insert after node
     * delete node
     * find end node
     * recursive delete nodes/list
-* doubly linked list
+* doubly-linked list
     * add node to front
-    * insert node
+    * insert after node
     * delete node
     * find end node
     * recursive delete nodes/list
 * print memory allocated/freed
-* test programme for all of the above
-* simple hash table
+* test program for all of the above
 
-##To Do##
+## To Do ##
 
-* binary trees
-* vector, list, etc.
-* dynamic arrays
-* testing/support with more interesting data contents
-* possibly add sorting and search algorithms
+* binary trees, quadtree
+* ADT list, etc.
+* dynamic arrays (contrast to C99s)
+* search and sort algorithms, hash tables -> apg_algorithms.h
