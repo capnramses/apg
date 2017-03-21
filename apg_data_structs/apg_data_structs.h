@@ -401,3 +401,27 @@ void reduce_frac( int *u, int *v ) {
   *u /= div;
   *v /= div;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+// quadtree assumptions
+//   - square regions of 2D space
+//   - maximum bucket size of n
+//   - when n exceeded, node splits into 4 equally spaced nodes
+//   - if an item intersects >1 region it exists in both/all
+//
+// alternative - precalc quadtree subdivisions down to a certain size eg 1m x 1m
+//             - work out which leaf node cell(s) everything is in - e.g.  use
+//               integer division on AABB corners - and store ptr in those cells
+//             - recursive frustum v node intersection tests - completely eliminate
+//               any subtrees not in frustum, leaving a set of leaf nodes
+//             - itemise unique stuff in set of remaining leaf nodes
+//             - frustum test can also be on AABB around frustum in 2D
+// L2 test vs 4/4 of root's children      				 4
+// L3 eliminated 2, test 8/16 children    	    		12
+// L4 eliminated 4, test 16/64 children					28 -- total box/box tests
+// L5 elimated 2, sorted list everything in 14 nodes (avoid dupes)
+// * > number of levels dramatically increases comp complexity
+// * 28 tests is really good compared to ~1000 tests on CPU
+// * but CPU bound isnt really a problem atm, especially cache-coherent arrays ~n=100
+// * older article with code notes: https://www.gamedev.net/resources/_/technical/graphics-programming-and-theory/quadtrees-r1303
