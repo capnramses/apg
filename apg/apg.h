@@ -100,7 +100,7 @@ bool apg_file_to_str (const char* file_name, size_t max_len, char* str);
 
 // custom strcmp to avoid commonly-made ==0 bracket soup bugs
 // returns true if true so far and one string shorter e.g. "ANT" "ANTON"
-bool apg_strstubsame( const char *a, const char *b );
+bool apg_strmatchy( const char *a, const char *b );
 
 /*****************************************************************************
 GLOBAL VAR DECLARATIONS (implement these)
@@ -240,7 +240,7 @@ bool apg_file_to_str (const char* file_name, size_t max_len, char* str) {
 
 // custom strcmp to avoid commonly-made ==0 bracket soup bugs
 // returns true if true so far and one string shorter e.g. "ANT" "ANTON"
-bool apg_strstubsame( const char *a, const char *b ) {
+bool apg_strmatchy( const char *a, const char *b ) {
   int len_a = strlen( a );
   int len_b = strlen( b );
   for ( int i = 0; ( i < len_a && i < len_b ); i++ ) {
