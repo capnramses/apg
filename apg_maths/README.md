@@ -1,4 +1,4 @@
-#apg_maths#
+# apg_maths #
 
 Minimal maths functions header for 3d graphics.
 Functions designed to resemble GLSL and GLU.
@@ -12,7 +12,7 @@ Column-major matrix operations and memory layout.
 
 The C++ version is the easiest to use because of operator overloading.
 
-##data types##
+## data types ##
 
 * `vec2` 2d vector
 * `vec3` 3d vector
@@ -24,7 +24,7 @@ The C++ version is the easiest to use because of operator overloading.
 See inside top of file for instructions on usage (differs a little between
 ports).
 
-##functions
+## functions
 
 * overloaded basic mathematical and assignment operators for data types
 * print() for each data type (contents)
@@ -38,8 +38,8 @@ ports).
 * versor to matrix
 * slerp (spherical interpolation)
 
-##future improvements
+## future improvements
 
-##design ideas
+## design ideas
 
-* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicit style of functions are extremely tedious, and in fact this is the number 1 argument for choosing C++ over C in a 3d graphics programme, which is a shame.
+* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicit style of functions are extremely tedious, and in fact this is the number 1 argument for choosing C++ over C in a 3D graphics program, which is a shame.
