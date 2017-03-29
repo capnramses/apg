@@ -1,10 +1,10 @@
-#apg
+# apg
 
 Personal play-around libs to brush up on programming skills / fancies.
 Some of these contain copy-paste-modify code snippets that I re-use from time
 to time.
 
-##contents
+## contents
 
 The maths library is probably the most generally useful for graphics / games.
 
