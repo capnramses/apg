@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-//
 // some stuff for multi-platform builds
+// note: i define these in the compile script e.g. -DWIN32 but probably makes more sense to detect built-in macros instead.
 #ifdef WIN32
 #define BUILD_PLAT "win32"
 #elif LINUX32
