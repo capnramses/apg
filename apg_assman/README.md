@@ -1,4 +1,4 @@
-#apg_assman - experimental asset manager#
+# apg_assman - experimental asset manager #
 
 This is an experiment to get some experience with:
 
