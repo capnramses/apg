@@ -65,6 +65,7 @@
 #define RAD2DEG(a) ((a)*(180.0/M_PI))
 
 // shorthand types for byte and bit manipulation (I don't like the _t suffix)
+// update 29mar2017: experience has taught me the value of the _t suffix so I wouldn't do this now - maybe add byte_t though.
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -82,7 +83,7 @@ typedef unsigned int uint;
 int loopi (int val, int min, int max);
 
 // checks argv params for a keyword. if so returns index in argv
-// i copied this trick from the DOOM source code
+// i learned this trick from the DOOM source code
 int check_param (const char* check);
 
 // open/refresh a new log file and print timestamp
@@ -239,11 +240,9 @@ bool apg_file_to_str (const char* file_name, size_t max_len, char* str) {
 }
 
 // custom strcmp to avoid commonly-made ==0 bracket soup bugs
-// returns true if true so far and one string shorter e.g. "ANT" "ANTON"
 bool apg_strmatchy( const char *a, const char *b ) {
-  int len_a = strlen( a );
-  int len_b = strlen( b );
-  for ( int i = 0; ( i < len_a && i < len_b ); i++ ) {
+  int len = MAX( strlen( a ), strlen( b ) );
+  for ( int i = 0; i < len; i++ ) {
     if ( a[i] != b[i] ) {
       return false;
     }
