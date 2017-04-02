@@ -23,6 +23,10 @@ TODO line-plane intersect
 TODO line-sphere intersect
 TODO line-OBB intersect
 TODO line-AABB intersect
+-bit storage in rgb ~
+int r = (num & 0xFF0000) >> 16
+int g = (num & 0x00FF00) >> 8
+int b = (num & 0x0000FF) >> 0 // or lose the >>0
 
 First v. branched from C++ original 5 May 2015
 11 April 2016 - compacted 
