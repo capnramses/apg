@@ -1,4 +1,4 @@
-#apg_interp#
+# apg_interp #
 
 A small library of interpolation functions for animations, and transitions
 between different numbers.
@@ -9,9 +9,9 @@ has names and parameters that are more intuitive to me, and more pure functions.
 
 C99 and JavaScript ports are here.
 
-I wrote a blog post about this http://antongerdelan.net/blog/?post=2015_03_18_interpolation
+I wrote a blog post about this http://antongerdelan.net/blog/formatted/2015_03_18_interpolation.html
 
-##functions##
+## functions ##
 
 * `clamp` - useful to constrain function range
 * `lerp` - linear interpolation
@@ -29,8 +29,7 @@ I wrote a blog post about this http://antongerdelan.net/blog/?post=2015_03_18_in
 ![decel elastic](decel_elastic.png)
 ![decel bounce](decel_bounce.png)
 
-##To Do##
+## To Do ##
 
-* add an `n` parameter to bounce and elastic functions to set the number of
-waves in the domain.
+* add an `n` parameter to bounce and elastic functions to set the number ofwaves in the domain.
 * make a chart for `bow_string`
