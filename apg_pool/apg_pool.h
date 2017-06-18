@@ -1,6 +1,7 @@
 //
 // c99 memory manager
 // first v. anton gerdelan 21 march 2016
+// Public Domain - no warrenty implied; use at your own risk.
 // WARNING: not tested!
 //
 // TODO

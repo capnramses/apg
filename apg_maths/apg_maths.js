@@ -3,6 +3,7 @@
 // anton gerdelan
 // 23 dec 2014
 // antongerdelan.net
+// Public Domain - no warrenty implied; use at your own risk.
 // 19 mar 2015 - patched by emma carrigan (quat_quat_mult, +scale mat4)
 // 24 mar 2015 - added look_at(). swapped argument order in mult_quat_quat()
 // and transposed the multiplications in mult_mat4_vec4() for column-major

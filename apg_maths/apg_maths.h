@@ -1,6 +1,7 @@
 /*****************************************************************************\
 Anton's Maths Library - C99 version
 Anton Gerdelan <antonofnote at gmail>
+Public Domain - no warrenty implied; use at your own risk.
 
 Contents:
 -Macros and data structures

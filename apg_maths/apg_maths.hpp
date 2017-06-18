@@ -4,6 +4,8 @@
                    Dr Anton Gerdelan  <antonofnote at gmail>
                        Trinity College Dublin, Ireland
 
+ Public Domain - no warrenty implied; use at your own risk.
+
  Usage
 -------
 Include header file.

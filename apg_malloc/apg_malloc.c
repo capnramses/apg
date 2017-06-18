@@ -3,9 +3,10 @@
 // leak checks
 // it's basically a re-implementation / learning experiment remaking
 // the stb_memleak library
-// Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland
+// Written by Dr Anton Gerdelan, Trinity College Dublin, Ireland
 // gerdela AT scss DOT tcd DOT ie
 // First v 14 April 2015
+// Public Domain - no warrenty implied; use at your own risk.
 //
 
 //#include "apg_malloc.h" // don't include this or our own malloc() will go bad

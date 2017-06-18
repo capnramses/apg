@@ -3,6 +3,7 @@
 // aka "Tweening" or "Easing"
 // Idea was to do something similar to other libs but with better structure
 // First version 23 March 2015 by Anton Gerdelan
+// Public Domain - no warrenty implied; use at your own risk.
 //
 
 //
