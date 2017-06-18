@@ -2,6 +2,7 @@
 // Interpolation Functions
 // Anton Gerdelan
 // First v 15 Mar 2015
+// Public Domain - no warrenty implied; use at your own risk.
 //
 // Notes:
 //

@@ -1,6 +1,7 @@
 //
 // apg.h - generic C99 utility functions
 // first version Dr Anton Gerdelan, 8 May 2015
+// Public Domain - no warrenty implied; use at your own risk.
 //
 // Usage Instructions
 // ------------------

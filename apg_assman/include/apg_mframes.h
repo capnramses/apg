@@ -1,6 +1,7 @@
 //
 // apg_mframes.h - frame-based memory allocator
 // first v. 2 sept 2015 - anton gerdelan
+// Public Domain - no warrenty implied; use at your own risk.
 // written for C99
 //
 

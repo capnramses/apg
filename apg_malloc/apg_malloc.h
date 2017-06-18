@@ -1,9 +1,10 @@
 //
 // apg_malloc wrapper for malloc() and free() to provide some accounting and
 // leak checks
-// Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland
+// Written by Dr Anton Gerdelan, Trinity College Dublin, Ireland
 // gerdela AT scss DOT tcd DOT ie
 // First v 14 April 2015
+// Public Domain - no warrenty implied; use at your own risk.
 //
 
 #ifndef _APG_MALLOC_H_

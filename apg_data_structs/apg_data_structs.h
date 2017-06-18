@@ -1,7 +1,8 @@
 // apg_data_structures: light-weight C99 data structures
 // https://github.com/capnramses/apg_data_structures
 // First version 13 April 2015, by Anton Gerdelan <antonofnote@gmail.com>
-// Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland
+// Written by Dr Anton Gerdelan, Trinity College Dublin, Ireland
+// Public Domain - no warrenty implied; use at your own risk.
 //
 // ChangeLog:     0.1    13 April 2015    First v. Lists, simple hash.
 //                0.11   21 March 2017    Refactored, .clang-format etc.    

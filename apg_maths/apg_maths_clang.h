@@ -8,6 +8,8 @@
                           <gerdela@scss.tcd.ie>
                         this version: 12 Feb 2016
 
+Public Domain - no warrenty implied; use at your own risk.
+
 This branch only works with the Clang C compiler as it uses Clang's OpenCL
 vector data type extensions.
 For the C++ version see the .hpp file.
