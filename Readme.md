@@ -17,6 +17,10 @@ The maths library is probably the most generally useful for graphics / games.
 | apg_malloc | memory functions leak checker | C |
 | apg_maths | 3d maths for graphics/games | C, C++, JavaScript |
 
+## TODO
+
+* move unfinished and/or garbagey bits into private repo
+
 ## license
 
 This is free and unencumbered software released into the public domain.
