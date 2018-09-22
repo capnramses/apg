@@ -125,11 +125,11 @@ int main () {
 	print (TI);
 	mat4 TT = transpose (TI);
 	print (TT);
-	R = rotate_x_deg (10.0f);
+	R = rot_x_deg (10.0f);
 	print (R);
-	R = rotate_y_deg (10.0f);
+	R = rot_y_deg (10.0f);
 	print (R);
-	R = rotate_z_deg (10.0f);
+	R = rot_z_deg (10.0f);
 	print (R);
 	mat4 S = scale (vec3 (10.0,10.0,10.0));
 	print (S);
