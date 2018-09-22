@@ -7,6 +7,7 @@ Column-major matrix operations and memory layout.
 * `apg_maths.hpp` - the C++ original
 * `apg_maths.js` - mostly complete port to JavaScript for use with WebGL
 * `apg_maths.h` - new C99 port with slightly revised interface
+* `apg_maths_clang.h` - C version with Clang-specific attributes to add built-in vector data types
 * `test.c` - tests for the C99 header
 * `test.cpp` - tests for the C++ header
 
@@ -37,9 +38,3 @@ ports).
 * unit quaternion (versor) normalisation etc.
 * versor to matrix
 * slerp (spherical interpolation)
-
-## future improvements
-
-## design ideas
-
-* there has to be a nicer way to do vector and matrix multiplication in C99, even if it means using macros, because the `mult_mat4_vec4(identity_mat4(), vec4_from_4f(1.0,1.0,1.0,1.0))` very explicit style of functions are extremely tedious, and in fact this is the number 1 argument for choosing C++ over C in a 3D graphics program, which is a shame.
