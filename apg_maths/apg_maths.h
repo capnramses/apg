@@ -174,7 +174,8 @@ static inline vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
 
 static inline float det_mat4( mat4 mm ) {
   // clang-format off
-  return mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] -
+  return
+		mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] -
 		mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] -
 		mm.m[12] * mm.m[5] * mm.m[10] * mm.m[3] +
 		mm.m[4] * mm.m[13] * mm.m[10] * mm.m[3] +
@@ -186,7 +187,7 @@ static inline float det_mat4( mat4 mm ) {
 		mm.m[0] * mm.m[13] * mm.m[10] * mm.m[7] -
 		mm.m[8] * mm.m[1] * mm.m[14] * mm.m[7] +
 		mm.m[0] * mm.m[9] * mm.m[14] * mm.m[7] +
-		mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] 
+		mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] -
 		mm.m[4] * mm.m[13] * mm.m[2] * mm.m[11] -
 		mm.m[12] * mm.m[1] * mm.m[6] * mm.m[11] +
 		mm.m[0] * mm.m[13] * mm.m[6] * mm.m[11] +
