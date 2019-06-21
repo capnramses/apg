@@ -30,7 +30,7 @@ struct wav_data_subchunk_t {
   // includes size of uint8_t* data;
 };
 
-int apg_write_wav( const char* filename, const unsigned char* data, int n_chans, int sample_rate, int n_samples, int bits_per_sample ) {
+int apg_write_wav( const char* filename, const void* data, int n_chans, int sample_rate, int n_samples, int bits_per_sample ) {
   if ( !filename || n_samples <= 0 || bits_per_sample <= 0 ) { return 0; }
   if ( 0 != bits_per_sample % 8 ) { return 0; }
 
