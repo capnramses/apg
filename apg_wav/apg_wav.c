@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -29,6 +30,33 @@ struct wav_data_subchunk_t {
 
   // includes size of uint8_t* data;
 };
+
+/* convenience struct and file->memory function */
+struct entire_file_t {
+  void* data;
+  size_t sz;
+};
+
+/* this could be replaced with a project-specific method */
+static bool _read_entire_file( const char* filename, struct entire_file_t* record ) {
+  FILE* fp = fopen( filename, "rb" );
+  if ( !fp ) {
+    fprintf( stderr, "ERROR: opening file for reading `%s`\n", filename );
+    return false;
+  }
+  fseek( fp, 0L, SEEK_END );
+  record->sz   = (size_t)ftell( fp );
+  record->data = malloc( record->sz );
+  if ( !record->data ) {
+    fclose( fp );
+    return false;
+  }
+  rewind( fp );
+  size_t nr = fread( record->data, record->sz, 1, fp );
+  fclose( fp );
+  if ( 1 != nr ) { return false; }
+  return true;
+}
 
 int apg_write_wav( const char* filename, const void* data, int n_chans, int sample_rate, int n_samples, int bits_per_sample ) {
   if ( !filename || n_samples <= 0 || bits_per_sample <= 0 ) { return 0; }
@@ -87,4 +115,25 @@ int apg_write_wav( const char* filename, const void* data, int n_chans, int samp
     fclose( fp );
   }
   return 1;
+}
+
+unsigned char* apg_read_wav( const char* filename, int* n_chans, int* sample_rate, int* n_samples, int* bits_per_sample ) {
+  if ( !filename || !n_chans || !sample_rate || !n_samples || !bits_per_sample ) { return 0; }
+  struct entire_file_t record;
+  bool ret = _read_entire_file( filename, &record );
+  if ( !ret || 0 == record.sz ) { return 0; }
+  // TODO validate each subchunk
+  struct wav_chunk_descr_t* chunk_descr   = (struct wav_chunk_descr_t*)record.data;
+  struct wav_fmt_subchunk_t* fmt_subchunk = (struct wav_fmt_subchunk_t*)( (uint8_t*)record.data + sizeof( struct wav_chunk_descr_t ) );
+  struct wav_data_subchunk_t* data_subchunk =
+    (struct wav_data_subchunk_t*)( (uint8_t*)record.data + sizeof( struct wav_fmt_subchunk_t ) + sizeof( struct wav_chunk_descr_t ) );
+  unsigned char* wav_data =
+    (unsigned char*)( (uint8_t*)record.data + sizeof( struct wav_fmt_subchunk_t ) + sizeof( struct wav_chunk_descr_t ) + sizeof( struct wav_data_subchunk_t ) );
+  *n_chans         = fmt_subchunk->n_chans;
+  *sample_rate     = fmt_subchunk->sample_rate;
+  *bits_per_sample = fmt_subchunk->bits_per_sample;
+  // TODO derive *n_samples = fmt_subchunk->n_samples;
+
+  // TODO malloc the data separately
+  return wav_data;
 }
