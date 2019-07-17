@@ -6,16 +6,20 @@ set -e
 echo "building data structures tests..."
 cd apg_data_structs
 gcc test.c
+cd ..
 
 echo "building interpolation tests..."
 cd apg_interp
 gcc test.c -lm
+cd ..
 
 echo "building maths library tests..."
 cd apg_maths
 gcc test.c -lm
+cd ..
 
 echo "building wav library tests..."
 cd apg_wav
 gcc main_write.c apg_wav.c -lm
 gcc main_read.c apg_wav.c -lm
+cd ..
