@@ -5,7 +5,7 @@
 // Public Domain - no warrenty implied; use at your own risk.
 //
 // ChangeLog:     0.1    13 April 2015    First v. Lists, simple hash.
-//                0.11   21 March 2017    Refactored, .clang-format etc.    
+//                0.11   21 March 2017    Refactored, .clang-format etc.
 
 #pragma once
 
@@ -424,5 +424,7 @@ void reduce_frac( int *u, int *v ) {
 // L5 elimated 2, sorted list everything in 14 nodes (avoid dupes)
 // * > number of levels dramatically increases comp complexity
 // * 28 tests is really good compared to ~1000 tests on CPU
-// * but CPU bound isnt really a problem atm, especially cache-coherent arrays ~n=100
-// * older article with code notes: https://www.gamedev.net/resources/_/technical/graphics-programming-and-theory/quadtrees-r1303
+// * but CPU bound isnt really a problem atm, especially cache-coherent arrays
+// ~n=100
+// * older article with code notes:
+// https://www.gamedev.net/resources/_/technical/graphics-programming-and-theory/quadtrees-r1303
