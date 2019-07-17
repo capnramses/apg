@@ -19,7 +19,8 @@ The maths library is probably the most generally useful for graphics / games.
 
 ## To Do
 
-When it matures move apg_bmp from the opengl_expmts repository into here.
+* When it matures move apg_bmp from the opengl_expmts repository into here.
+* Put my unicode tools here.
 
 ## LICENCE
 
