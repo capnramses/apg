@@ -31,15 +31,15 @@ size_t g_apg_ll_mem_allocd;
 // singly-linked list node, size 24 bytes
 typedef struct llist_node_t llist_node_t;
 struct llist_node_t {
-  void *data;
+  void* data;
   size_t sz;
-  llist_node_t *next;
+  llist_node_t* next;
 };
 
 // doubly-linked list node, size 32 bytes
 typedef struct dllist_node_t dllist_node_t;
 struct dllist_node_t {
-  void *data;
+  void* data;
   size_t sz;
   dllist_node_t *next, *prev;
 };
@@ -47,7 +47,7 @@ struct dllist_node_t {
 // binary tree node
 typedef struct binarytree_node_t binarytree_node_t;
 struct binarytree_node_t {
-  void *data;
+  void* data;
   size_t sz;
   binarytree_node_t *left, *right;
 };
@@ -55,31 +55,27 @@ struct binarytree_node_t {
 // quad tree node
 typedef struct quadtree_node_t quadtree_node_t;
 struct quadtree_node_t {
-  void *data;
+  void* data;
   size_t sz;
-  quadtree_node_t *children[4];
+  quadtree_node_t* children[4];
 };
 
 ///////////////////////////////// accounting //////////////////////////////////
 void print_mem_allocd();
 //////////////////////////// singly linked lists //////////////////////////////
-llist_node_t *llist_add_to_front( llist_node_t **list_ptr, const void *data,
-                                  size_t sz );
-llist_node_t *llist_insert_after( llist_node_t *prev_ptr, const void *data,
-                                  size_t sz );
-bool llist_delete_node( llist_node_t **list_ptr, llist_node_t *ptr );
-llist_node_t *llist_find_end_node( llist_node_t *list_ptr );
-bool llist_recursive_delete( llist_node_t **ptr );
+llist_node_t* llist_add_to_front( llist_node_t** list_ptr, const void* data, size_t sz );
+llist_node_t* llist_insert_after( llist_node_t* prev_ptr, const void* data, size_t sz );
+bool llist_delete_node( llist_node_t** list_ptr, llist_node_t* ptr );
+llist_node_t* llist_find_end_node( llist_node_t* list_ptr );
+bool llist_recursive_delete( llist_node_t** ptr );
 //////////////////////////// doubly linked lists //////////////////////////////
-dllist_node_t *dllist_add_to_front( dllist_node_t **list_ptr, const void *data,
-                                    size_t sz );
-dllist_node_t *dllist_insert_after( dllist_node_t *prev_ptr, const void *data,
-                                    size_t sz );
-bool dllist_delete_node( dllist_node_t **list_ptr, dllist_node_t *ptr );
-dllist_node_t *dllist_find_end_node( dllist_node_t *list_ptr );
-bool dllist_recursive_delete( dllist_node_t **ptr );
+dllist_node_t* dllist_add_to_front( dllist_node_t** list_ptr, const void* data, size_t sz );
+dllist_node_t* dllist_insert_after( dllist_node_t* prev_ptr, const void* data, size_t sz );
+bool dllist_delete_node( dllist_node_t** list_ptr, dllist_node_t* ptr );
+dllist_node_t* dllist_find_end_node( dllist_node_t* list_ptr );
+bool dllist_recursive_delete( dllist_node_t** ptr );
 //////////////////////////////// hash tables //////////////////////////////////
-unsigned int hash_index( const char *str, int k );
+unsigned int hash_index( const char* str, int k );
 
 //
 // prints memory stats
@@ -96,9 +92,8 @@ void print_mem_allocd() {
 // sz is the size of that data in bytes
 // returns ptr to new node or NULL on error
 // note: data pointer is not freed by this function
-inline llist_node_t *llist_add_to_front( llist_node_t **list_ptr, const void *data,
-                                         size_t sz ) {
-  llist_node_t *node = (llist_node_t *)malloc( sizeof( llist_node_t ) );
+inline llist_node_t* llist_add_to_front( llist_node_t** list_ptr, const void* data, size_t sz ) {
+  llist_node_t* node = (llist_node_t*)malloc( sizeof( llist_node_t ) );
   if ( !node ) {
     fprintf( stderr, "ERROR: could not alloc memory for ssl node struct\n" );
     return NULL;
@@ -107,9 +102,9 @@ inline llist_node_t *llist_add_to_front( llist_node_t **list_ptr, const void *da
   node->next = *list_ptr;
   node->data = malloc( sz );
   g_apg_ll_mem_allocd += sz;
-  node->sz = sz;
-  node->data = memcpy( node->data, data, sz );
-  *list_ptr = node;
+  node->sz            = sz;
+  node->data          = memcpy( node->data, data, sz );
+  *list_ptr           = node;
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd + sizeof( llist_node_t ) + sz;
   return node;
 }
@@ -121,14 +116,13 @@ inline llist_node_t *llist_add_to_front( llist_node_t **list_ptr, const void *da
 // sz is the size of that data in bytes
 // returns ptr to new node or NULL on error
 //
-inline llist_node_t *llist_insert_after( llist_node_t *prev_ptr, const void *data,
-                                         size_t sz ) {
+inline llist_node_t* llist_insert_after( llist_node_t* prev_ptr, const void* data, size_t sz ) {
   // this is far more likely to be a user mistake than anything - should warn
   if ( !prev_ptr ) {
     fprintf( stderr, "ERROR: could not insert llist node, prev_ptr was NULL\n" );
     return NULL;
   }
-  llist_node_t *node = (llist_node_t *)malloc( sizeof( llist_node_t ) );
+  llist_node_t* node = (llist_node_t*)malloc( sizeof( llist_node_t ) );
   if ( !node ) {
     fprintf( stderr, "ERROR: could not alloc memory for llist node struct\n" );
     return NULL;
@@ -137,9 +131,9 @@ inline llist_node_t *llist_insert_after( llist_node_t *prev_ptr, const void *dat
   node->next = prev_ptr->next;
   node->data = malloc( sz );
   g_apg_ll_mem_allocd += sz;
-  node->sz = sz;
-  node->data = memcpy( node->data, data, sz );
-  prev_ptr->next = node;
+  node->sz            = sz;
+  node->data          = memcpy( node->data, data, sz );
+  prev_ptr->next      = node;
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd + sizeof( llist_node_t ) + sz;
   return node;
 }
@@ -153,7 +147,7 @@ inline llist_node_t *llist_insert_after( llist_node_t *prev_ptr, const void *dat
 // ptr is the node to delete
 // returns false on error
 //
-inline bool llist_delete_node( llist_node_t **list_ptr, llist_node_t *ptr ) {
+inline bool llist_delete_node( llist_node_t** list_ptr, llist_node_t* ptr ) {
   if ( !*list_ptr ) {
     fprintf( stderr, "ERROR: can not delete llist node, list_ptr is NULL\n" );
     return false;
@@ -165,7 +159,7 @@ inline bool llist_delete_node( llist_node_t **list_ptr, llist_node_t *ptr ) {
   size_t sz = ptr->sz;
 
   // find prev node to ptr so can adjust
-  llist_node_t *p = *list_ptr;
+  llist_node_t* p = *list_ptr;
   while ( p ) {
     // p is first node in list, so adjust list ptr
     if ( p == ptr ) {
@@ -183,7 +177,7 @@ inline bool llist_delete_node( llist_node_t **list_ptr, llist_node_t *ptr ) {
   free( ptr->data );
   ptr->data = NULL; // pointless, not used again
   free( ptr );
-  ptr = NULL; // pointless, not used again
+  ptr                 = NULL; // pointless, not used again
   g_apg_ll_mem_allocd = g_apg_ll_mem_allocd - sz - sizeof( llist_node_t );
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd - sz - sizeof( llist_node_t );
 
@@ -195,15 +189,11 @@ inline bool llist_delete_node( llist_node_t **list_ptr, llist_node_t *ptr ) {
 // search
 // returns NULL if list is empty
 //
-inline llist_node_t *llist_find_end_node( llist_node_t *list_ptr ) {
-  if ( !list_ptr ) {
-    return NULL;
-  }
-  llist_node_t *p = list_ptr;
+inline llist_node_t* llist_find_end_node( llist_node_t* list_ptr ) {
+  if ( !list_ptr ) { return NULL; }
+  llist_node_t* p = list_ptr;
   while ( p ) {
-    if ( !p->next ) {
-      break;
-    }
+    if ( !p->next ) { break; }
     p = p->next;
   }
   return p;
@@ -213,19 +203,17 @@ inline llist_node_t *llist_find_end_node( llist_node_t *list_ptr ) {
 // sets ptr to NULL afterwards
 // returns false on error
 // note: figured there was no point inlining this
-bool llist_recursive_delete( llist_node_t **ptr ) {
+bool llist_recursive_delete( llist_node_t** ptr ) {
   if ( !*ptr ) {
     fprintf( stderr, "ERROR: could not recursive delete llist, node was NULL\n" );
     return false;
   }
-  if ( ( *ptr )->next ) {
-    llist_recursive_delete( &( *ptr )->next );
-  }
+  if ( ( *ptr )->next ) { llist_recursive_delete( &( *ptr )->next ); }
   size_t sz = ( *ptr )->sz;
   free( ( *ptr )->data );
   ( *ptr )->data = NULL; // pointless, not used again
   free( *ptr );
-  *ptr = NULL; // pointless, not used again
+  *ptr                = NULL; // pointless, not used again
   g_apg_ll_mem_allocd = g_apg_ll_mem_allocd - sz - sizeof( llist_node_t );
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd - sz - sizeof( llist_node_t );
   return true;
@@ -233,57 +221,51 @@ bool llist_recursive_delete( llist_node_t **ptr ) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-inline dllist_node_t *dllist_add_to_front( dllist_node_t **list_ptr,
-                                           const void *data, size_t sz ) {
-  dllist_node_t *node = (dllist_node_t *)malloc( sizeof( dllist_node_t ) );
+inline dllist_node_t* dllist_add_to_front( dllist_node_t** list_ptr, const void* data, size_t sz ) {
+  dllist_node_t* node = (dllist_node_t*)malloc( sizeof( dllist_node_t ) );
   if ( !node ) {
     fprintf( stderr, "ERROR: could not alloc memory for dll node struct\n" );
     return NULL;
   }
   g_apg_ll_mem_allocd += sizeof( dllist_node_t );
   node->next = *list_ptr;
-  if ( node->next ) {
-    node->next->prev = node;
-  }
+  if ( node->next ) { node->next->prev = node; }
   node->prev = NULL;
   node->data = malloc( sz );
   g_apg_ll_mem_allocd += sz;
-  node->sz = sz;
-  node->data = memcpy( node->data, data, sz );
-  *list_ptr = node;
+  node->sz            = sz;
+  node->data          = memcpy( node->data, data, sz );
+  *list_ptr           = node;
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd + sizeof( dllist_node_t ) + sz;
   return node;
 }
 
-inline dllist_node_t *dllist_insert_after( dllist_node_t *prev_ptr,
-                                           const void *data, size_t sz ) {
+inline dllist_node_t* dllist_insert_after( dllist_node_t* prev_ptr, const void* data, size_t sz ) {
   // this is far more likely to be a user mistake than anything - should warn
   if ( !prev_ptr ) {
     fprintf( stderr, "ERROR: could not insert dll node, prev_ptr was NULL\n" );
     return NULL;
   }
-  dllist_node_t *node = (dllist_node_t *)malloc( sizeof( dllist_node_t ) );
+  dllist_node_t* node = (dllist_node_t*)malloc( sizeof( dllist_node_t ) );
   if ( !node ) {
     fprintf( stderr, "ERROR: could not alloc memory for dll node struct\n" );
     return NULL;
   }
   g_apg_ll_mem_allocd += sizeof( dllist_node_t );
-  dllist_node_t *next = prev_ptr->next;
-  prev_ptr->next = node;
-  node->next = next;
-  if ( next ) {
-    next->prev = node;
-  }
+  dllist_node_t* next = prev_ptr->next;
+  prev_ptr->next      = node;
+  node->next          = next;
+  if ( next ) { next->prev = node; }
   node->prev = prev_ptr;
   node->data = malloc( sz );
   g_apg_ll_mem_allocd += sz;
-  node->sz = sz;
-  node->data = memcpy( node->data, data, sz );
+  node->sz            = sz;
+  node->data          = memcpy( node->data, data, sz );
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd + sizeof( dllist_node_t ) + sz;
   return node;
 }
 
-inline bool dllist_delete_node( dllist_node_t **list_ptr, dllist_node_t *ptr ) {
+inline bool dllist_delete_node( dllist_node_t** list_ptr, dllist_node_t* ptr ) {
   if ( !*list_ptr ) {
     fprintf( stderr, "ERROR: can not delete dll node, list_ptr is NULL\n" );
     return false;
@@ -297,53 +279,43 @@ inline bool dllist_delete_node( dllist_node_t **list_ptr, dllist_node_t *ptr ) {
   // p is first node in list, so adjust list ptr
   if ( !ptr->prev ) {
     *list_ptr = ptr->next;
-    if ( ptr->next ) {
-      ptr->next->prev = NULL;
-    }
+    if ( ptr->next ) { ptr->next->prev = NULL; }
   } else {
     ptr->prev->next = ptr->next;
     // this only applies if not deleting last node
-    if ( ptr->next ) {
-      ptr->next->prev = ptr->prev;
-    }
+    if ( ptr->next ) { ptr->next->prev = ptr->prev; }
   }
   free( ptr->data );
   ptr->data = NULL; // pointless, not used again
   free( ptr );
-  ptr = NULL; // pointless, not used again
+  ptr                 = NULL; // pointless, not used again
   g_apg_ll_mem_allocd = g_apg_ll_mem_allocd - sz - sizeof( dllist_node_t );
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd - sz - sizeof( dllist_node_t );
 
   return true;
 }
 
-inline dllist_node_t *dllist_find_end_node( dllist_node_t *list_ptr ) {
-  if ( !list_ptr ) {
-    return NULL;
-  }
-  dllist_node_t *p = list_ptr;
+inline dllist_node_t* dllist_find_end_node( dllist_node_t* list_ptr ) {
+  if ( !list_ptr ) { return NULL; }
+  dllist_node_t* p = list_ptr;
   while ( p ) {
-    if ( !p->next ) {
-      break;
-    }
+    if ( !p->next ) { break; }
     p = p->next;
   }
   return p;
 }
 
-bool dllist_recursive_delete( dllist_node_t **ptr ) {
+bool dllist_recursive_delete( dllist_node_t** ptr ) {
   if ( !*ptr ) {
     fprintf( stderr, "ERROR: could not recursive delete dll, node was NULL\n" );
     return false;
   }
-  if ( ( *ptr )->next ) {
-    dllist_recursive_delete( &( *ptr )->next );
-  }
+  if ( ( *ptr )->next ) { dllist_recursive_delete( &( *ptr )->next ); }
   size_t sz = ( *ptr )->sz;
   free( ( *ptr )->data );
   ( *ptr )->data = NULL; // pointless, not used again
   free( *ptr );
-  *ptr = NULL; // pointless, not used again
+  *ptr                = NULL; // pointless, not used again
   g_apg_ll_mem_allocd = g_apg_ll_mem_allocd - sz - sizeof( dllist_node_t );
   g_apg_ds_mem_allocd = g_apg_ds_mem_allocd - sz - sizeof( dllist_node_t );
   return true;
@@ -374,15 +346,9 @@ inline unsigned int hash_index( const char *str, int k ) {
 
 // Euclid's algorithm to find greatest common denominator of fraction
 inline int gcd( int u, int v ) {
-  if ( u < 0 ) {
-    u = -u;
-  } // doesn't play well with negatives so convert
-  if ( v < 0 ) {
-    v = -v;
-  }
-  if ( u == 0 || v == 0 ) {
-    return 0;
-  }
+  if ( u < 0 ) { u = -u; } // doesn't play well with negatives so convert
+  if ( v < 0 ) { v = -v; }
+  if ( u == 0 || v == 0 ) { return 0; }
   int t;
   while ( u > 0 ) {
     if ( u < v ) {
@@ -396,7 +362,7 @@ inline int gcd( int u, int v ) {
 }
 
 // reduce a fraction to smallest terms. e.g 10/20 -> 1/2
-void reduce_frac( int *u, int *v ) {
+void reduce_frac( int* u, int* v ) {
   assert( u && v );
   int div = gcd( *u, *v );
   *u /= div;
