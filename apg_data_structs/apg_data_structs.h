@@ -342,7 +342,7 @@ inline unsigned int hash_index( const char *str, int k ) {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Euclid's algorithm to find greatest common denominator of fraction
-inline int gcd( int u, int v ) {
+static inline int gcd( int u, int v ) {
   if ( u < 0 ) { u = -u; } // doesn't play well with negatives so convert
   if ( v < 0 ) { v = -v; }
   if ( u == 0 || v == 0 ) { return 0; }

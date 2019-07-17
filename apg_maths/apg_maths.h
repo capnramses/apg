@@ -30,7 +30,6 @@ First v. branched from C++ original 5 May 2015
 17 July  2019 - updated to code from voxel game project
 \*****************************************************************************/
 #pragma once
-#include "types.h"
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -48,6 +47,30 @@ First v. branched from C++ original 5 May 2015
 #define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #define CLAMP( x, lo, hi ) ( MIN( hi, MAX( lo, x ) ) )
+
+typedef struct vec2 {
+  float x, y;
+} vec2;
+
+typedef struct vec3 {
+  float x, y, z;
+} vec3;
+
+typedef struct vec4 {
+  float x, y, z, w;
+} vec4;
+
+typedef struct ivec3 {
+  int x, y, z;
+} ivec3;
+
+typedef struct mat4 {
+  float m[16];
+} mat4;
+
+typedef struct versor {
+  float w, x, y, z;
+} versor;
 
 static inline void print_vec2( vec2 v ) { printf( "[%.2f, %.2f]\n", v.x, v.y ); }
 static inline void print_vec3( vec3 v ) { printf( "[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z ); }
