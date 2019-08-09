@@ -1,12 +1,8 @@
 /*****************************************************************************\
 Anton's Maths Library - C99 version
+Licence: see bottom of file.
 Anton Gerdelan <antonofnote at gmail>
-Public Domain - no warrenty implied; use at your own risk.
 
-Contents:
--Macros and data structures
--Printing-Out
--Vector
 TODO project and reject vectors
 -Matrix
 TODO arbitrary axis rot
@@ -14,7 +10,6 @@ TODO arbitrary axis rot
 TODO orthographic
 -Quaternions
 TODO conjugates
-TODO quat * vect directly
 -Geometry
 TODO distance point to line
 TODO distance line to line
@@ -32,6 +27,7 @@ int b = (num & 0x0000FF) >> 0 // or lose the >>0
 First v. branched from C++ original 5 May 2015
 11 April 2016 - compacted
 12 April 2016 - switched to .x .y .z notation for vectors and quaternions
+17 July  2019 - updated to code from voxel game project
 \*****************************************************************************/
 #pragma once
 #include <stdio.h>
@@ -41,35 +37,44 @@ First v. branched from C++ original 5 May 2015
 
 #ifndef M_PI // C99 removed M_PI
 #define M_PI 3.14159265358979323846
+#define M_PI_2 M_PI / 2.0
 #endif
 
+#define HALF_PI M_PI_2
 #define ONE_DEG_IN_RAD ( 2.0 * M_PI ) / 360.0 // 0.017444444
 #define ONE_RAD_IN_DEG 360.0 / ( 2.0 * M_PI ) // 57.2957795
+
+#define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
+#define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
+#define CLAMP( x, lo, hi ) ( MIN( hi, MAX( lo, x ) ) )
 
 typedef struct vec2 {
   float x, y;
 } vec2;
+
 typedef struct vec3 {
   float x, y, z;
 } vec3;
+
 typedef struct vec4 {
   float x, y, z, w;
 } vec4;
+
+typedef struct ivec3 {
+  int x, y, z;
+} ivec3;
+
 typedef struct mat4 {
   float m[16];
 } mat4;
+
 typedef struct versor {
   float w, x, y, z;
 } versor;
 
-// ----------------------------- Print Funcs -----------------------------
-
 static inline void print_vec2( vec2 v ) { printf( "[%.2f, %.2f]\n", v.x, v.y ); }
-
 static inline void print_vec3( vec3 v ) { printf( "[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z ); }
-
 static inline void print_vec4( vec4 v ) { printf( "[%.2f, %.2f, %.2f, %.2f]\n", v.x, v.y, v.z, v.w ); }
-
 static inline void print_mat4( mat4 m ) {
   printf( "\n" );
   printf( "[%.2f][%.2f][%.2f][%.2f]\n", m.m[0], m.m[4], m.m[8], m.m[12] );
@@ -77,31 +82,22 @@ static inline void print_mat4( mat4 m ) {
   printf( "[%.2f][%.2f][%.2f][%.2f]\n", m.m[2], m.m[6], m.m[10], m.m[14] );
   printf( "[%.2f][%.2f][%.2f][%.2f]\n", m.m[3], m.m[7], m.m[11], m.m[15] );
 }
-
 static inline void print_quat( versor q ) { printf( "[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z ); }
 
-// ----------------------------- Vector Funcs -----------------------------
-
 static inline vec3 v3_v4( vec4 v ) { return ( vec3 ){.x = v.x, .y = v.y, .z = v.z}; }
-
 static inline vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x + b, .y = a.y + b, .z = a.z + b}; }
-
 static inline vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x - b, .y = a.y - b, .z = a.z - b}; }
-
 static inline vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x * b, .y = a.y * b, .z = a.z * b}; }
-
 static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x / b, .y = a.y / b, .z = a.z / b}; }
-
 static inline vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z}; }
-
 static inline vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z}; }
-
 static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z}; }
-
 static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z}; }
 
+// magnitude or length of a vec3
 static inline float length_vec3( vec3 v ) { return sqrt( v.x * v.x + v.y * v.y + v.z * v.z ); }
 
+// squared length
 static inline float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 
 static inline vec3 normalise_vec3( vec3 v ) {
@@ -118,14 +114,10 @@ static inline float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + 
 
 static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x}; }
 
-// converts an un-normalised direction vector's X,Z components into a heading
-// in degrees
-// NB i suspect that the z is backwards here but i've used in in
-// several places like this. d'oh!
+// converts an un-normalised direction vector's X,Z components into a heading in degrees
 static inline float vec3_to_heading( vec3 d ) { return atan2( -d.x, -d.z ) * ONE_RAD_IN_DEG; }
 
-// very informal function to convert a heading (e.g. y-axis orientation) into
-// a 3d vector with components in x and z axes
+// very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes
 static inline vec3 heading_to_vec3( float degrees ) {
   float rad = degrees * ONE_DEG_IN_RAD;
   return ( vec3 ){.x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad )};
@@ -133,16 +125,8 @@ static inline vec3 heading_to_vec3( float degrees ) {
 
 static inline vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){.x = v.x, .y = v.y, .z = v.z, .w = f}; }
 
-// ----------------------------- Matrix Funcs -----------------------------
-
-static inline mat4 zero_mat4() {
-  mat4 r;
-  memset( r.m, 0, 16 * sizeof( float ) );
-  return r;
-}
-
 static inline mat4 identity_mat4() {
-  mat4 r  = zero_mat4();
+  mat4 r  = {{0}};
   r.m[0]  = 1.0f;
   r.m[5]  = 1.0f;
   r.m[10] = 1.0f;
@@ -151,7 +135,7 @@ static inline mat4 identity_mat4() {
 }
 
 static inline mat4 mult_mat4_mat4( mat4 a, mat4 b ) {
-  mat4 r      = zero_mat4();
+  mat4 r      = {{0}};
   int r_index = 0;
   for ( int col = 0; col < 4; col++ ) {
     for ( int row = 0; row < 4; row++ ) {
@@ -173,74 +157,54 @@ static inline vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
 }
 
 static inline float det_mat4( mat4 mm ) {
-  // clang-format off
-  return
-		mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] -
-		mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] -
-		mm.m[12] * mm.m[5] * mm.m[10] * mm.m[3] +
-		mm.m[4] * mm.m[13] * mm.m[10] * mm.m[3] +
-		mm.m[8] * mm.m[5] * mm.m[14] * mm.m[3] -
-		mm.m[4] * mm.m[9] * mm.m[14] * mm.m[3] -
-		mm.m[12] * mm.m[9] * mm.m[2] * mm.m[7] +
-		mm.m[8] * mm.m[13] * mm.m[2] * mm.m[7] +
-		mm.m[12] * mm.m[1] * mm.m[10] * mm.m[7] -
-		mm.m[0] * mm.m[13] * mm.m[10] * mm.m[7] -
-		mm.m[8] * mm.m[1] * mm.m[14] * mm.m[7] +
-		mm.m[0] * mm.m[9] * mm.m[14] * mm.m[7] +
-		mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] -
-		mm.m[4] * mm.m[13] * mm.m[2] * mm.m[11] -
-		mm.m[12] * mm.m[1] * mm.m[6] * mm.m[11] +
-		mm.m[0] * mm.m[13] * mm.m[6] * mm.m[11] +
-		mm.m[4] * mm.m[1] * mm.m[14] * mm.m[11] -
-		mm.m[0] * mm.m[5] * mm.m[14] * mm.m[11] -
-		mm.m[8] * mm.m[5] * mm.m[2] * mm.m[15] +
-		mm.m[4] * mm.m[9] * mm.m[2] * mm.m[15] +
-		mm.m[8] * mm.m[1] * mm.m[6] * mm.m[15] -
-		mm.m[0] * mm.m[9] * mm.m[6] * mm.m[15] -
-		mm.m[4] * mm.m[1] * mm.m[10] * mm.m[15] +
-		mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
-  // clang-format on
+  return mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[10] * mm.m[3] +
+         mm.m[4] * mm.m[13] * mm.m[10] * mm.m[3] + mm.m[8] * mm.m[5] * mm.m[14] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[14] * mm.m[3] -
+         mm.m[12] * mm.m[9] * mm.m[2] * mm.m[7] + mm.m[8] * mm.m[13] * mm.m[2] * mm.m[7] + mm.m[12] * mm.m[1] * mm.m[10] * mm.m[7] -
+         mm.m[0] * mm.m[13] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[1] * mm.m[14] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[14] * mm.m[7] +
+         mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[2] * mm.m[11] - mm.m[12] * mm.m[1] * mm.m[6] * mm.m[11] +
+         mm.m[0] * mm.m[13] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[1] * mm.m[14] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[14] * mm.m[11] -
+         mm.m[8] * mm.m[5] * mm.m[2] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[2] * mm.m[15] + mm.m[8] * mm.m[1] * mm.m[6] * mm.m[15] -
+         mm.m[0] * mm.m[9] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[1] * mm.m[10] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
 }
 
+// TODO(Anton) look up fast inverse video tutorial
 static inline mat4 inverse_mat4( mat4 mm ) {
   float det = det_mat4( mm );
   if ( 0.0f == det ) { return mm; }
   float inv_det = 1.0f / det;
-  // clang-format off
-	mat4 r;
-	r.m[0] = inv_det * ( mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] + mm.m[13] * mm.m[6] * mm.m[11] -
-											 mm.m[5] * mm.m[14] * mm.m[11] - mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15] );
-	r.m[1] = inv_det * ( mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[2] * mm.m[11] +
-											 mm.m[1] * mm.m[14] * mm.m[11] + mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15] );
-	r.m[2] = inv_det * ( mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] + mm.m[13] * mm.m[2] * mm.m[7] -
-											 mm.m[1] * mm.m[14] * mm.m[7] - mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15] );
-	r.m[3] = inv_det * ( mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[2] * mm.m[7] +
-											 mm.m[1] * mm.m[10] * mm.m[7] + mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11] );
-	r.m[4] = inv_det * ( mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] - mm.m[12] * mm.m[6] * mm.m[11] +
-											 mm.m[4] * mm.m[14] * mm.m[11] + mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15] );
-	r.m[5] = inv_det * ( mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] + mm.m[12] * mm.m[2] * mm.m[11] -
-											 mm.m[0] * mm.m[14] * mm.m[11] - mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15] );
-	r.m[6] = inv_det * ( mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[2] * mm.m[7] +
-											 mm.m[0] * mm.m[14] * mm.m[7] + mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15] );
-	r.m[7] = inv_det * ( mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] + mm.m[8] * mm.m[2] * mm.m[7] -
-											 mm.m[0] * mm.m[10] * mm.m[7] - mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11] );
-	r.m[8] = inv_det * ( mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] + mm.m[12] * mm.m[5] * mm.m[11] -
-											 mm.m[4] * mm.m[13] * mm.m[11] - mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15] );
-	r.m[9] = inv_det * ( mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[1] * mm.m[11] +
-											 mm.m[0] * mm.m[13] * mm.m[11] + mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15] );
-	r.m[10] = inv_det * ( mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] + mm.m[12] * mm.m[1] * mm.m[7] -
-												mm.m[0] * mm.m[13] * mm.m[7] - mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15] );
-	r.m[11] = inv_det * ( mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[1] * mm.m[7] +
-												mm.m[0] * mm.m[9] * mm.m[7] + mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11] );
-	r.m[12] = inv_det * ( mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] - mm.m[12] * mm.m[5] * mm.m[10] +
-												mm.m[4] * mm.m[13] * mm.m[10] + mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14] );
-	r.m[13] = inv_det * ( mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] + mm.m[12] * mm.m[1] * mm.m[10] -
-												mm.m[0] * mm.m[13] * mm.m[10] - mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14] );
-	r.m[14] = inv_det * ( mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[1] * mm.m[6] +
-												mm.m[0] * mm.m[13] * mm.m[6] + mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14] );
-	r.m[15] = inv_det * ( mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] + mm.m[8] * mm.m[1] * mm.m[6] -
-												mm.m[0] * mm.m[9] * mm.m[6] - mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10] );
-  // clang-format on
+  mat4 r;
+  r.m[0]  = inv_det * ( mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] + mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
+                       mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15] );
+  r.m[1]  = inv_det * ( mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
+                       mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15] );
+  r.m[2]  = inv_det * ( mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] + mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
+                       mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15] );
+  r.m[3]  = inv_det * ( mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
+                       mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11] );
+  r.m[4]  = inv_det * ( mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] - mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
+                       mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15] );
+  r.m[5]  = inv_det * ( mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] + mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
+                       mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15] );
+  r.m[6]  = inv_det * ( mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
+                       mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15] );
+  r.m[7]  = inv_det * ( mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] + mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
+                       mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11] );
+  r.m[8]  = inv_det * ( mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] + mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
+                       mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15] );
+  r.m[9]  = inv_det * ( mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
+                       mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15] );
+  r.m[10] = inv_det * ( mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] + mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
+                        mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15] );
+  r.m[11] = inv_det * ( mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
+                        mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11] );
+  r.m[12] = inv_det * ( mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] - mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
+                        mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14] );
+  r.m[13] = inv_det * ( mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] + mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
+                        mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14] );
+  r.m[14] = inv_det * ( mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
+                        mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14] );
+  r.m[15] = inv_det * ( mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] + mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
+                        mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10] );
   return r;
 }
 
@@ -308,8 +272,6 @@ static inline mat4 scale_mat4( vec3 v ) {
   return r;
 }
 
-// ----------------------------- Virtual Camera -----------------------------
-
 static inline mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
   mat4 p    = translate_mat4( ( vec3 ){.x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z} );
   vec3 d    = sub_vec3_vec3( targ_pos, cam_pos );
@@ -336,7 +298,7 @@ static inline mat4 perspective( float fovy, float aspect, float near, float far 
   float sy      = near / range;
   float sz      = -( far + near ) / ( far - near );
   float pz      = -( 2.0f * far * near ) / ( far - near );
-  mat4 m        = zero_mat4();
+  mat4 m        = {{0}};
   m.m[0]        = sx;
   m.m[5]        = sy;
   m.m[10]       = sz;
@@ -345,11 +307,27 @@ static inline mat4 perspective( float fovy, float aspect, float near, float far 
   return m;
 }
 
-// ----------------------------- Quaternions -----------------------------
-
 static inline versor div_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s}; }
 
 static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s}; }
+
+// rotates vector v using quaternion q by calculating the sandwich product: v' = qvq^-1
+// from pg 89 in E.Lengyel's "FOGED: Mathematics"
+// another version (may be faster?):
+// t = 2 * cross(q.xyz, v)
+// v' = v + q.w * t + cross(q.xyz, t)
+// found https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+// attributed to a post by Fabian Giesen (no longer online)
+// TODO(Anton) not tested yet
+static inline vec3 mult_quat_vec3( versor q, vec3 v ) {
+  vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
+  float b2    = b.x * b.x + b.y * b.y + b.z * b.z;
+  vec3 part_a = mult_vec3_f( v, q.w * q.w - b2 );
+  vec3 part_b = mult_vec3_f( b, dot_vec3( v, b ) * 2.0f );
+  vec3 part_c = mult_vec3_f( cross_vec3( b, v ), q.w * 2.0f );
+  vec3 out    = add_vec3_vec3( part_a, add_vec3_vec3( part_b, part_c ) );
+  return out;
+}
 
 static inline versor normalise_quat( versor q ) {
   float sum          = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
@@ -388,6 +366,8 @@ static inline versor quat_from_axis_rad( float radians, vec3 axis ) {
 
 static inline versor quat_from_axis_deg( float degrees, vec3 axis ) { return quat_from_axis_rad( ONE_DEG_IN_RAD * degrees, axis ); }
 
+// creates a matrix from a quaternion - use if only needed for rotating a vector then do mult_quat_vec3() instead.
+// note: also a function to create a quaternion /from a matrix/: pg 93 in E.Lengyel's "FOGED: Mathematics"
 static inline mat4 quat_to_mat4( versor q ) {
   float w = q.w;
   float x = q.x;
@@ -438,4 +418,72 @@ static inline versor slerp_quat( versor q, versor r, float t ) {
   return result;
 }
 
-// ----------------------------- Geometric Intersection Tests -----------------------------
+// [0, 360]
+static inline float wrap_degrees_360( float degrees ) {
+  if ( degrees >= 0.0f && degrees < 360.0f ) { return degrees; }
+  int multiples = (int)( degrees / 360.0f );
+  if ( degrees > 0.0f ) {
+    degrees = degrees - (float)multiples * 360.0f;
+  } else {
+    degrees = degrees + (float)multiples * 360.0f;
+  }
+  return degrees;
+}
+
+static inline float abs_diff_btw_degrees( float first, float second ) {
+  first  = wrap_degrees_360( first );
+  second = wrap_degrees_360( second );
+
+  float diff = fabs( first - second );
+  if ( diff >= 180.0f ) { diff = fabs( diff - 360.0f ); }
+  return diff;
+}
+
+/*
+-------------------------------------------------------------------------------------
+This software is available under two licences - you may use it under either licence.
+-------------------------------------------------------------------------------------
+FIRST LICENCE OPTION
+
+>                                  Apache License
+>                            Version 2.0, January 2004
+>                         http://www.apache.org/licenses/
+>    Copyright 2019 Anton Gerdelan.
+>    Licensed under the Apache License, Version 2.0 (the "License");
+>    you may not use this file except in compliance with the License.
+>    You may obtain a copy of the License at
+>        http://www.apache.org/licenses/LICENSE-2.0
+>    Unless required by applicable law or agreed to in writing, software
+>    distributed under the License is distributed on an "AS IS" BASIS,
+>    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+>    See the License for the specific language governing permissions and
+>    limitations under the License.
+-------------------------------------------------------------------------------------
+SECOND LICENCE OPTION
+
+> This is free and unencumbered software released into the public domain.
+>
+> Anyone is free to copy, modify, publish, use, compile, sell, or
+> distribute this software, either in source code form or as a compiled
+> binary, for any purpose, commercial or non-commercial, and by any
+> means.
+>
+> In jurisdictions that recognize copyright laws, the author or authors
+> of this software dedicate any and all copyright interest in the
+> software to the public domain. We make this dedication for the benefit
+> of the public at large and to the detriment of our heirs and
+> successors. We intend this dedication to be an overt act of
+> relinquishment in perpetuity of all present and future rights to this
+> software under copyright law.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+> MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+> IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+> OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+> ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+> OTHER DEALINGS IN THE SOFTWARE.
+>
+> For more information, please refer to <http://unlicense.org>
+-------------------------------------------------------------------------------------
+*/

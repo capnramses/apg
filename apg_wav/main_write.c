@@ -19,5 +19,5 @@ int main() {
   }
 
   int result = apg_write_wav( "testout.wav", wav_data, n_chans, sample_rate, n_samples, bits_per_sample );
-  return 0;
+  return result;
 }

@@ -12,7 +12,7 @@ int main() {
 
   // constructors and assignment
   printf( "* zero_mat4\n" );
-  m4 = zero_mat4();
+  memset( &m4, 0, sizeof( mat4 ) );
   print_mat4( m4 );
   printf( "* identity_mat4\n" );
   m4 = identity_mat4();
