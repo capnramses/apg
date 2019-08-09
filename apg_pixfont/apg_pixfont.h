@@ -47,7 +47,6 @@ Technical Details:
 TODO:
 ==============================================================
 - Can add pixel art outlines to the text -- needs RGBA. may as well add colour here too.
-- Testing building in a C++ program
 - Support more glyphs
 
 History:
