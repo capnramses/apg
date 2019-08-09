@@ -12,7 +12,7 @@ int main() {
     "Hello, World!", //
     "This is a line\nbreak - did it work?", //
     "über spaß!", //
-    "Ní féidir liom Gaeilge a labhairt i ndáiríre" //
+    "An bhfuil cead agam dul amach go dtí an leithreas?" //
   };
   const char* output_filenames[N_TEST_STRINGS] = {"0.png", "1.png", "2.png", "4.png"};
 
