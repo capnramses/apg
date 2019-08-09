@@ -66,13 +66,6 @@ extern "C" {
 #define APG_PIXFONT_SUCCESS 1
 #define APG_PIXFONT_MAX_STRLEN 2048
 
-/* use your image loader, eg stb_image, to load a pixel font image into memory, and store a pointer to it, width, height, and number of channels here. */
-struct apg_pixfont_t {
-  unsigned char* img;
-  int w, h;
-  int n_colour_channels;
-};
-
 /* Get image dimensions required for writing full string into with str_into_image()
 
 ARGUMENTS:
