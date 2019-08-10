@@ -6,9 +6,9 @@ Authors and Contributors:
 
 What Does It Do?
 ==============================================================
-- Tells you how much memory to allocate is required for image to fit a given string.
 - Given a string of text, renders it into an image, in pre-allocated memory, using an embedded pixel font.
 - Useful for quick & dirty text output in graphics software. eg FPS counters or debug-on-screen text, or pixel-art games.
+- Tells you how much memory to allocate for an image to fit a given string.
 - Can set the number of colour channels, and those colours, for the text.
 - Can add pixel art outlines to the text.
 
