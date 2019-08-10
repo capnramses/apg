@@ -26,7 +26,7 @@ static int _apg_pixfont_strnlen( const char* str, int maxlen ) {
 
 // TODO(Anton) replace with unicode codepoint scans and then a lookup table for supported unicode
 // does not handle spacing for ' ' or '\n' - those must be handled before calling this function
-// additional_bytes_processed - if more than 2 bytes formed a glyph then additional_bytes_processed == 1
+// additional_bytes_processed - if 2+ bytes formed a single glyph then additional_bytes_processed == 1+
 static uint32_t _atlas_index_for_sequence( const char* sequence, int* additional_bytes_processed ) {
   assert( sequence && additional_bytes_processed );
 
