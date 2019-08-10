@@ -11,7 +11,6 @@ The maths library is probably the most generally useful for graphics / games.
 | sub-project      | description                           | languages  |
 |------------------|---------------------------------------|------------|
 | apg              | generic C programming utils           | C          |
-| apg_data_structs | light-weight data structures library  | C          |
 | apg_interp       | interpolation / "tweening" library    | C, JS      |
 | apg_maths        | 3d maths for graphics/games           | C, C++, JS |
 | apg_pixfont      | String-to-image with a pixel font     | C          |

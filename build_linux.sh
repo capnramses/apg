@@ -3,11 +3,6 @@
 # any error code causes script to exit with error code
 set -e
 
-echo "building data structures tests..."
-cd apg_data_structs
-gcc -std=c99 test.c
-cd ..
-
 echo "building interpolation tests..."
 cd apg_interp
 gcc -std=c99 test.c -lm
