@@ -72,6 +72,7 @@ extern "C" {
 ARGUMENTS:
 * ascii_str - null-terminated string to render. ASCII plus a few basic UTF-8 encoded Unicode Latin characters are supported.
 * w,h - minimum dimensions of image require to fix the whole string.
+* thickness - A scaling factor for the text ( default is 1px thick glyph stems ).
 * add_outline - if the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes
 
 RETURNS:
@@ -82,25 +83,27 @@ CAVEATS: image widths will always tightly fit text size
   To address this you could pad the image, or set OpenGL byte alignment to 1
 * If you want power-of-two sized images then allocate the next power-of-two size up.
 */
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int add_outline );
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline );
 
 /* Writes an ASCII string into a 1-channel image using the pixel font.
 Allocate image memory first and clear as desired. font writes over the top in 1-channel white.
+'Thickness' is useful for making big headings. Note that the outline will not scale, it stays 1px thick, which gives a consistent look.
 
 ARGUMENTS:
 * ascii_str - null-terminated string to render. ASCII plus a few basic UTF-8 encoded Unicode Latin characters are supported.
 * image - a pre-allocated block of memory to draw the image into. Use image_size_for_str() to find the size required for this.
-* image_w, image_h - dimensions of image to write into. If text pixels extend out of these bounds it won't attempt to write anything there.
+* w, h - dimensions of image to write into. If text pixels extend out of these bounds it won't attempt to write anything there.
 * vertically_flip - Image can be vertically flipped (0=no,1=yes) for eg OpenGL textures.
 * n_channels - 1 for greyscale, 2 for RG, 3 for RGB, 4 for RGBA. if using 2-4 then size memory allocated for image should reflect that.
-* r,g,b,a - colour values 0-255. 1-channel uses only red colour. 2-channel uses only red and alpha. 3-channel uses r,g,b. 4-channel uses all.
+* r,g,b,a - colour of the text. 1-channel uses only red colour. 2-channel uses only red and alpha. 3-channel uses r,g,b. 4-channel uses all.
+* thickness - A scaling factor for the text ( default is 1px thick glyph stems ).
 * add_outline - if the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes
 
 RETURNS:
 * returns APG_PIXFONT_FAILURE on error, otherwise success
 */
-int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int image_w, int image_h, int vertically_flip, int n_channels, unsigned char r,
-  unsigned char g, unsigned char b, unsigned char a, int add_outline );
+int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r,
+  unsigned char g, unsigned char b, unsigned char a, int thickness, int add_outline );
 
 #ifdef __cplusplus
 }
