@@ -23,7 +23,7 @@ Instructions:
 1. Copy apg_pixfont.c and apg_pixfont.h into your project's source code files.
    You don't need to copy the image file for the font - it's embedded in the C file.
 
-2. Find out the required memory size:
+2. Find out the required image dimensions
 
 int w, h;
 int n_channels = 1;
