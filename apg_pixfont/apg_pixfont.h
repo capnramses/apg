@@ -55,6 +55,7 @@ History:
 ==============================================================
 2018 - First version by Anton, as part of voxel game project
 2019 Aug 9 - Split into stand-alone library code.
+2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
 */
 #ifndef _APG_PIXFONT_H_
 #define _APG_PIXFONT_H_
