@@ -32,7 +32,8 @@ int main() {
 
     // CREATE TEXT IMAGE
     unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
-    result                  = apg_pixfont_str_into_image( test_strings[i], text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i] );
+    bool vflip               = false;
+    result = apg_pixfont_str_into_image( test_strings[i], text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], vflip );
     if ( !result ) {
       fprintf( stderr, "ERROR: creating string image %i\n", i );
       return 1;

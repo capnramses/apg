@@ -142,9 +142,16 @@ static bool _is_img_idx_coloured( const unsigned char* image, int idx, int n_cha
   return false;
 }
 
+// NOTE(Anton) could also user-specify an outline colour rather than all zero
+static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
+	for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
+	if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
+	if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline ) {
+  unsigned char a, int thickness, int add_outline, int v_flip ) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   int len      = _apg_pixfont_strnlen( ascii_str, APG_PIXFONT_MAX_STRLEN );
@@ -173,7 +180,7 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
     for ( int y = 0; y < _font_img_h; y++ ) {
       for ( int x = 0; x < spacing_px; x++ ) {
         int atlas_x       = atlas_index * 6 + x;
-        int atlas_y       = y;
+        int atlas_y       = v_flip ? _font_img_h - y - 1 : y;
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
         if ( _font_img[atlas_img_idx] > 0x00 ) {
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
@@ -182,7 +189,6 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
               int image_y     = y_cursor + y * thickness + y_th;
               int out_img_idx = w * image_y + image_x;
               if ( out_img_idx >= w * h ) { continue; }
-
               for ( int c = 0; c < n_channels; c++ ) { image[out_img_idx * n_channels + c] = colour[c]; }
             }
           }
@@ -192,29 +198,37 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
     x_cursor += spacing_px * thickness;
   } // endfor chars in str
 
+	// NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
   if ( add_outline ) {
-    for ( int y = h - 1; y >= 0; y-- ) {
-      for ( int x = w - 1; x >= 0; x-- ) {
-        if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
-        if ( y > 0 ) {
-          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) { goto apply_outline; }
-        }
-        if ( x > 0 ) {
-          if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { goto apply_outline; }
-        }
-        if ( y > 0 && x > 0 ) {
-          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) { goto apply_outline; }
-        }
-        continue;
-      // NOTE(Anton) could set an outline colour rather than all zero
-      apply_outline : {
-        int out_img_idx = w * y + x;
-        for ( int c = 0; c < n_channels; c++ ) { image[out_img_idx * n_channels + c] = 0x00; }
-        if ( 2 == n_channels ) { image[out_img_idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
-        if ( 4 == n_channels ) { image[out_img_idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
-      } // end label
-      } // endforx
-    } //endfor y
+		if ( !v_flip ) {
+			for ( int y = h - 1; y >= 0; y-- ) {
+				for ( int x = w - 1; x >= 0; x-- ) {
+					if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
+					if ( y > 0 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					} else if ( x > 0 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					} else if ( y > 0 && x > 0 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					}
+				} // endforx
+			} //endfor y
+		} else {
+			for ( int y = 0; y < h; y++ ) {
+				for ( int x = w - 1; x >= 0; x-- ) {
+					if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
+					if ( y < h - 1 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y + 1 ) + x ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					}
+					if ( x > 0 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					}
+					if ( y < h - 1 && x > 0 ) {
+						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y + 1 ) + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
+					}
+				} // endforx
+			} //endfor y
+		} // end vflip else
   } // endfor outline
   return APG_PIXFONT_SUCCESS;
 }
