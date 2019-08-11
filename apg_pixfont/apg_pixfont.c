@@ -206,9 +206,11 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
 					if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
 					if ( y > 0 ) {
 						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					} else if ( x > 0 ) {
+					}
+					if ( x > 0 ) {
 						if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					} else if ( y > 0 && x > 0 ) {
+					}
+					if ( y > 0 && x > 0 ) {
 						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
 					}
 				} // endforx
