@@ -23,23 +23,23 @@ Instructions:
 1. Copy apg_pixfont.c and apg_pixfont.h into your project's source code files.
    You don't need to copy the image file for the font - it's embedded in the C file.
 
-2. To get the required memory size call:
+2. Find out the required memory size:
 
 int w, h;
-apg_pixfont_image_size_for_str( "my_string", &w, &h );
+int n_channels = 1;
+int thickness = 1;
+bool outlines = false;
 
-3. Then allocate memory
+apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines );
 
-unsigned char* img_mem = (unsigned char*)malloc( w * h );
-memset( img_mem, 0x00, w * h ); // set background colour
+3. Allocate the memory
 
-4. Then paint the string into the memory
+unsigned char* img_mem = (unsigned char*)malloc( w * h * n_channels );
+memset( img_mem, 0x00, w * h * n_channels );
 
-apg_pixfont_str_into_image( "my_string", img_mem, w, h, 0, 1, 255, 255, 255, 255 );
+4. Then paint the string onto the memory
 
-5. You can then free the memory
-
-free( img_mem );
+apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines );
 
 ==============================================================
 
