@@ -26,8 +26,8 @@ better notation:
 x_i = starting 'time' value
 x_f = ending 'time' value
 x = current 'time' value
-y_i = 'start value' (at x = 0.0)
-y_f = 'end value' (at x= 1.0)
+y_i = min y (eg at x=0.0 for lerp)
+y_f = max y (eg at x=1.0 for lerp)
 returns y
 functions are named "accel" and "decel" instead of "in" and "out"
 
