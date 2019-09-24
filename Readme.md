@@ -6,19 +6,19 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## Contents
 
-The maths library is probably the most generally useful for graphics / games.
-
-| sub-project      | description                           | languages  |
-|------------------|---------------------------------------|------------|
-| apg              | generic C programming utils           | C          |
-| apg_interp       | interpolation / "tweening" library    | C, JS      |
-| apg_maths        | 3d maths for graphics/games           | C, C++, JS |
-| apg_pixfont      | String-to-image with a pixel font     | C          |
-| apg_wav          | .wav file format read/write           | C          |
+| Library          | Description                              | Language   |
+|------------------|------------------------------------------|------------|
+| apg              | Generic C programming utils.             | C          |
+| apg_interp       | Interpolation / "tweening" / "easing".   | C, JS      |
+| apg_maths        | 3D maths for graphics/games.             | C, C++, JS |
+| apg_pixfont      | String-to-image with a pixel font.       | C          |
+| apg_tga          | Single-header TGA format read/write.     | C          |
+| apg_wav          | WAV file format read/write.              | C          |
 
 ## To Do
 
 * When it matures move apg_bmp from the opengl_expmts repository into here.
+* Rewrite and put apg_ply from opengl_expmts in here.
 * Put my unicode tools here.
 
 ## LICENCE

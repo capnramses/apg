@@ -2,6 +2,7 @@ apg.log
 test
 a.out
 testout.wav
+out.*
 apg_pixfont/2.png
 apg_pixfont/0.png
 apg_pixfont/1.png
