@@ -18,6 +18,10 @@ cd apg_pixfont
 g++ test_pixfont.cpp apg_pixfont.c
 cd ..
 
+echo "building TGA library tests..."
+cd apg_tga
+gcc main.c
+
 echo "building wav library tests..."
 cd apg_wav
 gcc -std=c99 main_write.c apg_wav.c -lm
