@@ -21,7 +21,6 @@ Limitations:
 * Only reads/writes true colour uncompressed BGR and BGRA images.
 
 Todo:
-* clang-tidy
 * fuzzing
 * could allow malloc/free override
 * could add a separate function or parameter to convert RGB<->BGR
