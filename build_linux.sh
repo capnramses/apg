@@ -21,6 +21,7 @@ cd ..
 echo "building TGA library tests..."
 cd apg_tga
 gcc main.c
+cd ..
 
 echo "building wav library tests..."
 cd apg_wav
