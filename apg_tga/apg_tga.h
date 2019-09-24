@@ -12,7 +12,9 @@ Instructions:
 3.
 int w,h,n;
 uint8_t* img_ptr = apg_tga_read_file("my_file.tga", &w, &h, &n, 0);
-// usage the BGR or BGRA (when n == 4) image memory here
+
+// ... use the BGR or BGRA (when n == 4) image memory here ...
+
 free( img_ptr );
 
 Limitations:
