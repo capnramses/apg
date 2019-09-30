@@ -1,5 +1,5 @@
 /*==============================================================
-Single-Header TGA image file reader
+Single-Header TGA image file reader/writer
 Language: C89
 Author:   Anton Gerdelan - @capnramses
 Contact:  <antonofnote@gmail.com>

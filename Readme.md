@@ -12,13 +12,13 @@ Small utility libraries and copy-paste snippets of reusable code.
 | apg_interp       | Interpolation / "tweening" / "easing".   | C, JS      |
 | apg_maths        | 3D maths for graphics/games.             | C, C++, JS |
 | apg_pixfont      | String-to-image with a pixel font.       | C          |
+| apg_ply          | Stanford PLY mesh format read/write.     | C          |
 | apg_tga          | Single-header TGA format read/write.     | C          |
 | apg_wav          | WAV file format read/write.              | C          |
 
 ## To Do
 
 * When it matures move apg_bmp from the opengl_expmts repository into here.
-* Rewrite and put apg_ply from opengl_expmts in here.
 * Put my unicode tools here.
 
 ## LICENCE
