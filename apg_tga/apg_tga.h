@@ -1,10 +1,7 @@
 /*==============================================================
-Single-Header TGA image file reader/writer
+Single-Header TGA image file reader
 Language: C89
-Author:   Anton Gerdelan - @capnramses
-Contact:  <antonofnote@gmail.com>
-Website:  https://github.com/capnramses/apg - antongerdelan.net/
-Licence:  See bottom of this file.
+Author:   Anton Gerdelan <antonofnote@gmail.com> @capnramses
 
 Instructions:
 1. Include this header in one, and only one, source file.
@@ -12,22 +9,17 @@ Instructions:
 3.
 int w,h,n;
 uint8_t* img_ptr = apg_tga_read_file("my_file.tga", &w, &h, &n, 0);
-
-// ... use the BGR or BGRA (when n == 4) image memory here ...
-
+// usage the BGR or BGRA (when n == 4) image memory here
 free( img_ptr );
 
 Limitations:
 * Only reads/writes true colour uncompressed BGR and BGRA images.
 
 Todo:
-* fuzzing
 * could allow malloc/free override
 * could add a separate function or parameter to convert RGB<->BGR
 
-History:
-24/09/2019 - published to apg repository.
-09/09/2019 - first version.
+History: 9/9/2019 - first version.
 ==============================================================*/
 
 #ifndef APG_TGA_H
@@ -135,8 +127,6 @@ unsigned char* apg_tga_read_file( const char* filename, int* w, int* h, int* n, 
       free( record.data );
       return NULL;
     }
-    /* vertical flip so 0,0 is top-left */
-    if ( 0 == hdr_ptr->y_origin ) { vflip = 1; }
   }
   {
     img_ptr = malloc( img_data_sz );
@@ -168,11 +158,12 @@ unsigned int apg_tga_write_file( const char* filename, unsigned char* bgr_img_pt
 
   {
     memset( &hdr, 0, sizeof( struct tga_header_t ) );
-    hdr.image_type = 2;
-    hdr.w          = w;
-    hdr.h          = h;
-    hdr.y_origin   = h;
-    hdr.bpp        = 8 * n;
+    hdr.image_type     = 2;
+    hdr.w              = w;
+    hdr.h              = h;
+    hdr.y_origin       = h;
+    hdr.bpp            = 8 * n;
+    hdr.img_descriptor = 0x20; // tell image loader to flip vertically
   }
   {
     size_t nw     = 0;
@@ -195,45 +186,3 @@ unsigned int apg_tga_write_file( const char* filename, unsigned char* bgr_img_pt
 }
 
 #endif /* APG_TGA_IMPLEMENTATION */
-
-/*
--------------------------------------------------------------------------------------
-This software is available under two licences - you may use it under either licence.
--------------------------------------------------------------------------------------
-FIRST LICENCE OPTION
-
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
-   Copyright 2019 Anton Gerdelan.
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
--------------------------------------------------------------------------------------
-SECOND LICENCE OPTION
-
-Public Domain (www.unlicense.org)
-This is free and unencumbered software released into the public domain.
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
-software, either in source code form or as a compiled binary, for any purpose,
-commercial or non-commercial, and by any means.
-In jurisdictions that recognize copyright laws, the author or authors of this
-software dedicate any and all copyright interest in the software to the public
-domain. We make this dedication for the benefit of the public at large and to
-the detriment of our heirs and successors. We intend this dedication to be an
-overt act of relinquishment in perpetuity of all present and future rights to
-this software under copyright law.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
--------------------------------------------------------------------------------------
-*/
