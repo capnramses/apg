@@ -19,6 +19,7 @@ free( img_ptr );
 
 Limitations:
 * Only reads/writes true colour uncompressed BGR and BGRA images.
+* Note - vertical flip 0/1 might be round the wrong way after testing in D3D.
 
 Todo:
 * fuzzing
@@ -26,8 +27,9 @@ Todo:
 * could add a separate function or parameter to convert RGB<->BGR
 
 History:
-24/09/2019 - published to apg repository.
 09/09/2019 - first version.
+24/09/2019 - published to apg repository.
+14/11/2019 - fixes for MSVC warnings (CPP compat)
 ==============================================================*/
 
 #ifndef APG_TGA_H
@@ -92,7 +94,7 @@ unsigned char* apg_tga_read_file( const char* filename, int* w, int* h, int* n, 
     if ( !fptr ) { return NULL; }
     fseek( fptr, 0L, SEEK_END );
     record.sz   = (size_t)ftell( fptr );
-    record.data = malloc( record.sz );
+    record.data = (uint8_t*)malloc( record.sz );
     if ( !record.data ) {
       fclose( fptr );
       return NULL;
@@ -139,7 +141,7 @@ unsigned char* apg_tga_read_file( const char* filename, int* w, int* h, int* n, 
     if ( 0 == hdr_ptr->y_origin ) { vflip = 1; }
   }
   {
-    img_ptr = malloc( img_data_sz );
+    img_ptr = (uint8_t*)malloc( img_data_sz );
     if ( !img_ptr ) {
       free( record.data );
       return NULL;
@@ -169,10 +171,10 @@ unsigned int apg_tga_write_file( const char* filename, unsigned char* bgr_img_pt
   {
     memset( &hdr, 0, sizeof( struct tga_header_t ) );
     hdr.image_type = 2;
-    hdr.w          = w;
-    hdr.h          = h;
-    hdr.y_origin   = h;
-    hdr.bpp        = 8 * n;
+    hdr.w          = (uint16_t)w;
+    hdr.h          = (uint16_t)h;
+    hdr.y_origin   = (uint16_t)h;
+    hdr.bpp        = (uint8_t)(8 * n);
   }
   {
     size_t nw     = 0;
