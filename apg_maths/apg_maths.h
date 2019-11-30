@@ -28,6 +28,7 @@ First v. branched from C++ original 5 May 2015
 11 April 2016 - compacted
 12 April 2016 - switched to .x .y .z notation for vectors and quaternions
 17 July  2019 - updated to code from voxel game project
+20 Nov   2019 - added a cpp clause
 \*****************************************************************************/
 #pragma once
 
