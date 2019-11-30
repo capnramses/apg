@@ -35,14 +35,18 @@ First v. branched from C++ original 5 May 2015
 #include <math.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef M_PI // C99 removed M_PI
 #define M_PI 3.14159265358979323846
 #define M_PI_2 M_PI / 2.0
 #endif
 
 #define HALF_PI M_PI_2
-#define ONE_DEG_IN_RAD ( 2.0 * M_PI ) / 360.0 // 0.017444444
-#define ONE_RAD_IN_DEG 360.0 / ( 2.0 * M_PI ) // 57.2957795
+#define ONE_DEG_IN_RAD ( 2.0f * M_PI ) / 360.0f // 0.017444444
+#define ONE_RAD_IN_DEG 360.0 / ( 2.0f * M_PI ) // 57.2957795
 
 #define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
@@ -95,7 +99,7 @@ static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x *
 static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z}; }
 
 // magnitude or length of a vec3
-static inline float length_vec3( vec3 v ) { return sqrt( v.x * v.x + v.y * v.y + v.z * v.z ); }
+static inline float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z ); }
 
 // squared length
 static inline float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
@@ -115,7 +119,7 @@ static inline float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + 
 static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x}; }
 
 // converts an un-normalised direction vector's X,Z components into a heading in degrees
-static inline float vec3_to_heading( vec3 d ) { return atan2( -d.x, -d.z ) * ONE_RAD_IN_DEG; }
+static inline float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * ONE_RAD_IN_DEG; }
 
 // very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes
 static inline vec3 heading_to_vec3( float degrees ) {
@@ -240,27 +244,27 @@ static inline mat4 translate_mat4( vec3 vv ) {
 static inline mat4 rot_x_deg_mat4( float deg ) {
   float rad = deg * ONE_DEG_IN_RAD;
   mat4 r    = identity_mat4();
-  r.m[5] = r.m[10] = cos( rad );
-  r.m[9]           = -sin( rad );
-  r.m[6]           = sin( rad );
+  r.m[5] = r.m[10] = cosf( rad );
+  r.m[9]           = -sinf( rad );
+  r.m[6]           = sinf( rad );
   return r;
 }
 
 static inline mat4 rot_y_deg_mat4( float deg ) {
   float rad = deg * ONE_DEG_IN_RAD;
   mat4 r    = identity_mat4();
-  r.m[0] = r.m[10] = cos( rad );
-  r.m[8]           = sin( rad );
-  r.m[2]           = -sin( rad );
+  r.m[0] = r.m[10] = cosf( rad );
+  r.m[8]           = sinf( rad );
+  r.m[2]           = -sinf( rad );
   return r;
 }
 
 static inline mat4 rot_z_deg_mat4( float deg ) {
   float rad = deg * ONE_DEG_IN_RAD;
   mat4 r    = identity_mat4();
-  r.m[0] = r.m[5] = cos( rad );
-  r.m[4]          = -sin( rad );
-  r.m[1]          = sin( rad );
+  r.m[0] = r.m[5] = cosf( rad );
+  r.m[4]          = -sinf( rad );
+  r.m[1]          = sinf( rad );
   return r;
 }
 
@@ -293,7 +297,7 @@ static inline mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
 
 static inline mat4 perspective( float fovy, float aspect, float near, float far ) {
   float fov_rad = fovy * ONE_DEG_IN_RAD;
-  float range   = tan( fov_rad / 2.0f ) * near;
+  float range   = tanf( fov_rad / 2.0f ) * near;
   float sx      = ( 2.0f * near ) / ( range * aspect + range * aspect );
   float sy      = near / range;
   float sz      = -( far + near ) / ( far - near );
@@ -320,7 +324,7 @@ static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){.w = 
 // attributed to a post by Fabian Giesen (no longer online)
 // TODO(Anton) not tested yet
 static inline vec3 mult_quat_vec3( versor q, vec3 v ) {
-  vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
+ vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
   float b2    = b.x * b.x + b.y * b.y + b.z * b.z;
   vec3 part_a = mult_vec3_f( v, q.w * q.w - b2 );
   vec3 part_b = mult_vec3_f( b, dot_vec3( v, b ) * 2.0f );
@@ -333,7 +337,7 @@ static inline versor normalise_quat( versor q ) {
   float sum          = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
   const float thresh = 0.0001f;
   if ( fabs( 1.0f - sum ) < thresh ) { return q; }
-  float mag = sqrt( sum );
+  float mag = sqrtf( sum );
   return div_quat_f( q, mag );
 }
 
@@ -357,10 +361,10 @@ static inline versor add_quat_quat( versor a, versor b ) {
 
 static inline versor quat_from_axis_rad( float radians, vec3 axis ) {
   versor result;
-  result.w = cos( radians / 2.0 );
-  result.x = sin( radians / 2.0 ) * axis.x;
-  result.y = sin( radians / 2.0 ) * axis.y;
-  result.z = sin( radians / 2.0 ) * axis.z;
+  result.w = cosf( radians / 2.0 );
+  result.x = sinf( radians / 2.0 ) * axis.x;
+  result.y = sinf( radians / 2.0 ) * axis.y;
+  result.z = sinf( radians / 2.0 ) * axis.z;
   return result;
 }
 
@@ -398,19 +402,19 @@ static inline versor slerp_quat( versor q, versor r, float t ) {
     q              = mult_quat_f( q, -1.0f );
     cos_half_theta = dot_quat( q, r );
   }
-  if ( fabs( cos_half_theta ) >= 1.0f ) { return q; }
-  float sin_half_theta = sqrt( 1.0f - cos_half_theta * cos_half_theta );
+  if ( fabsf( cos_half_theta ) >= 1.0f ) { return q; }
+  float sin_half_theta = sqrtf( 1.0f - cos_half_theta * cos_half_theta );
   versor result;
-  if ( fabs( sin_half_theta ) < 0.001f ) {
+  if ( fabsf( sin_half_theta ) < 0.001f ) {
     result.w = ( 1.0f - t ) * q.w + t * r.w;
     result.x = ( 1.0f - t ) * q.x + t * r.x;
     result.y = ( 1.0f - t ) * q.y + t * r.y;
     result.z = ( 1.0f - t ) * q.z + t * r.z;
     return result;
   }
-  float half_theta = acos( cos_half_theta );
-  float a          = sin( ( 1.0f - t ) * half_theta ) / sin_half_theta;
-  float b          = sin( t * half_theta ) / sin_half_theta;
+  float half_theta = acosf( cos_half_theta );
+  float a          = sinf( ( 1.0f - t ) * half_theta ) / sin_half_theta;
+  float b          = sinf( t * half_theta ) / sin_half_theta;
   result.w         = q.w * a + r.w * b;
   result.x         = q.x * a + r.x * b;
   result.y         = q.y * a + r.y * b;
@@ -434,10 +438,15 @@ static inline float abs_diff_btw_degrees( float first, float second ) {
   first  = wrap_degrees_360( first );
   second = wrap_degrees_360( second );
 
-  float diff = fabs( first - second );
-  if ( diff >= 180.0f ) { diff = fabs( diff - 360.0f ); }
+  float diff = fabsf( first - second );
+  if ( diff >= 180.0f ) { diff = fabsf( diff - 360.0f ); }
   return diff;
 }
+
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
 -------------------------------------------------------------------------------------
