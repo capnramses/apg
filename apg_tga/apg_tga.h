@@ -167,7 +167,7 @@ unsigned int apg_tga_write_file( const char* filename, unsigned char* bgr_img_pt
     hdr.h          = (uint16_t)h;
     hdr.y_origin   = (uint16_t)h;
     hdr.bpp        = (uint8_t)(8 * n);
-    /* hdr.img_descriptor = 0x20; // tell image loader to flip vertically */ 
+    hdr.img_descriptor = 0x20; /* tell image loader to flip vertically */ 
   }
   {
     size_t nw     = 0;
