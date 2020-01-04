@@ -18,7 +18,7 @@ Instructions
 * You then feed keyboard input to this console.
 * You ask this console to render an RGBA image to memory.
 * You then use that for drawing any way you like. You don't need a 3D graphics API.
-* For an OpenGL example see the opengl_demo/ subfolder.
+* For an OpenGL example see example 082 in my "gfx_expmts" repository on GitHub.
 
 The primary interface for user-entered text is:
 
