@@ -116,6 +116,14 @@ static inline int apg_strnlen( const char* str, int maxlen ) {
   return i;
 }
 
+/* Custom strncat() without the annoying '\0' src truncation issues.
+   Resulting string is always '\0' truncated.
+   PARAMS
+     dest_max - This is the maximum length the destination string is allowed to grow to.
+     src_max  - This is the maximum number of bytes to copy from the source string.
+*/
+void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max );
+
 /*=================================================================================================
 LOG FILES
 =================================================================================================*/
@@ -292,6 +300,17 @@ bool apg_strmatchy( const char* a, const char* b ) {
     if ( a[i] != b[i] ) { return false; }
   }
   return true;
+}
+
+void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
+  assert( dst && src );
+
+  int dst_len   = apg_strnlen( dst, dest_max );
+  dst[dst_len]  = '\0'; // just in case it wasn't already terminated before max length
+  int remainder = dest_max - dst_len;
+  if ( remainder <= 0 ) { return; }
+  const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
+  strncat( dst, src, n );                                // strncat manual guarantees null termination.
 }
 
 /*=================================================================================================

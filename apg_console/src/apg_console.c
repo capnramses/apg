@@ -36,7 +36,7 @@ static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_li
 static char _c_user_entered_text[APG_C_STR_MAX];
 
 static const int _c_n_built_in_commands            = 5;
-static char _c_built_in_commands[5][APG_C_STR_MAX] = {"help", "clear", "var", "list_vars", "list_funcs"};
+static char _c_built_in_commands[5][APG_C_STR_MAX] = { "help", "clear", "var", "list_vars", "list_funcs" };
 
 static bool _c_redraw_required;
 
@@ -45,6 +45,23 @@ static int apg_c_strnlen( const char* str, int maxlen ) {
   int i = 0;
   while ( i < maxlen && str[i] ) { i++; }
   return i;
+}
+
+/* Custom strncat() without the annoying '\0' src truncation issues.
+   Resulting string is always '\0' truncated.
+   PARAMS
+     dest_max - This is the maximum length the destination string is allowed to grow to.
+     src_max  - This is the maximum number of bytes to copy from the source string.
+*/
+static void apg_c_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
+  assert( dst && src );
+
+  int dst_len   = apg_c_strnlen( dst, dest_max );
+  dst[dst_len]  = '\0'; // just in case it wasn't already terminated before max length
+  int remainder = dest_max - dst_len;
+  if ( remainder <= 0 ) { return; }
+  const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
+  strncat( dst, src, n );                                // strncat manual guarantees null termination.
 }
 
 static void _help() {
@@ -144,9 +161,9 @@ void apg_c_autocomplete() {
   }
   if ( 1 == n_matching ) {
     switch ( section_matching ) {
-    case 0: strncat( _c_user_entered_text, &_c_built_in_commands[last_matching_idx][token_span], APG_C_STR_MAX ); break;
-    case 1: strncat( _c_user_entered_text, &_c_funcs[last_matching_idx].str[token_span], APG_C_STR_MAX ); break;
-    case 2: strncat( _c_user_entered_text, &c_vars[last_matching_idx].str[token_span], APG_C_STR_MAX ); break;
+    case 0: apg_c_strncat( _c_user_entered_text, &_c_built_in_commands[last_matching_idx][token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
+    case 1: apg_c_strncat( _c_user_entered_text, &_c_funcs[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
+    case 2: apg_c_strncat( _c_user_entered_text, &c_vars[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
     default: assert( false ); break;
     } // endswitch
   }
@@ -291,7 +308,7 @@ bool apg_c_append_user_entered_text( const char* str ) {
   }
 
   // append
-  strncat( _c_user_entered_text, str, APG_C_STR_MAX );
+  apg_c_strncat( _c_user_entered_text, str, APG_C_STR_MAX, APG_C_STR_MAX );
 
   // check for line break and if so parse and then delete the rest of the string - no complex carry-on stuff.
   for ( int i = uet_len; i < total_len; i++ ) {
@@ -425,7 +442,7 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
   { // draw user-entered text on the bottom of the image
     char uet_str[APG_C_STR_MAX];
     strcpy( uet_str, "> " );
-    strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX - 2 );
+    apg_c_strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
     int bottom_row_idx = h * row_stride - ( row_height_px * row_stride );
     if ( bottom_row_idx < 0 ) { return false; } // not even space for one line
     apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines, v_flip );
