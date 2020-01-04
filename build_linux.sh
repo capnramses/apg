@@ -3,6 +3,11 @@
 # any error code causes script to exit with error code
 set -e
 
+echo "building drop-down console tests..."
+cd apg_console
+gcc -std=c99 -I src/ tests/main.c src/apg_console.c src/apg_pixfont.c -lm
+cd ..
+
 echo "building interpolation tests..."
 cd apg_interp
 gcc -std=c99 test.c -lm
