@@ -3,10 +3,11 @@ test
 a.out
 testout.wav
 out.*
-apg_pixfont/2.png
 apg_pixfont/0.png
 apg_pixfont/1.png
+apg_pixfont/2.png
 apg_pixfont/4.png
 apg_pixfont/6.png
 apg_pixfont/5.png
 apg_pixfont/7.png
+.vscode/
