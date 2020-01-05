@@ -29,7 +29,6 @@ int w, h;
 int n_channels = 1;
 int thickness = 1;
 bool outlines = false;
-bool vflip = false;
 
 apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines );
 
@@ -40,7 +39,7 @@ memset( img_mem, 0x00, w * h * n_channels );
 
 4. Then paint the string onto the memory
 
-apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines, vflip );
+apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines );
 
 ==============================================================
 
@@ -58,6 +57,7 @@ History:
 0.0.1 - 2019 Aug 9 - Split into stand-alone library code.
 0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
 0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
+0.0.4 - 2022 Jan 05 - Removed vflip again, to simplify code in several places.
 */
 #ifndef _APG_PIXFONT_H_
 #define _APG_PIXFONT_H_
@@ -101,13 +101,12 @@ ARGUMENTS:
 * r,g,b,a - colour of the text. 1-channel uses only red colour. 2-channel uses only red and alpha. 3-channel uses r,g,b. 4-channel uses all.
 * thickness - A scaling factor for the text ( default is 1px thick glyph stems ).
 * add_outline - if the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes
-* vlfip - 0=do nothing, 1=vertically flip the image (handy for eg OpenGL or drawing text into an already-flipped background image). 
 
 RETURNS:
 * returns APG_PIXFONT_FAILURE on error, otherwise success
 */
-int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r,
-  unsigned char g, unsigned char b, unsigned char a, int thickness, int add_outline, int v_flip );
+int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
+  unsigned char a, int thickness, int add_outline );
 
 #ifdef __cplusplus
 }
