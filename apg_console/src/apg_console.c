@@ -36,7 +36,7 @@ static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_li
 static char _c_user_entered_text[APG_C_STR_MAX];
 
 static const int _c_n_built_in_commands            = 5;
-static char _c_built_in_commands[5][APG_C_STR_MAX] = { "help", "clear", "var", "list_vars", "list_funcs" };
+static char _c_built_in_commands[5][APG_C_STR_MAX] = {"help", "clear", "var", "list_vars", "list_funcs"};
 
 static bool _c_redraw_required;
 
@@ -424,7 +424,6 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
   // text properties
   const int thickness = 1;
   const int outlines  = 1;
-  const int v_flip    = 0;
 
   if ( row_stride < 1 ) { return false; }
 
@@ -437,7 +436,7 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
     if ( line_idx < 0 ) { line_idx += APG_C_OUTPUT_LINES_MAX; }
     int row_idx = h * row_stride - ( row_height_px * row_stride ) * ( i + 2 );
     if ( row_idx < 0 ) { break; } // don't bother if entire row above upper image bound
-    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines, v_flip );
+    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines );
   }
   { // draw user-entered text on the bottom of the image
     char uet_str[APG_C_STR_MAX];
@@ -445,7 +444,7 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
     apg_c_strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
     int bottom_row_idx = h * row_stride - ( row_height_px * row_stride );
     if ( bottom_row_idx < 0 ) { return false; } // not even space for one line
-    apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines, v_flip );
+    apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines );
   }
 
   // set background colour wherever there is no text/outline

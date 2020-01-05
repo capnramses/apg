@@ -35,24 +35,8 @@ int main() {
   float* ret_g = apg_c_get_var( "anton" ); // fetch var
   assert( ret_g && fabsf( *ret_g ) >= 789.0f - FLT_EPSILON );
 
-  n_lines = apg_c_count_lines();
-  printf( "n_lines=%i\n", n_lines );
-  assert( 1 == n_lines );
-
-  apg_c_dump_to_stdout();
-  printf( "---\n" );
-
-  apg_c_dump_to_stdout();
-  printf( "---\n" );
   float* ret_j = apg_c_create_var( "antonio", 101112.0f ); // set another far that would match substring "ant"
   assert( ret_j );
-
-  apg_c_dump_to_stdout();
-  printf( "---\n" );
-
-  n_lines = apg_c_count_lines();
-  printf( "n_lines=%i\n", n_lines );
-  assert( 3 == n_lines );
 
   apg_c_print( "first item" );
   apg_c_print( "second item" );
