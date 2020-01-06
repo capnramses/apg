@@ -1,24 +1,25 @@
-/*==============================================================
+/* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
-Status:   Working. Not tested across compilers/platforms yet. Expect warnings.
-Language: C99
 Author:   Anton Gerdelan - @capnramses
+
+Language: C99
+Status:   Working. Not tested across compilers/platforms yet. Expect warnings.
 Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
   2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
+  2020/01/06 - Reduced interface. Moved from stored float cvars to addresses of existing vars. Data type is also specified for bool/int/uint/float support.
 
 Instructions
 ============
-* Just drop the 4 files under the src/ subfolder into your project (font and console source code).
+* Just drop the 4 files into your project (console and pixel font source code).
 * No external image or font assets are required. The font is hard-coded into the source code.
 * This file is the console interface - #include "apg_console.h" in your application code.
 * Your program handles keyboard capture and drawing.
 * You then feed keyboard input to this console.
 * You ask this console to render an RGBA image to memory.
 * You then use that for drawing any way you like. You don't need a 3D graphics API.
-* For an OpenGL example see example 082 in my "gfx_expmts" repository on GitHub.
 
 The primary interface for user-entered text is:
 
@@ -40,26 +41,24 @@ Instructions may be of the following forms:
 Built-in commands include:
 
   "help"           - list built-in commands.
-  "var my_var 2.0" - create a new variable called my_var and initialise its value to 2.0.
   "my_var 2.0"     - set the value of a variable 'my_var'.
   "my_var"         - print the value of variable 'my_var'.
   "clear"          - invoke the 'clear' command.
+  "list_vars"      - print registered variables and their values to drop-down console
+  "list_funcs"     - print registered variables and their values to drop-down console
 
-All values are stored as 32-bit floats, but may be cast to also represent boolean or integer values.
+Variables may also be registered, or accessed programmatically:
 
-Variables may also be created, set, or fetched programmatically.
-
-  apg_c_create_var( str, val )
-  apg_c_set_var( str, val )
+  apg_c_register_var( str, var_ptr, datatype )
   apg_c_get_var()
 
 C functions can be called from console by registering a command name and function to call.
 Your callback functions must be in the form `bool my_function( float arg )`. If your function returns false the console prints an error message.
-User functions always require 1 float argument but if you call it without supplying an argument then the argument value is set to 0.
+User functions always require 1 float argument but if it is called from the drop-down console without supplying an argument then the argument value is set to 0.
 
-  apg_c_create_func( str, function_ptr );
+  apg_c_register_func( str, function_ptr );
 
-Scrolling output text may be interacted with
+Scrolling output text may be interacted with programmatically:
 
   apg_c_apg_c_output_clear() - Clear the output text.
   apg_c_print( str )         - Adds a line of text to the output such as a debug message.
@@ -73,13 +72,8 @@ This is API-agnostic so must be converted to a texture to be used with 3D APIs.
   apg_c_image_redraw_required()   - Check if anything has actually changed requiring a redraw. You should also redraw if eg the display area changes size.
 
 TODO
-* definitely
-~ maybe
-=====
 ~ Up arrow key scrolls command history or selects previous 1 command.
-~ Support dynamic key bindings `bind keycode c_func` - just requires support for 2-argument functions. App can do the rest.
-~ Store a colour for each line so eg errors can be in red.
-==============================================================*/
+======================================================================================================================= */
 #pragma once
 
 #ifdef __cplusplus
@@ -95,40 +89,59 @@ extern "C" {
 #define APG_C_FUNCS_MAX 128           // maximum number of console commands
 #define APG_C_OUTPUT_LINES_MAX 32     // maximum number of lines retained in output
 
+/* =======================================================================================================================
+user-entered text API. call these functions based on eg keyboard input.
+======================================================================================================================= */
+
 bool apg_c_append_user_entered_text( const char* str );
 void apg_c_backspace( void );
+void apg_c_autocomplete( void );
 void apg_c_clear_user_entered_text( void );
 
-// creates a console variable with name `str` and initial value `val`.
-// RETURNS
-//   NULL if value with name `str` already exists. The function then does not change the value.
-//   Address of the c_var. Since c_vars cannot be deleted this can be used anywhere in your code to get or set the c_var's value.
-float* apg_c_create_var( const char* str, float val );
-
-// fetches the value of a console variable with name `str`.
-// RETURNS
-//   NULL if the variable does not exist.
-//   Address of the c_var. Since c_vars cannot be deleted this can be used anywhere in your code to get or set the c_var's value.
-float* apg_c_get_var( const char* str );
-
-// changes the value of an existing console variable.
-// RETURNS
-//  false if a variable with name `str` does not already exist.
-bool apg_c_set_var( const char* str, float val );
-
-bool apg_c_create_func( const char* str, bool ( *fptr )( float ) );
-
-void apg_c_autocomplete( void );
+/* =======================================================================================================================
+console output text API.
+======================================================================================================================= */
 
 void apg_c_output_clear( void );
-
 // Appends str as an output line to the scrolling output
 void apg_c_print( const char* str );
-
 int apg_c_count_lines( void );
-
 // printf everything in console to stdout stream
 void apg_c_dump_to_stdout( void );
+
+/* =======================================================================================================================
+program <-> console variable and function linkage API
+======================================================================================================================= */
+
+typedef enum apg_c_var_datatype_t { APG_C_BOOL, APG_C_INT32, APG_C_UINT32, APG_C_FLOAT, APG_C_OTHER } apg_c_var_datatype_t;
+
+typedef struct apg_c_var_t {
+  char str[APG_C_STR_MAX];
+  void* var_ptr;
+  apg_c_var_datatype_t datatype;
+} apg_c_var_t;
+
+// Registers and existing program variable with the console.
+// WARNING Pointer is assumed to be valid for lifetime of console registration.
+// PARAMS
+//   str      - A name for the variable.
+//   var_ptr  - Pointer to variable to register and use for this c_var.
+//   datatype - Data type of the variable pointed to by var_ptr. Determines how values can be set from the console.
+// RETURNS
+//   false if failed ie not space left in array of var ptrs.
+bool apg_c_register_var( const char* str, void* var_ptr, apg_c_var_datatype_t datatype );
+
+// Fetches the address of a console variable with name `str`.
+// RETURNS
+//   NULL if the variable does not exist.
+//   Address of the c_var entry with pointer and data type.
+apg_c_var_t* apg_c_get_var( const char* str );
+
+bool apg_c_register_func( const char* str, bool ( *fptr )( float ) );
+
+/* =======================================================================================================================
+rendering API
+======================================================================================================================= */
 
 // Draw the current console text into an image buffer you have allocated with dimensions w, h, and n_channels.
 // The destination image does not need to exactly match the console text size - it can be bigger or smaller.

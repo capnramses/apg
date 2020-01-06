@@ -1,1 +1,0 @@
-gcc -o consoletests.exe -I src\ tests\main.c src\apg_console.c src\apg_pixfont.c

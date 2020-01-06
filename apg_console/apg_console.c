@@ -1,11 +1,9 @@
-/*==============================================================
+/* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
-Language: C99
 Author:   Anton Gerdelan - @capnramses
-Contact:  <antongdl@protonmail.com>
-Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
+Language: C99
 Licence:  See bottom of header file.
-==============================================================*/
+======================================================================================================================= */
 #include "apg_console.h"
 #include "apg_pixfont.h" // used for adding glyphs to image output
 #include <assert.h>
@@ -15,20 +13,15 @@ Licence:  See bottom of header file.
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct c_var_t {
-  char str[APG_C_STR_MAX];
-  float val;
-} c_var_t;
-
-typedef struct c_func_t {
+typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
   bool ( *func_ptr )( float );
-} c_func_t;
+} apg_c_func_t;
 
-static c_var_t c_vars[APG_C_VARS_MAX];
-static uint32_t n_c_vars;
+static apg_c_var_t _c_vars[APG_C_VARS_MAX];
+static uint32_t _n_c_vars;
 
-static c_func_t _c_funcs[APG_C_FUNCS_MAX];
+static apg_c_func_t _c_funcs[APG_C_FUNCS_MAX];
 static uint32_t _n_c_funcs;
 
 static char c_output_lines[APG_C_OUTPUT_LINES_MAX][APG_C_STR_MAX];
@@ -36,7 +29,7 @@ static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_li
 static char _c_user_entered_text[APG_C_STR_MAX];
 
 static const int _c_n_built_in_commands            = 5;
-static char _c_built_in_commands[5][APG_C_STR_MAX] = {"help", "clear", "var", "list_vars", "list_funcs"};
+static char _c_built_in_commands[5][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
 
 static bool _c_redraw_required;
 
@@ -70,12 +63,12 @@ static void _help() {
 }
 
 static void _list_c_vars() {
-  apg_c_print( "c_vars are:" );
-  for ( uint32_t i = 0; i < n_c_vars; i++ ) { apg_c_print( c_vars[i].str ); }
+  apg_c_print( "=====c_vars=====" );
+  for ( uint32_t i = 0; i < _n_c_vars; i++ ) { apg_c_print( _c_vars[i].str ); }
 }
 
 static void _list_c_funcs() {
-  apg_c_print( "c_funcs are:" );
+  apg_c_print( "=====c_funcs=====" );
   for ( uint32_t i = 0; i < _n_c_funcs; i++ ) { apg_c_print( _c_funcs[i].str ); }
 }
 
@@ -84,8 +77,8 @@ static void _list_c_funcs() {
 static int _console_find_var( const char* str ) {
   assert( str );
 
-  for ( uint32_t i = 0; i < n_c_vars; i++ ) {
-    if ( strncmp( str, c_vars[i].str, APG_C_STR_MAX ) == 0 ) { return i; }
+  for ( uint32_t i = 0; i < _n_c_vars; i++ ) {
+    if ( strncmp( str, _c_vars[i].str, APG_C_STR_MAX ) == 0 ) { return i; }
   }
   return -1;
 }
@@ -108,66 +101,9 @@ static int _console_find_builtin_func( const char* str ) {
   return -1;
 }
 
-// WARNING(Anton) - assumes string is ASCII
-void apg_c_autocomplete() {
-  size_t len = strlen( _c_user_entered_text );
-  if ( 0 == len ) { return; }
-
-  int i;
-  for ( i = len - 1; i >= 0; i-- ) {
-    if ( isspace( _c_user_entered_text[i] ) ) { break; }
-  }
-  i++;
-  int token_span = len - i;
-  if ( 0 == token_span ) { return; }
-  char token[APG_C_STR_MAX + 1];
-  for ( int k = 0; k < token_span; k++ ) { token[k] = _c_user_entered_text[k + i]; }
-  token[token_span] = '\0';
-
-  int n_matching        = 0;
-  int last_matching_idx = -1;
-  int section_matching  = -1;
-  // check built-in funcs
-  for ( int l = 0; l < _c_n_built_in_commands; l++ ) {
-    char* res = strstr( _c_built_in_commands[l], token );
-    if ( _c_built_in_commands[l] == res ) {
-      n_matching++;
-      last_matching_idx = l;
-      section_matching  = 0;
-      apg_c_print( _c_built_in_commands[l] );
-    }
-  }
-
-  // check cfuncs
-  for ( uint32_t m = 0; m < _n_c_funcs; m++ ) {
-    char* res = strstr( _c_funcs[m].str, token );
-    if ( _c_funcs[m].str == res ) {
-      n_matching++;
-      last_matching_idx = m;
-      section_matching  = 1;
-      apg_c_print( _c_funcs[m].str );
-    }
-  }
-
-  // check variables
-  for ( uint32_t o = 0; o < n_c_vars; o++ ) {
-    char* res = strstr( c_vars[o].str, token );
-    if ( c_vars[o].str == res ) {
-      n_matching++;
-      last_matching_idx = o;
-      section_matching  = 2;
-      apg_c_print( c_vars[o].str );
-    }
-  }
-  if ( 1 == n_matching ) {
-    switch ( section_matching ) {
-    case 0: apg_c_strncat( _c_user_entered_text, &_c_built_in_commands[last_matching_idx][token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
-    case 1: apg_c_strncat( _c_user_entered_text, &_c_funcs[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
-    case 2: apg_c_strncat( _c_user_entered_text, &c_vars[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
-    default: assert( false ); break;
-    } // endswitch
-  }
-}
+/* =======================================================================================================================
+user-entered text API. call these functions based on eg keyboard input.
+======================================================================================================================= */
 
 static bool _parse_user_entered_instruction( const char* str ) {
   assert( str );
@@ -201,12 +137,6 @@ static bool _parse_user_entered_instruction( const char* str ) {
       return true;
     }
 
-    if ( strncmp( one, "var", APG_C_STR_MAX ) == 0 ) {
-      snprintf( tmp, APG_C_STR_MAX, "To create a variable with `var` the form is: `var myvariablename 1`" );
-      apg_c_print( tmp );
-      return true;
-    }
-
     if ( strncmp( one, "list_vars", APG_C_STR_MAX ) == 0 ) {
       _list_c_vars();
       return true;
@@ -216,13 +146,30 @@ static bool _parse_user_entered_instruction( const char* str ) {
       return true;
     }
 
-    { // then variable. equivalent to 'get myvariable' but no 'get' command required in this console.
-      float* got_it = apg_c_get_var( one );
-      if ( got_it ) {
-        snprintf( tmp, APG_C_STR_MAX, "%s %.2f", one, *got_it );
-        apg_c_print( tmp );
-        return true;
-      }
+    // then variable. equivalent to 'get myvariable' but no 'get' command required in this console.
+    int var_idx = _console_find_var( one );
+    if ( var_idx >= 0 ) {
+      apg_c_var_datatype_t dt = _c_vars[var_idx].datatype;
+      void* var_ptr           = _c_vars[var_idx].var_ptr;
+      assert( var_ptr );
+      tmp[0] = '\0';
+      switch ( dt ) {
+      case APG_C_BOOL: {
+        snprintf( tmp, APG_C_STR_MAX, "%s %u.", one, *(bool*)var_ptr );
+      } break;
+      case APG_C_INT32: {
+        snprintf( tmp, APG_C_STR_MAX, "%s %i.", one, *(int32_t*)var_ptr );
+      } break;
+      case APG_C_UINT32: {
+        snprintf( tmp, APG_C_STR_MAX, "%s %u.", one, *(uint32_t*)var_ptr );
+      } break;
+      case APG_C_FLOAT: {
+        snprintf( tmp, APG_C_STR_MAX, "%s %f.", one, *(float*)var_ptr );
+      } break;
+      default: { snprintf( tmp, APG_C_STR_MAX, "%s OTHER", one ); } break; // some other data type
+      }                                                                    // endswitch
+      apg_c_print( tmp );
+      return true;
     }
 
     // give up
@@ -232,11 +179,11 @@ static bool _parse_user_entered_instruction( const char* str ) {
   } break;
 
   case 2: {
-    float val = (float)atof( two );
+    float fval = (float)atof( two );
 
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
-      bool res = _c_funcs[func_idx].func_ptr( val );
+      bool res = _c_funcs[func_idx].func_ptr( fval );
       if ( !res ) {
         snprintf( tmp, APG_C_STR_MAX, "ERROR: function `%s` returned error.", one );
         apg_c_print( tmp );
@@ -245,39 +192,30 @@ static bool _parse_user_entered_instruction( const char* str ) {
     }
 
     // assume this is equiv to "set myvariable value" with an implied "set"
-    bool set_it = apg_c_set_var( one, val );
-    if ( set_it ) {
-      snprintf( tmp, APG_C_STR_MAX, "`%s %.2f`", one, val );
-      apg_c_print( tmp );
+    int var_idx = _console_find_var( one );
+    if ( var_idx >= 0 ) {
+      apg_c_var_datatype_t dt = _c_vars[var_idx].datatype;
+      void* var_ptr           = _c_vars[var_idx].var_ptr;
+      assert( var_ptr );
+      tmp[0] = '\0';
+      switch ( dt ) {
+      case APG_C_BOOL: {
+        *(bool*)var_ptr = (bool)atoi( two );
+      } break;
+      case APG_C_INT32: {
+        *(int32_t*)var_ptr = (int32_t)atoi( two );
+      } break;
+      case APG_C_UINT32: {
+        *(uint32_t*)var_ptr = (uint32_t)atoi( two );
+      } break;
+      case APG_C_FLOAT: {
+        *(float*)var_ptr = fval;
+      } break;
+      default: break; // do nothing for complex data types
+      }               // endswitch
       return true;
     } else {
-      if ( strncmp( one, "var", APG_C_STR_MAX ) == 0 ) {
-        snprintf( tmp, APG_C_STR_MAX, "ERROR: `var` must be initialised to a value `var myvar 1`." );
-        apg_c_print( tmp );
-        return true;
-      } else {
-        snprintf( tmp, APG_C_STR_MAX, "ERROR: `%s` is not a recognised variable name. To create a new variable use `var myvar 0`.", one );
-        apg_c_print( tmp );
-      }
-      return false;
-    }
-  } break;
-
-  case 3: {
-    // "var myvariable value"
-    if ( strncmp( one, "var", APG_C_STR_MAX ) != 0 ) {
-      snprintf( tmp, APG_C_STR_MAX, "ERROR: `%s` is not a recognised command for a 3-token instruction. Did you mean `var`?", one );
-      apg_c_print( tmp );
-      return false;
-    }
-    float val        = (float)atof( three );
-    float* create_it = apg_c_create_var( two, val );
-    if ( create_it ) {
-      snprintf( tmp, APG_C_STR_MAX, "`var %s %.2f`", two, val );
-      apg_c_print( tmp );
-      return true;
-    } else {
-      snprintf( tmp, APG_C_STR_MAX, "ERROR: Symbol `%s` already exists.", two );
+      snprintf( tmp, APG_C_STR_MAX, "ERROR: `%s` is not a recognised variable name.", one );
       apg_c_print( tmp );
       return false;
     }
@@ -338,6 +276,70 @@ void apg_c_clear_user_entered_text( void ) {
   _c_redraw_required      = true;
 }
 
+// WARNING(Anton) - assumes string is ASCII
+void apg_c_autocomplete() {
+  size_t len = strlen( _c_user_entered_text );
+  if ( 0 == len ) { return; }
+
+  int i;
+  for ( i = len - 1; i >= 0; i-- ) {
+    if ( isspace( _c_user_entered_text[i] ) ) { break; }
+  }
+  i++;
+  int token_span = len - i;
+  if ( 0 == token_span ) { return; }
+  char token[APG_C_STR_MAX + 1];
+  for ( int k = 0; k < token_span; k++ ) { token[k] = _c_user_entered_text[k + i]; }
+  token[token_span] = '\0';
+
+  int n_matching        = 0;
+  int last_matching_idx = -1;
+  int section_matching  = -1;
+  // check built-in funcs
+  for ( int l = 0; l < _c_n_built_in_commands; l++ ) {
+    char* res = strstr( _c_built_in_commands[l], token );
+    if ( _c_built_in_commands[l] == res ) {
+      n_matching++;
+      last_matching_idx = l;
+      section_matching  = 0;
+      apg_c_print( _c_built_in_commands[l] );
+    }
+  }
+
+  // check cfuncs
+  for ( uint32_t m = 0; m < _n_c_funcs; m++ ) {
+    char* res = strstr( _c_funcs[m].str, token );
+    if ( _c_funcs[m].str == res ) {
+      n_matching++;
+      last_matching_idx = m;
+      section_matching  = 1;
+      apg_c_print( _c_funcs[m].str );
+    }
+  }
+
+  // check variables
+  for ( uint32_t o = 0; o < _n_c_vars; o++ ) {
+    char* res = strstr( _c_vars[o].str, token );
+    if ( _c_vars[o].str == res ) {
+      n_matching++;
+      last_matching_idx = o;
+      section_matching  = 2;
+      apg_c_print( _c_vars[o].str );
+    }
+  }
+  if ( 1 == n_matching ) {
+    switch ( section_matching ) {
+    case 0: apg_c_strncat( _c_user_entered_text, &_c_built_in_commands[last_matching_idx][token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
+    case 1: apg_c_strncat( _c_user_entered_text, &_c_funcs[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
+    case 2: apg_c_strncat( _c_user_entered_text, &_c_vars[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
+    default: assert( false ); break;
+    } // endswitch
+  }
+}
+
+/* =======================================================================================================================
+console output text API.
+======================================================================================================================= */
 void apg_c_output_clear( void ) {
   c_output_lines_oldest = c_output_lines_newest = -1;
   c_n_output_lines                              = 0;
@@ -369,7 +371,10 @@ void apg_c_dump_to_stdout( void ) {
   printf( "> %s\n", _c_user_entered_text );
 }
 
-bool apg_c_create_func( const char* str, bool ( *fptr )( float ) ) {
+/* =======================================================================================================================
+program <-> console variable and function linkage API
+======================================================================================================================= */
+bool apg_c_register_func( const char* str, bool ( *fptr )( float ) ) {
   assert( str );
   assert( fptr );
 
@@ -383,39 +388,34 @@ bool apg_c_create_func( const char* str, bool ( *fptr )( float ) ) {
   return true;
 }
 
-float* apg_c_create_var( const char* str, float val ) {
-  assert( str );
+bool apg_c_register_var( const char* str, void* var_ptr, apg_c_var_datatype_t datatype ) {
+  assert( str && var_ptr );
 
-  if ( n_c_vars >= APG_C_VARS_MAX ) { return NULL; }
+  if ( _n_c_vars >= APG_C_VARS_MAX ) { return false; }
   int idx = _console_find_var( str );
-  if ( idx >= 0 ) { return NULL; }
+  if ( idx >= 0 ) { return false; }
   idx = _console_find_builtin_func( str );
-  if ( idx >= 0 ) { return NULL; }
+  if ( idx >= 0 ) { return false; }
   idx = _console_find_func( str );
-  if ( idx >= 0 ) { return NULL; }
-  idx = n_c_vars++;
-  strncpy( c_vars[idx].str, str, APG_C_STR_MAX - 1 );
-  c_vars[idx].val = val;
-  return &c_vars[idx].val;
+  if ( idx >= 0 ) { return false; }
+  idx = _n_c_vars++;
+  strncpy( _c_vars[idx].str, str, APG_C_STR_MAX - 1 );
+  _c_vars[idx].var_ptr  = var_ptr;
+  _c_vars[idx].datatype = datatype;
+  return true;
 }
 
-float* apg_c_get_var( const char* str ) {
+apg_c_var_t* apg_c_get_var( const char* str ) {
   assert( str );
 
   int idx = _console_find_var( str );
   if ( idx < 0 ) { return NULL; }
-  return &c_vars[idx].val;
+  return &_c_vars[idx];
 }
 
-bool apg_c_set_var( const char* str, float val ) {
-  assert( str );
-
-  int idx = _console_find_var( str );
-  if ( idx < 0 ) { return false; }
-  c_vars[idx].val = val;
-  return true;
-}
-
+/* =======================================================================================================================
+rendering API
+======================================================================================================================= */
 bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, uint8_t* background_colour ) {
   assert( img_ptr );
 
