@@ -6,16 +6,17 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## Contents
 
-| Library     | Description                                     | Language | # Files         |
-|-------------|-------------------------------------------------|----------|-----------------|
-| apg         | Generic C programming utils.                    | C        | 1               |
-| apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont |
-| apg_interp  | Interpolation / "tweening" / "easing".          | C, JS    | 1,1             |
-| apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1,1             |
-| apg_pixfont | String-to-image with a pixel font.              | C        | 2               |
-| apg_ply     | Stanford PLY mesh format read/write.            | C        |                 |
-| apg_tga     | Single-header TGA format read/write.            | C        | 1               |
-| apg_wav     | WAV file format read/write.                     | C        | 2               |
+| Library     | Description                                     | Language | # Files         | Version    |
+| ----------- | ----------------------------------------------- | -------- | --------------- | ---------- |
+| apg         | Generic C programming utils.                    | C        | 1               | 1          |
+| apg_bmp     | Windows BMP reader/writer library.              | C        | 2               | 3          |
+| apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont | 2020/01/06 |
+| apg_interp  | Interpolation / "tweening" / "easing".          | C, JS    | 1,1             | 2019/09/10 |
+| apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1,1             | 2019/11/20 |
+| apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.0.4      |
+| apg_ply     | Stanford PLY mesh format read/write.            | C        |                 | ?          |
+| apg_tga     | Single-header TGA format read/write.            | C        | 1               | 2019/11/14 |
+| apg_wav     | WAV file format read/write.                     | C        | 2               | 1          |
 
 ## To Do
 

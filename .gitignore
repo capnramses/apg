@@ -1,8 +1,20 @@
+#projects
+.vscode/
+#runtime generated
 apg.log
-test
-a.out
 testout.wav
 out.*
+apg_console/testoutput.png
+apg_console/testuserenteredtext.png
+apg_bmp/tests_fuzzing/fuzz_24bpp_outputs/
+apg_bmp/tests_fuzzing/fuzz_32bpp_outputs/
+#binaries
+test
+a.out
+apg_bmp/test_read_bmp
+apg_bmp/tests_fuzzing/fuzz_24bpp
+apg_bmp/tests_fuzzing/fuzz_32bpp
+#working test data
 apg_pixfont/0.png
 apg_pixfont/1.png
 apg_pixfont/2.png
@@ -10,6 +22,3 @@ apg_pixfont/4.png
 apg_pixfont/6.png
 apg_pixfont/5.png
 apg_pixfont/7.png
-.vscode/
-apg_console/testoutput.png
-apg_console/testuserenteredtext.png
