@@ -20,7 +20,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## To Do
 
-* When it matures move apg_bmp from the opengl_expmts repository into here.
+* Restore apg_bmp write() function.
 * Put my unicode tools here.
 
 ## LICENCE
