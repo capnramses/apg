@@ -3,10 +3,11 @@
 # any error code causes script to exit with error code
 set -e
 
-REM echo "building drop-down console tests..."
-REM cd apg_console
-REM gcc -std=c99 -I src/ tests/main.c src/apg_console.c src/apg_pixfont.c -lm
-REM cd ..
+# TODO(Anton) need to recreate test cases for console
+# echo "building drop-down console tests..."
+# cd apg_console
+# gcc -std=c99 -I src/ tests/main.c src/apg_console.c src/apg_pixfont.c -lm
+# cd ..
 
 echo "building interpolation tests..."
 cd apg_interp
