@@ -232,10 +232,6 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, int* n_chans 
     bitshift_rgba[1] = _bitscan( dib_hdr_ptr->bitmask_g );
     bitshift_rgba[2] = _bitscan( dib_hdr_ptr->bitmask_b );
     bitshift_rgba[3] = _bitscan( bitmask_a );
-    if ( bitshift_rgba[0] < 0 || bitshift_rgba[1] < 0 || bitshift_rgba[2] < 0 || bitshift_rgba[3] < 0 ) {
-      free( record.data );
-      return NULL;
-    }
   }
 
   // allocate memory for the output pixels block. cast to size_t in case width and height are both the max of 65536 and n_dst_chans > 1
