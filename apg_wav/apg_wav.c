@@ -123,10 +123,10 @@ unsigned char* apg_read_wav( const char* filename, int* n_chans, int* sample_rat
   bool ret = _read_entire_file( filename, &record );
   if ( !ret || 0 == record.sz ) { return 0; }
   // TODO validate each subchunk
-  struct wav_chunk_descr_t* chunk_descr   = (struct wav_chunk_descr_t*)record.data;
+  //struct wav_chunk_descr_t* chunk_descr   = (struct wav_chunk_descr_t*)record.data;
   struct wav_fmt_subchunk_t* fmt_subchunk = (struct wav_fmt_subchunk_t*)( (uint8_t*)record.data + sizeof( struct wav_chunk_descr_t ) );
-  struct wav_data_subchunk_t* data_subchunk =
-    (struct wav_data_subchunk_t*)( (uint8_t*)record.data + sizeof( struct wav_fmt_subchunk_t ) + sizeof( struct wav_chunk_descr_t ) );
+  //struct wav_data_subchunk_t* data_subchunk =
+   // (struct wav_data_subchunk_t*)( (uint8_t*)record.data + sizeof( struct wav_fmt_subchunk_t ) + sizeof( struct wav_chunk_descr_t ) );
   unsigned char* wav_data =
     (unsigned char*)( (uint8_t*)record.data + sizeof( struct wav_fmt_subchunk_t ) + sizeof( struct wav_chunk_descr_t ) + sizeof( struct wav_data_subchunk_t ) );
   *n_chans         = fmt_subchunk->n_chans;

@@ -2,35 +2,44 @@
 
 # any error code causes script to exit with error code
 set -e
+# echo everything
+set -x
 
-# TODO(Anton) need to recreate test cases for console
-# echo "building drop-down console tests..."
-# cd apg_console
-# gcc -std=c99 -I src/ tests/main.c src/apg_console.c src/apg_pixfont.c -lm
-# cd ..
+CC=clang
+CPP=clang++
+FLAGS="-fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror -pedantic -g"
 
-echo "building interpolation tests..."
+# TODO(Anton) need to recreate test cases for apg
+# TODO(Anton) need to recreate test cases for apg_console since API updated
+
+echo "building apg_bmp tests..."
+cd apg_bmp
+$CC $FLAGS -o test_read_bmp test_code/main.c -I./ -Itest_code/ apg_bmp.c -DAPG_BMP_DEBUG_OUTPUT
+cd ..
+
+echo "building apg_interp tests..."
 cd apg_interp
-gcc -std=c99 test.c -lm
+$CC $FLAGS -std=c99 -I./ tests/test.c -lm
 cd ..
 
-echo "building maths library tests..."
+echo "building apg_maths tests..."
 cd apg_maths
-gcc -std=c99 test.c -lm
+$CC $FLAGS -std=c99 -I./ tests/test.c -lm
 cd ..
 
-echo "building pixfont library tests..."
+echo "building apg_pixfont tests..."
 cd apg_pixfont
-g++ test_pixfont.cpp apg_pixfont.c
+$CC $FLAGS -std=c99 -o apg_pixfont.o -I./ -c apg_pixfont.c
+$CPP $FLAGS -I./ -Itests/ tests/test_pixfont.cpp apg_pixfont.o -lm
 cd ..
 
-echo "building TGA library tests..."
+echo "building apg_tga tests..."
 cd apg_tga
-gcc main.c
+$CC $FLAGS -I./ -Itests/ tests/main.c
 cd ..
 
 echo "building wav library tests..."
 cd apg_wav
-gcc -std=c99 main_write.c apg_wav.c -lm
-gcc -std=c99 main_read.c apg_wav.c -lm
+$CC $FLAGS -I./ -Itests/ tests/main_write.c apg_wav.c -lm
+$CC $FLAGS -I./ -Itests/ tests/main_read.c apg_wav.c -lm
 cd ..

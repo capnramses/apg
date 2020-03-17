@@ -1,5 +1,8 @@
 #projects
 .vscode/
+#compilers and linkers
+*.o
+*.s
 #runtime generated
 apg.log
 testout.wav

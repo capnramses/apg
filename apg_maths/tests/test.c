@@ -4,11 +4,11 @@
 int main() {
   printf( "testing C99 version of maths library\n" );
 
-  vec2 v2, v2b;
+  // vec2 v2, v2b;
   vec3 v3, v3b;
-  vec4 v4, v4b;
-  mat4 m4, m4b;
-  versor q, qb;
+  //vec4 v4, v4b;
+  mat4 m4;//m4b;
+  //versor q, qb;
 
   // constructors and assignment
   printf( "* zero_mat4\n" );
