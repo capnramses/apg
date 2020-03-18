@@ -24,8 +24,8 @@ Current Limitations:
 
 To Do:
 - FUZZING
-  - create a fuzz test set for each BPP (32,24,8,4,1).
-	- fuzz each BPP separately.
+  - create a fuzz test set for more obscure bpp and formats (16,8,4,1 bpp) etc.
+  - 24 and 32-bit fairly well fuzzed
 - (maybe) FEATURE Flipping the image based on negative width and height in header, and/or function arguments. 
 - (maybe) PERF ifdef intrinsics/asm for bitscan. Platform-specific code so won't include unless necessary.
 - (maybe) FEATURE Add parameter for padding output memory to eg 4-byte alignment or n channels.
