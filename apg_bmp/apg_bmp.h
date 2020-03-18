@@ -13,19 +13,25 @@ Instructions:
 - Just drop this header, and the matching .c file into your project.
 - To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
 
+Advantages:
+- The implementation is fast, simple, and supports more formats than most BMP reader libraries.
+- The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
+- The reader is robust to large files and malformed files, and will return any valid partial data in an image.
+- Reader supports 32bpp (with alpha channel), 24bpp, 8bpp, 4bpp, and 1bpp monochrome BMP images.
+- Reader handles indexed BMP images using a colour palette.
+- Writer supports 32bpp RGBA and 24bpp uncompressed RGB images.
+
 Current Limitations:
-- 16-bit images not supported (yet). 1,4,8,24, and 32-bit images can be read.
+- 16-bit images not supported (don't have any samples to test on).
 - No support for interleaved channel bit layouts eg RGB101010 RGB555 RGB565.
-- No hooks provided yet to override internal malloc calls.
-- No support for compressed images, although in practice these are not used.
+- No support for compressed BMP images, although in practice these are not used.
 - Output images with alpha channel are written in BITMAPINFOHEADER format.
   For better alpha support in other apps the 124-bit v5 header could be used instead,
 	at the cost of some backward compatibility and bloat.
 
 To Do:
 - FUZZING
-  - create a fuzz test set for each BPP (32,24,8,4,1).
-	- fuzz each BPP separately.
+  - create a unique fuzz test set for (8,4,1 BPP).
 - (maybe) FEATURE Flipping the image based on negative width and height in header, and/or function arguments. 
 - (maybe) PERF ifdef intrinsics/asm for bitscan. Platform-specific code so won't include unless necessary.
 - (maybe) FEATURE Add parameter for padding output memory to eg 4-byte alignment or n channels.
