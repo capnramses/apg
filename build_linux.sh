@@ -14,7 +14,8 @@ FLAGS="-fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror -pedantic -
 
 echo "building apg_bmp tests..."
 cd apg_bmp
-$CC $FLAGS -o test_read_bmp test_code/main.c -I./ -Itest_code/ apg_bmp.c -DAPG_BMP_DEBUG_OUTPUT
+$CC $FLAGS -o test_read_bmp test_code/main_read.c -I./ -Itest_code/ apg_bmp.c -DAPG_BMP_DEBUG_OUTPUT
+$CC $FLAGS -o test_write_bmp test_code/main_write.c -I./ -Itest_code/ apg_bmp.c -DAPG_BMP_DEBUG_OUTPUT
 cd ..
 
 echo "building apg_interp tests..."

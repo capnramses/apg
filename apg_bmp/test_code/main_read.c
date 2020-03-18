@@ -15,7 +15,8 @@ int main( int argc, const char** argv ) {
     return 0;
   }
   printf( "Reading `%s`. Writing out.png\n", argv[1] );
-  int w = 0, h = 0, n_chans = 0;
+  int w = 0, h = 0;
+  unsigned int n_chans   = 0;
   unsigned char* img_mem = apg_bmp_read( argv[1], &w, &h, &n_chans );
   if ( !img_mem ) {
     fprintf( stderr, "ERROR: failed to read image `%s`\n", argv[1] );

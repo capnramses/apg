@@ -128,7 +128,7 @@ static uint32_t _bitscan( uint32_t dword ) {
   return -1;
 }
 
-unsigned char* apg_bmp_read( const char* filename, int* w, int* h, int* n_chans ) {
+unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans ) {
   if ( !filename || !w || !h || !n_chans ) { return NULL; }
 
   // read in the whole file into memory first - much faster than parsing on-the-fly
@@ -224,7 +224,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, int* n_chans 
   }
 
   // find which bit number each colour channel starts at, so we can separate colours out
-  uint32_t bitshift_rgba[4] = { 0, 0, 0, 0 }; // NOTE(Anton) noticed this was int and not uint32_t so changed it. 17 Mar 2020
+  uint32_t bitshift_rgba[4] = {0, 0, 0, 0}; // NOTE(Anton) noticed this was int and not uint32_t so changed it. 17 Mar 2020
   uint32_t bitmask_a        = 0;
   if ( has_bitmasks ) {
     bitmask_a        = ~( dib_hdr_ptr->bitmask_r | dib_hdr_ptr->bitmask_g | dib_hdr_ptr->bitmask_b );
@@ -417,4 +417,113 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, int* n_chans 
 
   free( record.data );
   return dst_img_ptr;
+}
+
+void apg_bmp_free( unsigned char* pixels_ptr ) {
+  if ( !pixels_ptr ) { return; }
+  free( pixels_ptr );
+}
+
+unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int w, int h, unsigned int n_chans ) {
+  if ( !filename || !pixels_ptr ) { return 0; }
+  if ( 0 == w || 0 == h ) { return 0; }
+  if ( labs( w ) > _BMP_MAX_DIMS || labs( h ) > _BMP_MAX_DIMS ) { return 0; }
+  if ( n_chans != 3 && n_chans != 4 ) { return 0; }
+
+  uint32_t height = labs( h );
+  uint32_t width  = labs( w );
+  // work out if any padding how much to skip at end of each row
+  const size_t unpadded_row_sz      = width * n_chans;
+  const size_t row_padding_sz       = 0 == unpadded_row_sz % 4 ? 0 : 4 - unpadded_row_sz % 4;
+  const size_t row_sz               = unpadded_row_sz + row_padding_sz;
+  const size_t dst_pixels_padded_sz = row_sz * height;
+
+  const size_t dib_hdr_sz = sizeof( _bmp_dib_BITMAPINFOHEADER_t );
+  _bmp_file_header_t file_hdr;
+  {
+    file_hdr.file_type[0]      = 'B';
+    file_hdr.file_type[1]      = 'M';
+    file_hdr.file_sz           = _BMP_FILE_HDR_SZ + dib_hdr_sz + dst_pixels_padded_sz;
+    file_hdr.reserved1         = 0;
+    file_hdr.reserved2         = 0;
+    file_hdr.image_data_offset = _BMP_FILE_HDR_SZ + dib_hdr_sz;
+  }
+  _bmp_dib_BITMAPINFOHEADER_t dib_hdr;
+  {
+    dib_hdr.this_header_sz         = _BMP_MIN_DIB_HDR_SZ; // NOTE: must be 40 and not include the bitmask memory in size here
+    dib_hdr.w                      = w;
+    dib_hdr.h                      = h;
+    dib_hdr.n_planes               = 1;
+    dib_hdr.bpp                    = 3 == n_chans ? 24 : 32;
+    dib_hdr.compression_method     = 3 == n_chans ? BI_RGB : BI_BITFIELDS;
+    dib_hdr.image_uncompressed_sz  = 0;
+    dib_hdr.horiz_pixels_per_meter = 0;
+    dib_hdr.vert_pixels_per_meter  = 0;
+    dib_hdr.n_colours_in_palette   = 0;
+    dib_hdr.n_important_colours    = 0;
+    // big-endian masks. only used in BI_BITFIELDS and BI_ALPHABITFIELDS ( 16 and 32-bit images )
+    // important note: GIMP stores BMP data in this array order for 32-bit: [A][B][G][R]
+    dib_hdr.bitmask_r = 0xFF000000;
+    dib_hdr.bitmask_g = 0x00FF0000;
+    dib_hdr.bitmask_b = 0x0000FF00;
+  }
+
+  uint8_t* dst_pixels_ptr = malloc( dst_pixels_padded_sz );
+  if ( !dst_pixels_ptr ) { return 0; }
+  {
+    size_t dst_byte_idx = 0;
+    uint8_t padding[4]  = {0, 0, 0, 0};
+    uint8_t rgba[4]     = {0, 0, 0, 0};
+    uint8_t bgra[4]     = {0, 0, 0, 0};
+
+    for ( uint32_t row = 0; row < height; row++ ) {
+      size_t src_byte_idx = ( height - 1 - row ) * n_chans * width;
+      for ( uint32_t col = 0; col < width; col++ ) {
+        for ( uint32_t chan = 0; chan < n_chans; chan++ ) { rgba[chan] = pixels_ptr[src_byte_idx++]; }
+        if ( 3 == n_chans ) {
+          bgra[0] = rgba[2];
+          bgra[1] = rgba[1];
+          bgra[2] = rgba[0];
+        } else {
+          /* NOTE(Anton) RGBA with alpha channel would be better supported with an extended DIB header */
+          bgra[0] = rgba[3];
+          bgra[1] = rgba[2];
+          bgra[2] = rgba[1];
+          bgra[3] = rgba[0]; // alpha
+        }
+        memcpy( &dst_pixels_ptr[dst_byte_idx], bgra, n_chans );
+        dst_byte_idx += (size_t)n_chans;
+      } // endfor col
+      if ( row_padding_sz > 0 ) {
+        memcpy( &dst_pixels_ptr[dst_byte_idx], padding, row_padding_sz );
+        dst_byte_idx += row_padding_sz;
+      }
+    } // endfor row
+  }
+  {
+    FILE* fp = fopen( filename, "wb" );
+    if ( !fp ) {
+      free( dst_pixels_ptr );
+      return 0;
+    }
+    if ( 1 != fwrite( &file_hdr, _BMP_FILE_HDR_SZ, 1, fp ) ) {
+      free( dst_pixels_ptr );
+      fclose( fp );
+      return 0;
+    }
+    if ( 1 != fwrite( &dib_hdr, dib_hdr_sz, 1, fp ) ) {
+      free( dst_pixels_ptr );
+      fclose( fp );
+      return 0;
+    }
+    if ( 1 != fwrite( dst_pixels_ptr, dst_pixels_padded_sz, 1, fp ) ) {
+      free( dst_pixels_ptr );
+      fclose( fp );
+      return 0;
+    }
+    fclose( fp );
+  }
+  free( dst_pixels_ptr );
+
+  return 1;
 }

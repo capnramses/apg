@@ -15,6 +15,7 @@ apg_bmp/tests_fuzzing/fuzz_32bpp_outputs/
 test
 a.out
 apg_bmp/test_read_bmp
+apg_bmp/test_write_bmp
 apg_bmp/tests_fuzzing/fuzz_24bpp
 apg_bmp/tests_fuzzing/fuzz_32bpp
 #working test data

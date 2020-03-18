@@ -1,7 +1,7 @@
 /*
 BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3. 17 March 2020.
+Version: 3.1 18 March 2020.
 Licence: see bottom of file.
 C89 ( Implementation is C99 )
 
@@ -11,7 +11,7 @@ Contributors:
 
 Instructions:
 - Just drop this header, and the matching .c file into your project.
-- to get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
+- To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
 
 Current Limitations:
 - 16-bit images not supported (yet). 1,4,8,24, and 32-bit images can be read.
@@ -23,7 +23,6 @@ Current Limitations:
 	at the cost of some backward compatibility and bloat.
 
 To Do:
-- Re-instate bmp writer for v3
 - FUZZING
   - create a fuzz test set for each BPP (32,24,8,4,1).
 	- fuzz each BPP separately.
@@ -40,16 +39,27 @@ To Do:
 extern "C" {
 #endif /* CPP */
 
-/*
-Reads a bitmap from a file, allocates memory for the raw image data, and returns it.
+/* Reads a bitmap from a file, allocates memory for the raw image data, and returns it.
 PARAMS
   * w,h,     - Retrieves the width and height of the BMP in pixels.
   * n_chans  - Retrieves the number of channels in the BMP.
 RETURNS
   * Tightly-packed pixel memory in RGBA order. The caller must call free() on the memory.
-  * NULL on any error. Any allocated memory is freed before returning NULL.
-*/
-unsigned char* apg_bmp_read( const char* filename, int* w, int* h, int* n_chans );
+  * NULL on any error. Any allocated memory is freed before returning NULL. */
+unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans );
+
+/* Calls free() on memory created by apg_bmp_read */
+void apg_bmp_free( unsigned char* pixels_ptr );
+
+/* Writes a bitmap to a file.
+PARAMS
+  * filename   - e.g."my_bitmap.bmp". Must not be NULL.
+  * pixels_ptr - Pointer to tightly-packed pixel memory in RGBA order. Must not be NULL. There must be abs(w)*abs(h)*n_chans bytes in the memory pointed to.
+  * w,h,       - Width and height of the image in pixels.
+  * n_chans    - The number of channels in the BMP. 3 or 4 supported for writing, which means RGB or RGBA memory, respectively.
+RETURNS
+  * Zero on any error, non zero on success. */
+unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int w, int h, unsigned int n_chans );
 
 #ifdef __cplusplus
 }
