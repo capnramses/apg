@@ -60,11 +60,11 @@ User functions always require 1 float argument but if it is called from the drop
 
 Scrolling output text may be interacted with programmatically:
 
-  apg_c_apg_c_output_clear() - Clear the output text.
-  apg_c_print( str )         - Adds a line of text to the output such as a debug message.
-  apg_c_dump_to_stdout()     - Writes the current console output text to stdout via printf().
-  apg_c_count_lines()        - Counts the number of lines in the console output.
-  
+  apg_c_output_clear()   - Clear the output text.
+  apg_c_print( str )     - Adds a line of text to the output such as a debug message.
+  apg_c_dump_to_stdout() - Writes the current console output text to stdout via printf().
+  apg_c_count_lines()    - Counts the number of lines in the console output.
+
 The console text may also be rendered out to an image for use in any graphical applications.
 This is API-agnostic so must be converted to a texture to be used with 3D APIs.
 
@@ -93,6 +93,7 @@ extern "C" {
 user-entered text API. call these functions based on eg keyboard input.
 ======================================================================================================================= */
 
+// returns true if a valid command was parsed out of str.
 bool apg_c_append_user_entered_text( const char* str );
 void apg_c_backspace( void );
 void apg_c_autocomplete( void );
