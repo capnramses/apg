@@ -70,9 +70,6 @@ This is API-agnostic so must be converted to a texture to be used with 3D APIs.
 
   apg_c_draw_to_image_mem()       - Writes current console text on top of a pre-allocated image.
   apg_c_image_redraw_required()   - Check if anything has actually changed requiring a redraw. You should also redraw if eg the display area changes size.
-
-TODO
-~ Up arrow key scrolls command history or selects previous 1 command.
 ======================================================================================================================= */
 #pragma once
 
@@ -93,10 +90,19 @@ extern "C" {
 user-entered text API. call these functions based on eg keyboard input.
 ======================================================================================================================= */
 
-// returns true if a valid command was parsed out of str.
+// RETURNS - true if a valid command was parsed out of str.
 bool apg_c_append_user_entered_text( const char* str );
+
+// removes the last char from the current user-entered string.
 void apg_c_backspace( void );
+
+// autocompletes the current user-entered text if it matches a command. call if i.e. the user presses 'TAB'
 void apg_c_autocomplete( void );
+
+// enters a command from recent history into the current user-entered text field. i.e. if user presses up cursor arrow.
+// PARAMS - hist is the number of entries back from the most recent command entered. 0 is the previously-entered command.
+void apg_c_reuse_hist( int hist );
+
 void apg_c_clear_user_entered_text( void );
 
 /* =======================================================================================================================

@@ -53,5 +53,7 @@ int main() {
   apg_c_autocomplete();
   apg_c_append_user_entered_text( "\n" );
   apg_c_dump_to_stdout();
+  apg_c_reuse_hist( 1 );
+  free( img_ptr );
   return 0;
 }

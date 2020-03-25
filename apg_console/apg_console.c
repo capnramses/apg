@@ -13,6 +13,8 @@ Licence:  See bottom of header file.
 #include <stdlib.h>
 #include <string.h>
 
+#define APG_C_MAX_COMMAND_HIST 4
+
 typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
   bool ( *func_ptr )( float );
@@ -27,11 +29,21 @@ static uint32_t _n_c_funcs;
 static char c_output_lines[APG_C_OUTPUT_LINES_MAX][APG_C_STR_MAX];
 static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_lines = 0;
 static char _c_user_entered_text[APG_C_STR_MAX];
+static char _c_command_history[APG_C_MAX_COMMAND_HIST][APG_C_STR_MAX];
+static int _c_latest_command_in_history = -1;
 
 static const int _c_n_built_in_commands            = 5;
 static char _c_built_in_commands[5][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
 
 static bool _c_redraw_required;
+
+static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
+  assert( _c_user_entered_text );
+
+  _c_latest_command_in_history                        = ( _c_latest_command_in_history + 1 ) % APG_C_MAX_COMMAND_HIST;
+  _c_command_history[_c_latest_command_in_history][0] = '\0';
+  strncat( _c_command_history[_c_latest_command_in_history], _c_user_entered_text, APG_C_STR_MAX - 1 );
+}
 
 /* because string.h doesn't always have strnlen() */
 static int apg_c_strnlen( const char* str, int maxlen ) {
@@ -166,8 +178,10 @@ static bool _parse_user_entered_instruction( const char* str ) {
       case APG_C_FLOAT: {
         snprintf( tmp, APG_C_STR_MAX, "%s %f.", one, *(float*)var_ptr );
       } break;
-      default: { snprintf( tmp, APG_C_STR_MAX, "%s OTHER", one ); } break; // some other data type
-      }                                                                    // endswitch
+      default: {
+        snprintf( tmp, APG_C_STR_MAX, "%s OTHER", one );
+      } break; // some other data type
+      }        // endswitch
       apg_c_print( tmp );
       return true;
     }
@@ -252,6 +266,7 @@ bool apg_c_append_user_entered_text( const char* str ) {
   for ( int i = uet_len; i < total_len; i++ ) {
     if ( _c_user_entered_text[i] == '\n' ) {
       _c_user_entered_text[i] = '\0';
+      _apg_c_command_hist_append( _c_user_entered_text );
       apg_c_print( _c_user_entered_text );
       bool parsed             = _parse_user_entered_instruction( _c_user_entered_text );
       _c_user_entered_text[0] = '\0';
@@ -261,6 +276,14 @@ bool apg_c_append_user_entered_text( const char* str ) {
 
   _c_redraw_required = true;
   return true;
+}
+
+void apg_c_reuse_hist( int hist ) {
+  int32_t idx             = _c_latest_command_in_history - hist;
+  idx                     = idx < 0 ? APG_C_MAX_COMMAND_HIST - 1 : idx % APG_C_MAX_COMMAND_HIST;
+  _c_user_entered_text[0] = '\0';
+  strncat( _c_user_entered_text, _c_command_history[idx], APG_C_STR_MAX - 1 );
+  _c_redraw_required = true;
 }
 
 // WARNING(Anton) not unicode-aware!

@@ -37,7 +37,7 @@ static uint32_t _atlas_index_for_sequence( const char* sequence, int* additional
 
   uint8_t first_byte = (uint8_t)sequence[0];
 
-  if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; }
+  if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; } // printable ascii, excluding LF CR TAB
 
   if ( 0xC3 == first_byte && len > 1 ) {
     uint8_t second_byte = (uint8_t)sequence[1];
