@@ -37,14 +37,6 @@ static char _c_built_in_commands[5][APG_C_STR_MAX] = { "help", "clear", "list_va
 
 static bool _c_redraw_required;
 
-static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
-  assert( _c_user_entered_text );
-
-  _c_latest_command_in_history                        = ( _c_latest_command_in_history + 1 ) % APG_C_MAX_COMMAND_HIST;
-  _c_command_history[_c_latest_command_in_history][0] = '\0';
-  strncat( _c_command_history[_c_latest_command_in_history], _c_user_entered_text, APG_C_STR_MAX - 1 );
-}
-
 /* because string.h doesn't always have strnlen() */
 static int apg_c_strnlen( const char* str, int maxlen ) {
   int i = 0;
@@ -55,18 +47,27 @@ static int apg_c_strnlen( const char* str, int maxlen ) {
 /* Custom strncat() without the annoying '\0' src truncation issues.
    Resulting string is always '\0' truncated.
    PARAMS
-     dest_max - This is the maximum length the destination string is allowed to grow to.
-     src_max  - This is the maximum number of bytes to copy from the source string.
+     dest_max_len - This is the maximum length the destination string is allowed to grow to.
+     src_max_copy - This is the maximum number of bytes to copy from the source string.
 */
-static void apg_c_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
+static void apg_c_strncat( char* dst, const char* src, const int dest_max_len, const int src_max_copy ) {
   assert( dst && src );
 
-  int dst_len   = apg_c_strnlen( dst, dest_max );
-  dst[dst_len]  = '\0'; // just in case it wasn't already terminated before max length
-  int remainder = dest_max - dst_len;
-  if ( remainder <= 0 ) { return; }
-  const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
-  strncat( dst, src, n );                                // strncat manual guarantees null termination.
+  int dst_len         = apg_c_strnlen( dst, dest_max_len );
+  dst[dst_len]        = '\0'; // just in case it wasn't already terminated before max length
+  int remaining_space = dest_max_len - dst_len;
+  if ( remaining_space <= 0 ) { return; }
+  if ( remaining_space <= 0 ) { return; }
+  const int n = remaining_space < src_max_copy ? remaining_space : src_max_copy; // use src_max if smaller
+  strncat( dst, src, n - 1 );                                                    // strncat manual guarantees null termination.
+}
+
+static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
+  assert( _c_user_entered_text );
+
+  _c_latest_command_in_history                        = ( _c_latest_command_in_history + 1 ) % APG_C_MAX_COMMAND_HIST;
+  _c_command_history[_c_latest_command_in_history][0] = '\0';
+  apg_c_strncat( _c_command_history[_c_latest_command_in_history], _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
 }
 
 static void _help() {
@@ -282,7 +283,7 @@ void apg_c_reuse_hist( int hist ) {
   int32_t idx             = _c_latest_command_in_history - hist;
   idx                     = idx < 0 ? APG_C_MAX_COMMAND_HIST - 1 : idx % APG_C_MAX_COMMAND_HIST;
   _c_user_entered_text[0] = '\0';
-  strncat( _c_user_entered_text, _c_command_history[idx], APG_C_STR_MAX - 1 );
+  apg_c_strncat( _c_user_entered_text, _c_command_history[idx], APG_C_STR_MAX, APG_C_STR_MAX );
   _c_redraw_required = true;
 }
 
