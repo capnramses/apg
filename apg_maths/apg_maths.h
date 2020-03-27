@@ -51,7 +51,7 @@ extern "C" {
 
 #define HALF_PI M_PI_2
 #define ONE_DEG_IN_RAD ( 2.0f * M_PI ) / 360.0f // 0.017444444
-#define ONE_RAD_IN_DEG 360.0 / ( 2.0f * M_PI ) // 57.2957795
+#define ONE_RAD_IN_DEG 360.0 / ( 2.0f * M_PI )  // 57.2957795
 
 #define MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
@@ -93,15 +93,24 @@ static inline void print_mat4( mat4 m ) {
 }
 static inline void print_quat( versor q ) { printf( "[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z ); }
 
-static inline vec3 v3_v4( vec4 v ) { return ( vec3 ){ .x = v.x, .y = v.y, .z = v.z }; }
-static inline vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
-static inline vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
-static inline vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x * b, .y = a.y * b, .z = a.z * b }; }
-static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x / b, .y = a.y / b, .z = a.z / b }; }
-static inline vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z }; }
-static inline vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z }; }
-static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z }; }
-static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z }; }
+static inline vec2 sub_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){.x = a.x - b.x, .y = a.y - b.y}; }
+
+static inline vec3 v3_v4( vec4 v ) { return ( vec3 ){.x = v.x, .y = v.y, .z = v.z}; }
+static inline vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x + b, .y = a.y + b, .z = a.z + b}; }
+static inline vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x - b, .y = a.y - b, .z = a.z - b}; }
+static inline vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x * b, .y = a.y * b, .z = a.z * b}; }
+static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x / b, .y = a.y / b, .z = a.z / b}; }
+static inline vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z}; }
+
+static inline vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z}; }
+static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z}; }
+static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z}; }
+
+// magnitude or length of a vec2
+static inline float length_vec2( vec2 v ) { return sqrt( v.x * v.x + v.y * v.y ); }
+
+// squared length
+static inline float length2_vec2( vec2 v ) { return v.x * v.x + v.y * v.y; }
 
 // magnitude or length of a vec3
 static inline float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z ); }
@@ -112,7 +121,7 @@ static inline float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z 
 static inline vec3 normalise_vec3( vec3 v ) {
   vec3 vb;
   float l = length_vec3( v );
-  if ( 0.0f == l ) { return ( vec3 ){ .x = 0.0f, .y = 0.0f, .z = 0.0f }; }
+  if ( 0.0f == l ) { return ( vec3 ){.x = 0.0f, .y = 0.0f, .z = 0.0f}; }
   vb.x = v.x / l;
   vb.y = v.y / l;
   vb.z = v.z / l;
@@ -121,7 +130,7 @@ static inline vec3 normalise_vec3( vec3 v ) {
 
 static inline float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x }; }
+static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x}; }
 
 // converts an un-normalised direction vector's X,Z components into a heading in degrees
 static inline float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * ONE_RAD_IN_DEG; }
@@ -129,13 +138,13 @@ static inline float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * ON
 // very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes
 static inline vec3 heading_to_vec3( float degrees ) {
   float rad = degrees * ONE_DEG_IN_RAD;
-  return ( vec3 ){ .x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad ) };
+  return ( vec3 ){.x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad )};
 }
 
-static inline vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){ .x = v.x, .y = v.y, .z = v.z, .w = f }; }
+static inline vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){.x = v.x, .y = v.y, .z = v.z, .w = f}; }
 
 static inline mat4 identity_mat4() {
-  mat4 r  = { { 0 } };
+  mat4 r  = {{0}};
   r.m[0]  = 1.0f;
   r.m[5]  = 1.0f;
   r.m[10] = 1.0f;
@@ -144,7 +153,7 @@ static inline mat4 identity_mat4() {
 }
 
 static inline mat4 mult_mat4_mat4( mat4 a, mat4 b ) {
-  mat4 r      = { { 0 } };
+  mat4 r      = {{0}};
   int r_index = 0;
   for ( int col = 0; col < 4; col++ ) {
     for ( int row = 0; row < 4; row++ ) {
@@ -162,7 +171,7 @@ static inline vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
   float y = m.m[1] * v.x + m.m[5] * v.y + m.m[9] * v.z + m.m[13] * v.w;
   float z = m.m[2] * v.x + m.m[6] * v.y + m.m[10] * v.z + m.m[14] * v.w;
   float w = m.m[3] * v.x + m.m[7] * v.y + m.m[11] * v.z + m.m[15] * v.w;
-  return ( vec4 ){ .x = x, .y = y, .z = z, .w = w };
+  return ( vec4 ){.x = x, .y = y, .z = z, .w = w};
 }
 
 static inline float det_mat4( mat4 mm ) {
@@ -282,7 +291,7 @@ static inline mat4 scale_mat4( vec3 v ) {
 }
 
 static inline mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
-  mat4 p    = translate_mat4( ( vec3 ){ .x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z } );
+  mat4 p    = translate_mat4( ( vec3 ){.x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z} );
   vec3 d    = sub_vec3_vec3( targ_pos, cam_pos );
   vec3 f    = normalise_vec3( d );
   vec3 r    = normalise_vec3( cross_vec3( f, up ) );
@@ -300,14 +309,14 @@ static inline mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
   return mult_mat4_mat4( ori, p );
 }
 
-static inline mat4 perspective( float fovy, float aspect, float near, float far ) {
+static inline mat4 perspective( float fovy, float aspect, float near_plane, float far_plane ) {
   float fov_rad = fovy * ONE_DEG_IN_RAD;
-  float range   = tanf( fov_rad / 2.0f ) * near;
-  float sx      = ( 2.0f * near ) / ( range * aspect + range * aspect );
-  float sy      = near / range;
-  float sz      = -( far + near ) / ( far - near );
-  float pz      = -( 2.0f * far * near ) / ( far - near );
-  mat4 m        = { { 0 } };
+  float range   = tanf( fov_rad / 2.0f ) * near_plane;
+  float sx      = ( 2.0f * near_plane ) / ( range * aspect + range * aspect );
+  float sy      = near_plane / range;
+  float sz      = -( far_plane + near_plane ) / ( far_plane - near_plane );
+  float pz      = -( 2.0f * far_plane * near_plane ) / ( far_plane - near_plane );
+  mat4 m        = {{0}};
   m.m[0]        = sx;
   m.m[5]        = sy;
   m.m[10]       = sz;
@@ -330,7 +339,7 @@ static inline mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp
   float subvp_w_ndc = ( (float)subvp_w / (float)vp_w ) * 2.0f;
   float subvp_h_ndc = ( (float)subvp_h / (float)vp_h ) * 2.0f;
   // Create a scale and translation transform which maps the range [x_ndc, x_ndc+a_ndc] to [-1,1], and similar for y
-  mat4 M  = { { 0 } };
+  mat4 M  = {{0}};
   M.m[0]  = 2.0f / subvp_w_ndc;
   M.m[5]  = 2.0f / subvp_h_ndc;
   M.m[10] = 1.0f;
@@ -342,9 +351,9 @@ static inline mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp
   return P_asym;
 }
 
-static inline versor div_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s }; }
+static inline versor div_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s}; }
 
-static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s }; }
+static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s}; }
 
 // rotates vector v using quaternion q by calculating the sandwich product: v' = qvq^-1
 // from pg 89 in E.Lengyel's "FOGED: Mathematics"
@@ -355,7 +364,7 @@ static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){ .w =
 // attributed to a post by Fabian Giesen (no longer online)
 // TODO(Anton) not tested yet
 static inline vec3 mult_quat_vec3( versor q, vec3 v ) {
- vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
+  vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
   float b2    = b.x * b.x + b.y * b.y + b.z * b.z;
   vec3 part_a = mult_vec3_f( v, q.w * q.w - b2 );
   vec3 part_b = mult_vec3_f( b, dot_vec3( v, b ) * 2.0f );
@@ -474,6 +483,80 @@ static inline float abs_diff_btw_degrees( float first, float second ) {
   return diff;
 }
 
+// returns t, the distance along the infinite line of the ray from ray origin to intersection.
+// If t is negative then intersection is a 'miss' (intersection behind ray origin).
+// intersection xyz is then ray_origin + ray_direction * t
+static inline float ray_plane( vec3 ray_origin, vec3 ray_direction, vec3 plane_normal, float plane_d ) {
+  return -( dot_vec3( ray_origin, plane_normal ) + plane_d ) / dot_vec3( ray_direction, plane_normal );
+}
+
+// adapted from https://psgraphics.blogspot.com/2016/02/new-simple-ray-box-test-from-andrew.html
+static inline bool ray_aabb( vec3 ray_origin, vec3 ray_direction, vec3 aabb_min, vec3 aabb_max, float tmin, float tmax ) {
+  float* rd      = &ray_direction.x;
+  float* ro      = &ray_origin.x;
+  float* box_min = &aabb_min.x;
+  float* box_max = &aabb_max.x;
+  for ( int i = 0; i < 3; i++ ) {
+    float invD = 1.0f / rd[i];
+    float t0   = ( box_min[i] - ro[i] ) * invD;
+    float t1   = ( box_max[i] - ro[i] ) * invD;
+    if ( invD < 0.0 ) {
+      float tmp = t0;
+      t0        = t1;
+      t1        = tmp;
+    }
+    tmin = t0 > tmin ? t0 : tmin;
+    tmax = t1 < tmax ? t1 : tmax;
+    if ( tmax <= tmin ) { return false; }
+  }
+  return true;
+}
+
+typedef struct obb_t {   // A in RTR notation
+  vec3 centre;           // a^c in RTR notation
+  vec3 norm_side_dir[3]; // a^u, a^v, a^w in RTR notation
+  float half_lengths[3]; // centre to face. must be positive. h_u, h_v, h_w in RTR notation
+} obb_t;
+
+// t is intersection distance along ray
+// face_num is the slab index (1,2,3) corresponding to box side direction intersected. face_num will be negative for the opposing side.
+// note that it's not (0,1,2) because negative zero for the opposing face would be problematic
+static inline bool ray_obb( obb_t box, vec3 ray_o, vec3 ray_d, float* t, int* face_num ) {
+  assert( t );
+  *t         = 0.0f;
+  float tmin = -INFINITY;
+  float tmax = INFINITY;
+  int imin = 0, imax = 0;
+  vec3 p = sub_vec3_vec3( box.centre, ray_o );
+  for ( int i = 0; i < 3; i++ ) { // 3 "slabs" (pair of front/back planes)
+    float e = dot_vec3( box.norm_side_dir[i], p );
+    float f = dot_vec3( box.norm_side_dir[i], ray_d );
+    if ( fabs( f ) > FLT_EPSILON ) {
+      float t1 = ( e + box.half_lengths[i] ) / f; // intersection on front
+      float t2 = ( e - box.half_lengths[i] ) / f; // and back side of slab
+      if ( t1 > t2 ) {
+        float tmp = t1;
+        t1        = t2;
+        t2        = tmp;
+      }
+      if ( t1 > tmin ) {
+        tmin = t1;
+        imin = i;
+      }
+      if ( t2 < tmax ) {
+        tmax = t2;
+        imax = -i;
+      }
+      if ( tmin > tmax ) { return false; }
+      if ( tmax < 0 ) { return false; }
+    } else if ( -e - box.half_lengths[i] > 0 || -e + box.half_lengths[i] < 0 ) {
+      return false;
+    }
+  }
+  *t        = tmin > 0 ? tmin : tmax;
+  *face_num = tmin > 0 ? imin + 1 : imax + 1;
+  return true;
+}
 
 #ifdef __cplusplus
 }
