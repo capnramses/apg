@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bool anton_func( float arg ) {
-  printf( "the value given to anton_func was %f\n", arg );
+bool anton_func( const char* arg_str ) {
+  printf( "the value given to anton_func was `%s`\n", arg_str );
   return true;
 }
 
