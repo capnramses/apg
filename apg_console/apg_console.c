@@ -17,7 +17,8 @@ Licence:  See bottom of header file.
 
 typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
-  bool ( *func_ptr )( float );
+  // NOTE: the string arg is allowed to be NULL, meaning no argument given to function
+  bool ( *func_ptr )( const char* );
 } apg_c_func_t;
 
 static apg_c_var_t _c_vars[APG_C_VARS_MAX];
@@ -131,7 +132,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     // search for func match
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
-      bool res = _c_funcs[func_idx].func_ptr( 0.0f );
+      bool res = _c_funcs[func_idx].func_ptr( NULL );
       if ( !res ) {
         snprintf( tmp, APG_C_STR_MAX, "ERROR: function `%s` returned error.", one );
         apg_c_print( tmp );
@@ -195,10 +196,9 @@ static bool _parse_user_entered_instruction( const char* str ) {
 
   case 2: {
     float fval = (float)atof( two );
-
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
-      bool res = _c_funcs[func_idx].func_ptr( fval );
+      bool res = _c_funcs[func_idx].func_ptr( two ); // give 2nd token as arg string
       if ( !res ) {
         snprintf( tmp, APG_C_STR_MAX, "ERROR: function `%s` returned error.", one );
         apg_c_print( tmp );
@@ -398,7 +398,7 @@ void apg_c_dump_to_stdout( void ) {
 /* =======================================================================================================================
 program <-> console variable and function linkage API
 ======================================================================================================================= */
-bool apg_c_register_func( const char* str, bool ( *fptr )( float ) ) {
+bool apg_c_register_func( const char* str, bool ( *fptr )( const char* arg_str ) ) {
   assert( str );
   assert( fptr );
 

@@ -10,7 +10,8 @@ Licence:  See bottom of this file.
 Version History:
   2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
   2020/01/06 - Reduced interface. Moved from stored float cvars to addresses of existing vars. Data type is also specified for bool/int/uint/float support.
-
+  2020/03/28 - Improved function callback parameter handling (float->string).
+  
 Instructions
 ============
 * Just drop the 4 files into your project (console and pixel font source code).
@@ -144,7 +145,7 @@ bool apg_c_register_var( const char* str, void* var_ptr, apg_c_var_datatype_t da
 //   Address of the c_var entry with pointer and data type.
 apg_c_var_t* apg_c_get_var( const char* str );
 
-bool apg_c_register_func( const char* str, bool ( *fptr )( float ) );
+bool apg_c_register_func( const char* str, bool ( *fptr )( const char* arg_str ) );
 
 /* =======================================================================================================================
 rendering API
