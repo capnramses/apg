@@ -3,6 +3,7 @@
 #compilers and linkers
 *.o
 *.s
+*.exp
 #runtime generated
 apg.log
 testout.wav
