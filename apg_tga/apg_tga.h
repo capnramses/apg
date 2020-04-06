@@ -29,10 +29,10 @@ Todo:
 * could allow malloc/free override
 
 History:
-09/09/2019 - First version.
-24/09/2019 - Published to apg repository.
-14/11/2019 - Fixes for MSVC warnings (CPP compat)
-06/04/2020 - Tidy-up between repos. Added BGR<->RGB utility function. Bugfix: Writing. Y direction for GIMP etc. APG_TGA_DEBUG_OUTPUT option.
+0.3 06/04/2020 - Tidy-up between repos. Added BGR<->RGB utility function. Bugfix: Writing. Y direction for GIMP etc. APG_TGA_DEBUG_OUTPUT option.
+0.2 14/11/2019 - Fixes for MSVC warnings (CPP compat)
+0.1 24/09/2019 - Published to apg repository.
+0.0 09/09/2019 - First version.
 ==============================================================*/
 
 #ifndef APG_TGA_H
