@@ -3,6 +3,8 @@ Test Program for apg_tga.h
 Author:  Anton Gerdelan -- @capnramses
 */
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #define APG_TGA_IMPLEMENTATION
 #include "apg_tga.h"
 #include <stdio.h>
@@ -14,13 +16,12 @@ int main( int argc, char** argv ) {
     return 0;
   }
   printf( "loading %s\n", argv[1] );
-  int w, h, n;
-  uint8_t* img = apg_tga_read_file( argv[1], &w, &h, &n, 0 );
-  if ( !img ) {
-    fprintf( stderr, "ERROR: didn't load\n" );
-    return 1;
-  }
+  unsigned int w, h, n;
+  uint8_t* img = stbi_load( argv[1], &w, &h, &n, 0 );
+  if ( !img ) { return 1; }
+
   printf( "loaded %s - %ix%i n=%i!\n", argv[1], w, h, n );
+  if(!apg_tga_bgr_to_rgb( img, w,h,n)){return 1;}
 
   if ( !apg_tga_write_file( "out.tga", img, w, h, n ) ) {
     fprintf( stderr, "ERROR writing file\n" );
