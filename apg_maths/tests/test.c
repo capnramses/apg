@@ -1,5 +1,6 @@
 #include "apg_maths.h"
 #include <stdio.h>
+#include <string.h> // memset
 
 int main() {
   printf( "testing C99 version of maths library\n" );
