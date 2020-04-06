@@ -43,7 +43,8 @@ cd ..
 
 echo "building apg_tga tests..."
 cd apg_tga
-$CC $FLAGS -I./ -Itests/ tests/main.c
+$CC $FLAGS -o test_read_tga test_code/main_read.c -I./ -Itest_code/ -DAPG_TGA_DEBUG_OUTPUT
+$CC $FLAGS -o test_write_tga test_code/main_write.c -I./ -Itest_code/ -DAPG_TGA_DEBUG_OUTPUT
 cd ..
 
 echo "building wav library tests..."
