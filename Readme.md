@@ -12,7 +12,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 | apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.1        | Yes - [AFL](https://lcamtuf.coredump.cx/afl/) |
 | apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont | 2020/01/06 | No                                            |
 | apg_interp  | Interpolation / "tweening" / "easing".          | C, JS    | 1,1             | 2019/09/10 | No                                            |
-| apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1,1             | 2019/11/20 | No                                            |
+| apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1,1             | 2.10       | No                                            |
 | apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.0.4      | No                                            |
 | apg_ply     | Stanford PLY mesh format read/write.            | C        |                 | ?          | No                                            |
 | apg_tga     | Single-header TGA image reader/writer.          | C        | 1               | 0.3        | No                                            |
