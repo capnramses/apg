@@ -184,6 +184,7 @@ unsigned char* apg_tga_read_file( const char* filename, unsigned int* w, unsigne
     }
     /* vertical flip so 0,0 is bottom-left */
     if ( 0 == hdr_ptr->y_origin ) { vflip = 1; }
+    if ( hdr_ptr->img_descriptor & APG_TGA_BITFIELD_TOPLEFT == 0 ) { vflip = 1; } 
   }
   {
     img_ptr = (uint8_t*)malloc( img_data_sz );
@@ -192,7 +193,7 @@ unsigned char* apg_tga_read_file( const char* filename, unsigned int* w, unsigne
       return NULL;
     }
   }
-  if ( vert_flip ) { vflip = true; }
+  if ( vert_flip ) { vflip = !vflip; }
   if ( vflip ) {
     size_t row_stride = *w * *n;
     for ( unsigned int row = 0; row < *h; row++ ) {
