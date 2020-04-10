@@ -15,7 +15,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 | apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1,1             | 2.10       | No                                            |
 | apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.0.4      | No                                            |
 | apg_ply     | Stanford PLY mesh format read/write.            | C        |                 | ?          | No                                            |
-| apg_tga     | Single-header TGA image reader/writer.          | C        | 1               | 0.3        | No                                            |
+| apg_tga     | Single-header TGA image reader/writer.          | C        | 1               | 0.3.1      | No                                            |
 | apg_wav     | WAV file format read/write.                     | C        | 2               | 1          | No                                            |
 
 ## To Do

@@ -29,10 +29,11 @@ Todo:
 * could allow malloc/free override
 
 History:
-0.3 06/04/2020 - Tidy-up between repos. Added BGR<->RGB utility function. Bugfix: Writing. Y direction for GIMP etc. APG_TGA_DEBUG_OUTPUT option.
-0.2 14/11/2019 - Fixes for MSVC warnings (CPP compat)
-0.1 24/09/2019 - Published to apg repository.
-0.0 09/09/2019 - First version.
+0.3.1 10/04/2020 - Fixed the origin top-left bitfield
+0.3   06/04/2020 - Tidy-up between repos. Added BGR<->RGB utility function. Bugfix: Writing. Y direction for GIMP etc. APG_TGA_DEBUG_OUTPUT option.
+0.2   14/11/2019 - Fixes for MSVC warnings (CPP compat)
+0.1   24/09/2019 - Published to apg repository.
+0.0   09/09/2019 - First version.
 ==============================================================*/
 
 #ifndef APG_TGA_H
@@ -66,6 +67,8 @@ End of Header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define APG_TGA_BITFIELD_TOPLEFT 0x10 /* 0001 0000 */
 
 #pragma pack( push, 1 )
 struct tga_header_t {
@@ -216,7 +219,7 @@ unsigned int apg_tga_write_file( const char* filename, unsigned char* bgr_img_pt
     hdr.h              = (uint16_t)h;
     hdr.y_origin       = (uint16_t)h;
     hdr.bpp            = ( uint8_t )( 8 * n );
-    hdr.img_descriptor = 40; /* NOTE(Anton) if wrong, eg set to zero, then image may be upside-down.
+    hdr.img_descriptor = APG_TGA_BITFIELD_TOPLEFT; /* NOTE(Anton) if wrong, eg set to zero, then image may be upside-down.
     bits 3-0 give the alpha channel depth, bits 5-8 give direction */
   }
   {
