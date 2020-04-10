@@ -184,7 +184,7 @@ unsigned char* apg_tga_read_file( const char* filename, unsigned int* w, unsigne
     }
     /* vertical flip so 0,0 is bottom-left */
     if ( 0 == hdr_ptr->y_origin ) { vflip = 1; }
-    if ( hdr_ptr->img_descriptor & APG_TGA_BITFIELD_TOPLEFT == 0 ) { vflip = 1; } 
+    if ( ( hdr_ptr->img_descriptor & APG_TGA_BITFIELD_TOPLEFT ) == 0 ) { vflip = 1; }
   }
   {
     img_ptr = (uint8_t*)malloc( img_data_sz );
