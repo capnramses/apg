@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.0.4
+/* apg_pixfont - C Pixel Font Utility v0.0.5
 LICENCE: see bottom of this file
 ==============================================================
 Authors and Contributors:
@@ -53,11 +53,12 @@ TODO:
 
 History:
 ==============================================================
-0.0.0 - 2018 - First version by Anton, as part of voxel game project
-0.0.1 - 2019 Aug 9 - Split into stand-alone library code.
-0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
-0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
+0.0.5 - 2022 Apr 17 - Reduced text space required for hard-coded image array.
 0.0.4 - 2022 Jan 05 - Removed vflip again, to simplify code in several places.
+0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
+0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
+0.0.1 - 2019 Aug 9 - Split into stand-alone library code.
+0.0.0 - 2018 - First version by Anton, as part of voxel game project
 */
 #ifndef _APG_PIXFONT_H_
 #define _APG_PIXFONT_H_
