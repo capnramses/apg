@@ -16,11 +16,8 @@ Small utility libraries and copy-paste snippets of reusable code.
 | apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.0.5      | No                                            |
 | apg_ply     | Stanford PLY mesh format read/write.            | C        |                 | ?          | No                                            |
 | apg_tga     | Single-header TGA image reader/writer.          | C        | 1               | 0.3.1      | No                                            |
+| apg_unicode | Unicode codepoint <-> UTF-8 String Functions.   | C        | 2               | 0.2        | No                                            |
 | apg_wav     | WAV file format read/write.                     | C        | 2               | 1          | No                                            |
-
-## To Do
-
-* Put my unicode tools here.
 
 ## LICENCE
 
