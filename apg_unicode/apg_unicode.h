@@ -6,6 +6,7 @@ Licence: see bottom of file.
 C89 ( Implementation is C99 )
 
 TODO:
+* Find out why some vars in bitwise ops are unused - feels like a copy-paste mistake between versions.
 * Compile with all warnings and address unused vars etc.
 * More tests. Arabic, reversed, etc.
 
