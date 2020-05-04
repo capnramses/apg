@@ -95,7 +95,8 @@ static inline int apg_loopi( int val, int min, int max ) {
 PSEUDO-RANDOM NUMBERS
 =================================================================================================*/
 /* platform-consistent rand() and srand()
-based on http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf pg 312 */
+based on http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf pg 312
+WARNING - these functions are not thread-safe. */
 #define APG_RAND_MAX 32767 // Must be at least 32767 (0x7fff). Windows uses this value.
 
 void apg_srand( unsigned int seed );
@@ -103,7 +104,6 @@ int apg_rand( void );
 
 /* same as apg_rand() except returns a value between 0.0 and 1.0 */
 float apg_randf( void );
-
 
 /*=================================================================================================
 TIME
@@ -254,11 +254,11 @@ void* apg_scratch_mem_c( size_t sz );
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS IMPLEMENTATION
 =================================================================================================*/
+static unsigned long int next = 1;
+
 void apg_srand( unsigned int seed ) { next = seed; }
 
 int apg_rand( void ) {
-  static unsigned long int next = 1;
-
   next = next * 1103515245 + 12345;
   return (unsigned int)( next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
@@ -408,7 +408,9 @@ static void _crash_handler( int sig ) {
   case SIGILL: {
     apg_log_err( "FATAL ERROR: SIGILL - signal %i\nIllegal instruction - probably function pointer invalid or stack overflow:\n", sig );
   } break;
-  default: { apg_log_err( "FATAL ERROR: signal %i:\n", sig ); } break;
+  default: {
+    apg_log_err( "FATAL ERROR: signal %i:\n", sig );
+  } break;
   }
   /* note(anton) sigbus didnt exist on my mingw32 gcc */
 
