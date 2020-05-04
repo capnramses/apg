@@ -1,6 +1,11 @@
-/*apg.h - generic C utility functions
-First version Dr Anton Gerdelan, 8 May 2015
+/*apg.h - Generic C utility functions.
+Version: 1.2. 4th May 2020.
 Licence: see bottom of file.
+C89 ( Implementation is C99 )
+Licence: see bottom of file.
+History:
+1.1 - 4 May 2020. Added custom rand() functions.
+1.0 - 8 May 2015. By Anton Gerdelan.
 
 Usage Instructions
 ------------------
@@ -9,7 +14,6 @@ Usage Instructions
  TODO
 ------------------
 * linearise/unlinearise function
-* ascii or unicode fetcher/printer thing
 * string manip/trim
 */
 
@@ -86,6 +90,20 @@ static inline int apg_loopi( int val, int min, int max ) {
   if ( val > max ) { return min; }
   return val;
 }
+
+/*=================================================================================================
+PSEUDO-RANDOM NUMBERS
+=================================================================================================*/
+/* platform-consistent rand() and srand()
+based on http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf pg 312 */
+#define APG_RAND_MAX 32767 // Must be at least 32767 (0x7fff). Windows uses this value.
+
+void apg_srand( unsigned int seed );
+int apg_rand( void );
+
+/* same as apg_rand() except returns a value between 0.0 and 1.0 */
+float apg_randf( void );
+
 
 /*=================================================================================================
 TIME
@@ -232,6 +250,20 @@ void* apg_scratch_mem_c( size_t sz );
 #else
 #include <execinfo.h>
 #endif
+
+/*=================================================================================================
+PSEUDO-RANDOM NUMBERS IMPLEMENTATION
+=================================================================================================*/
+void apg_srand( unsigned int seed ) { next = seed; }
+
+int apg_rand( void ) {
+  static unsigned long int next = 1;
+
+  next = next * 1103515245 + 12345;
+  return (unsigned int)( next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+}
+
+float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
 
 /*=================================================================================================
 TIME IMPLEMENTATION
