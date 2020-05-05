@@ -112,9 +112,12 @@ does not do any malloc - fills existing buffer up to length max_len
 returns false on error */
 bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
 
-/* custom strcmp to avoid commonly-made ==0 bracket soup bugs
-returns true if true so far and one string shorter e.g. "ANT" "ANTON" */
-bool apg_strmatch( const char* a, const char* b, size_t a_max, size_t b_max );
+/* Custom strcmp variant to do a partial match avoid commonly-made == 0 bracket soup bugs.
+PARAMS
+a,b         - Input strings to compare.
+a_max,b_max - Maximum lengths of a and b, respectively. Makes function robust to missing nul-terminators.
+RETURNS true if both strings are the same, or if the shorter string matches its length up to the longer string at that point. i.e. "ANT" "ANTON" returns true. */
+bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max );
 
 /* because string.h doesn't always have strnlen() */
 static inline int apg_strnlen( const char* str, int maxlen ) {
@@ -315,7 +318,7 @@ bool apg_file_to_str( const char* file_name, size_t max_len, char* str ) {
   return true;
 }
 
-bool apg_strmatch( const char* a, const char* b, size_t a_max, size_t b_max ) {
+bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max ) {
   size_t len = APG_MAX( strnlen( a, a_max ), strnlen( b, b_max ) );
   for ( size_t i = 0; i < len; i++ ) {
     if ( a[i] != b[i] ) { return false; }
