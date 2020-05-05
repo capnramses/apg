@@ -94,6 +94,9 @@ int apg_rand( void );
 /* same as apg_rand() except returns a value between 0.0 and 1.0 */
 float apg_randf( void );
 
+/* useful to re-seed apg_srand later with whatever the pseudo-random sequence is up to now i.e. for saved games. */
+unsigned int apg_get_srand_next( void );
+
 /*=================================================================================================
 TIME
 =================================================================================================*/
@@ -252,6 +255,8 @@ int apg_rand( void ) {
 }
 
 float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
+
+unsigned int apg_get_srand_next( void ) { return _srand_next; }
 
 /*=================================================================================================
 TIME IMPLEMENTATION
