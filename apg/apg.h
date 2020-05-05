@@ -57,13 +57,6 @@ COMPILER HELPERS
 /*=================================================================================================
 MATHS
 =================================================================================================*/
-/* C99 removed M_PI */
-#define _USE_MATH_DEFINES
-#include <math.h>
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 /* replacement for the deprecated min/max functions from original C spec.
 was going to have a series of GL-like functions but it was a lot of fiddly code/alternatives,
 so I'm just copying from stb.h here. as much as I dislike pre-processor directives, this makes sense.
@@ -71,10 +64,6 @@ I believe the trick is to have all the parentheses. same deal for clamp */
 #define APG_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
-
-/* unit conversions */
-#define APG_DEG2RAD( a ) ( ( a ) * ( M_PI / 180.0 ) )
-#define APG_RAD2DEG( a ) ( ( a ) * ( 180.0 / M_PI ) )
 
 /* like clamp, but if > max then returns min e.g. loops back to 0
 and if < min, returns max e.g. loops back to 99
@@ -125,7 +114,7 @@ bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
 
 /* custom strcmp to avoid commonly-made ==0 bracket soup bugs
 returns true if true so far and one string shorter e.g. "ANT" "ANTON" */
-bool apg_strmatchy( const char* a, const char* b );
+bool apg_strmatch( const char* a, const char* b, size_t a_max, size_t b_max );
 
 /* because string.h doesn't always have strnlen() */
 static inline int apg_strnlen( const char* str, int maxlen ) {
@@ -326,9 +315,9 @@ bool apg_file_to_str( const char* file_name, size_t max_len, char* str ) {
   return true;
 }
 
-bool apg_strmatchy( const char* a, const char* b ) {
-  int len = APG_MAX( strlen( a ), strlen( b ) );
-  for ( int i = 0; i < len; i++ ) {
+bool apg_strmatch( const char* a, const char* b, size_t a_max, size_t b_max ) {
+  size_t len = APG_MAX( strnlen( a, a_max ), strnlen( b, b_max ) );
+  for ( size_t i = 0; i < len; i++ ) {
     if ( a[i] != b[i] ) { return false; }
   }
   return true;
