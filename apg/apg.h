@@ -99,7 +99,7 @@ TIME
 =================================================================================================*/
 /* get a monotonic time value in nanoseconds (linux only)
 value is some arbitrary system time but is invulnerable to clock changes */
-double apg_time_linux();
+double apg_time_linux( void );
 
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms );
@@ -120,11 +120,7 @@ RETURNS true if both strings are the same, or if the shorter string matches its 
 bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max );
 
 /* because string.h doesn't always have strnlen() */
-static inline int apg_strnlen( const char* str, int maxlen ) {
-  int i = 0;
-  while ( i < maxlen && str[i] ) { i++; }
-  return i;
-}
+int apg_strnlen( const char* str, int maxlen );
 
 /* Custom strncat() without the annoying '\0' src truncation issues.
    Resulting string is always '\0' truncated.
@@ -165,11 +161,11 @@ Line 92 of "src/utils.c" starts at address 0x6c745 <print_trace+74> and ends at 
 void apg_print_trace( FILE* stream );
 
 /* writes a backtrace on sigsegv */
-void apg_start_crash_handler();
+void apg_start_crash_handler( void );
 
 #ifdef APG_UNIT_TESTS
-void apg_deliberate_sigsegv();
-void apg_deliberate_divzero();
+void apg_deliberate_sigsegv( void );
+void apg_deliberate_divzero( void );
 #endif
 
 /*=================================================================================================
@@ -265,7 +261,7 @@ value is some arbitrary system time but is invulnerable to clock changes
 CLOCK_MONOTONIC -- vulnerable to adjtime() and NTP changes
 CLOCK_MONOTONIC_RAW -- vulnerable to voltage and heat changes */
 #ifdef __linux__
-inline double apg_time_linux() {
+double apg_time_linux( void ) {
   struct timespec t;
   static double prev_value = 0.0;
   int r                    = clock_gettime( CLOCK_MONOTONIC, &t );
@@ -324,6 +320,12 @@ bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max )
     if ( a[i] != b[i] ) { return false; }
   }
   return true;
+}
+
+int apg_strnlen( const char* str, int maxlen ) {
+  int i = 0;
+  while ( i < maxlen && str[i] ) { i++; }
+  return i;
 }
 
 void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
