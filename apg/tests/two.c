@@ -5,6 +5,9 @@
 void two() {
   // open a file
   char buff[1024];
-  if ( !apg_file_to_str( "test_file.txt", 1024, buff ) ) { return; }
+  if ( !apg_file_to_str( "test_file.txt", 1024, buff ) ) {
+    fprintf( stderr, "Couldn't find file test_file.txt\n" );
+    return;
+  }
   printf( "file contents:\n[%s]\n", buff );
 }

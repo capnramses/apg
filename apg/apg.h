@@ -4,12 +4,14 @@ Licence: see bottom of file.
 C89 ( Implementation is C99 )
 Licence: see bottom of file.
 History:
-1.1 - 4 May 2020. Added custom rand() functions.
-1.0 - 8 May 2015. By Anton Gerdelan.
+1.2 - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
+1.1 -  4 May 2020. Added custom rand() functions.
+1.0 -  8 May 2015. By Anton Gerdelan.
 
 Usage Instructions
 ------------------
-* in one file #define APG_IMPLEMENTATION above the #include
+* In one file #define APG_IMPLEMENTATION above the #include.
+* On MinGW you may have to link against some system libs with -limagehlp
 
  TODO
 ------------------
@@ -100,9 +102,15 @@ unsigned int apg_get_srand_next( void );
 /*=================================================================================================
 TIME
 =================================================================================================*/
-/* get a monotonic time value in nanoseconds (linux only)
-value is some arbitrary system time but is invulnerable to clock changes */
-double apg_time_linux( void );
+/* Set up for using timers.
+WARNING - These functions are not thread-safe. */
+void apg_time_init( void );
+
+/* Get a monotonic time value in seconds with up to nanoseconds precision.
+Value is some arbitrary system time but is invulnerable to clock changes.
+Call apg_time_init() once before calling apg_time_s().
+WARNING - These functions are not thread-safe. */
+double apg_time_s( void );
 
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms );
@@ -231,27 +239,34 @@ void* apg_scratch_mem_c( size_t sz );
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>                /* for strcasecmp */
-/*#define _POSIX_C_SOURCE 199309L*/ /* for the timer on linux. may already be defined */
+#include <strings.h> /* for strcasecmp */
 #include <time.h>
 #include <unistd.h> /* linux-only? */
 #ifdef _WIN32
-#include <Windows.h> /* for backtraces */
+#include <windows.h> /* for backtraces and timers */
 #include <dbghelp.h> /* SymInitialize */
 #else
 #include <execinfo.h>
+#endif
+/* includes for timers */
+#ifdef _WIN32
+#include <profileapi.h>
+#elif __APPLE__
+#include <mach/mach_time.h>
+#else
+#include <sys/time.h>
 #endif
 
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS IMPLEMENTATION
 =================================================================================================*/
-static unsigned long int next = 1;
+static unsigned long int _srand_next = 1;
 
-void apg_srand( unsigned int seed ) { next = seed; }
+void apg_srand( unsigned int seed ) { _srand_next = seed; }
 
 int apg_rand( void ) {
-  next = next * 1103515245 + 12345;
-  return (unsigned int)( next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+  _srand_next = _srand_next * 1103515245 + 12345;
+  return (unsigned int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
 float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
@@ -261,27 +276,42 @@ unsigned int apg_get_srand_next( void ) { return _srand_next; }
 /*=================================================================================================
 TIME IMPLEMENTATION
 =================================================================================================*/
-/* get a monotonic time value in seconds w/ nanosecond precision (linux only)
-value is some arbitrary system time but is invulnerable to clock changes
-CLOCK_MONOTONIC -- vulnerable to adjtime() and NTP changes
-CLOCK_MONOTONIC_RAW -- vulnerable to voltage and heat changes */
-#ifdef __linux__
-double apg_time_linux( void ) {
-  struct timespec t;
-  static double prev_value = 0.0;
-  int r                    = clock_gettime( CLOCK_MONOTONIC, &t );
-  if ( r < 0 ) {
-    fprintf( stderr, "WARNING: could not get time value\n" );
-    return prev_value;
-  }
-  double ns  = t.tv_nsec;
-  double s   = ns * 0.000000001;
-  time_t tts = t.tv_sec;
-  s += difftime( tts, 0 );
-  prev_value = s;
-  return s;
+static uint64_t _frequency = 1000000, _offset;
+
+void apg_time_init( void ) {
+#ifdef _WIN32
+  uint64_t counter;
+  _frequency = 1000; // QueryPerformanceCounter default
+  QueryPerformanceFrequency( (LARGE_INTEGER*)&_frequency );
+  QueryPerformanceCounter( (LARGE_INTEGER*)&_offset );
+#elif __APPLE__
+  mach_timebase_info_data_t info;
+  mach_timebase_info( &info );
+  _frequency       = ( info.denom * 1e9 ) / info.numer;
+  _offset          = mach_absolute_time();
+#else
+  _frequency = 1000000000; // nanoseconds
+  struct timespec ts;
+  clock_gettime( CLOCK_MONOTONIC, &ts );
+  _offset = (uint64_t)ts.tv_sec * (uint64_t)_frequency + (uint64_t)ts.tv_nsec;
+#endif
 }
-#endif /* __linux__ */
+
+double apg_time_s( void ) {
+#ifdef _WIN32
+  uint64_t counter = 0;
+  QueryPerformanceCounter( (LARGE_INTEGER*)&counter );
+  return (double)( counter - _offset ) / _frequency;
+#elif __APPLE__
+  uint64_t counter = mach_absolute_time();
+  return (double)( counter - _offset ) / _frequency;
+#else
+  struct timespec ts;
+  clock_gettime( CLOCK_MONOTONIC, &ts );
+  uint64_t counter = (uint64_t)ts.tv_sec * (uint64_t)_frequency + (uint64_t)ts.tv_nsec;
+  return (double)( counter - _offset ) / _frequency;
+#endif
+}
 
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms ) {
