@@ -1,12 +1,12 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-v0.7
 URL:     https://github.com/capnramses/apg
 Licence: See bottom of file.
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 ==================================================================================================
 History:
-v0.7 - 19 Apr 2020 - Removed M_PI, replaced with APG_PI. Added prefix to macros to avoid redefinition vulnerability. Added version numbers.
+v0.8 - 21 May 2020 - AABB intersection and frustum bounds and plane-extraction functions.
+v0.7 - 19 Apr 2020 - Removed M_PI, replaced with APG_PI. Added prefix to macros to avoid redefinition vulnerability.
 v0.6 -  9 Apr 2020 - Frustum extraction functions.
 v0.5 - 11 Apr 2016 - Compacted.
 v0.4 - 12 Apr 2016 - Switched to .x .y .z notation for vectors and quaternions.
@@ -75,9 +75,22 @@ typedef struct mat4 {
   float m[16];
 } mat4;
 
-typedef struct versor { // 'versor' is the proper name for a _unit quaternion_ (the kind used for geometric rotations)
+/* 'Versor' is the proper name for a _unit quaternion_ (the kind used for geometric rotations) */
+typedef struct versor {
   float w, x, y, z;
 } versor;
+
+/* Oriented Bounding Box (OBB) volume and orientation definition. */
+typedef struct obb_t {   // A in RTR notation
+  vec3 centre;           // a^c in RTR notation
+  vec3 norm_side_dir[3]; // a^u, a^v, a^w in RTR notation
+  float half_lengths[3]; // centre to face. must be positive. h_u, h_v, h_w in RTR notation
+} obb_t;
+
+/* Axis-Aligned Bounding Box (AABB) volume given box two diagonally-opposing corners. */
+typedef struct aabb_t {
+  vec3 min, max;
+} aabb_t;
 
 static inline void print_vec2( vec2 v ) { printf( "[%.2f, %.2f]\n", v.x, v.y ); }
 static inline void print_vec3( vec3 v ) { printf( "[%.2f, %.2f, %.2f]\n", v.x, v.y, v.z ); }
@@ -108,13 +121,13 @@ static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x / b,
 static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z}; }
 static inline vec4 div_vec4_f( vec4 v, float f ) { return ( vec4 ){.x = v.x / f, .y = v.y / f, .z = v.z / f, .w = v.w / f}; }
 
-// magnitude or length of a vec2
+/* magnitude or length of a vec2 */
 static inline float length_vec2( vec2 v ) { return sqrt( v.x * v.x + v.y * v.y ); }
-// squared length
+/* squared length */
 static inline float length2_vec2( vec2 v ) { return v.x * v.x + v.y * v.y; }
-// magnitude or length of a vec3
+/* magnitude or length of a vec3 */
 static inline float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z ); }
-// squared length
+/* squared length */
 static inline float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 
 static inline vec3 normalise_vec3( vec3 v ) {
@@ -127,13 +140,29 @@ static inline vec3 normalise_vec3( vec3 v ) {
   return vb;
 }
 
+/* Note that plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.
+Based on FoGED Vol 1 Ch 3.4.2 pg 115 by Eric Lengyel */
+static inline vec4 normalise_plane( vec4 xyzd ) {
+  vec4 out = xyzd;
+  // "To normalize a plane we multiply _all four_ components by 1/||n|| (where n is the 3d part) but only n has unit length after normalization"
+  float mag = length_vec3( v3_v4( xyzd ) );
+  if ( fabsf( mag ) > 0.0f ) {
+    float one_over_mag = 1.0 / mag;
+    out.x *= one_over_mag;
+    out.y *= one_over_mag;
+    out.z *= one_over_mag;
+    out.w *= one_over_mag;
+  }
+  return out;
+}
+
 static inline float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x}; }
 
-// Converts an un-normalised direction vector's X,Z components into a heading in degrees.
+/* Converts an un-normalised direction vector's X,Z components into a heading in degrees. */
 static inline float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * APG_M_ONE_RAD_IN_DEG; }
-// Very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes.
+/* Very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes. */
 static inline vec3 heading_to_vec3( float degrees ) {
   float rad = degrees * APG_M_ONE_DEG_IN_RAD;
   return ( vec3 ){.x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad )};
@@ -352,12 +381,11 @@ static inline mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp
 based on http://donw.io/post/frustum-point-extraction/
 
 PARAMS
-  PVM     - Any world-to-clip space matrix.
+  PV      - Any world-to-clip space matrix.
   corners - A buffer of 8x vec3. Must not be NULL. World space corner points will be set here.
 
 REMARKS
 Expect some floating small point error compared to original world space points.
-For plane extraction see https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
 */
 static inline void frustum_points_from_PV( mat4 PV, vec3* corners_wor ) {
   assert( corners_wor );
@@ -381,31 +409,27 @@ static inline void frustum_points_from_PV( mat4 PV, vec3* corners_wor ) {
   }
 }
 
-/*
-PARAMS
-  corners_wor - A buffer of 8x vec3, containing corner points in world space. Must not be NULL.
-  planes_wor  - A buffer of 6x vec3. Must not be NULL. Bounding plane normals will be set here.
-REMARKS
-Plane normals point inwards, to be used with frustum test functions */
-static inline void frustum_planes_from_points( const vec3* corners_wor, vec3* planes_wor ) {
-  assert( corners_wor && planes_wor );
-  // edges
-  vec3 ftr_m_fbr = sub_vec3_vec3( corners_wor[6], corners_wor[7] ); // a
-  vec3 nbr_m_fbr = sub_vec3_vec3( corners_wor[3], corners_wor[7] ); // b
-  vec3 ftl_m_fbl = sub_vec3_vec3( corners_wor[5], corners_wor[4] ); // c
-  vec3 nbl_m_fbl = sub_vec3_vec3( corners_wor[0], corners_wor[4] ); // d
-  vec3 ntr_m_ntl = sub_vec3_vec3( corners_wor[2], corners_wor[1] ); // e
-  vec3 ftl_m_ntl = sub_vec3_vec3( corners_wor[5], corners_wor[1] ); // f
-  vec3 nbr_m_nbl = sub_vec3_vec3( corners_wor[3], corners_wor[0] ); // g
-  vec3 ntl_m_nbl = sub_vec3_vec3( corners_wor[1], corners_wor[0] ); // h
-  vec3 fbr_m_fbl = sub_vec3_vec3( corners_wor[7], corners_wor[4] ); // i
+/* Fast extraction of 6 clip planes .
+Based on http://www8.cs.umu.se/kurser/5DV051/HT12/lab/plane_extraction.pdf
 
-  planes_wor[0] = normalise_vec3( cross_vec3( nbr_m_fbr, ftr_m_fbr ) ); // b*a=right (pointing inwards)
-  planes_wor[1] = normalise_vec3( cross_vec3( ftl_m_fbl, nbl_m_fbl ) ); // c*d=left
-  planes_wor[2] = normalise_vec3( cross_vec3( ftl_m_ntl, ntr_m_ntl ) ); // f*e=top
-  planes_wor[3] = normalise_vec3( cross_vec3( nbl_m_fbl, fbr_m_fbl ) ); // d*i=bottom
-  planes_wor[4] = normalise_vec3( cross_vec3( ntl_m_nbl, nbr_m_nbl ) ); // h*g=near
-  planes_wor[5] = normalise_vec3( cross_vec3( fbr_m_fbl, ftl_m_fbl ) ); // i*c=far
+PARAMS
+  PV               - Any world-to-clip space matrix.
+  corners          - A buffer of 6x vec4 to set world space planes. Must not be NULL. The plane coefficients are in the form: [n|d].
+  normalise_planes - Set to false if you only need the planes for in-front/behind tests, and not distance of point from plane.
+REMARKS Note that plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.
+*/
+static inline void frustum_planes_from_PV( mat4 PV, vec4* planes_xyxd, bool normalise_planes ) {
+  assert( planes_xyxd );
+
+  planes_xyxd[0] = ( vec4 ){.x = PV.m[3] + PV.m[0], .y = PV.m[7] + PV.m[4], .z = PV.m[11] + PV.m[8], .w = PV.m[15] + PV.m[12]};  // left clipping plane
+  planes_xyxd[1] = ( vec4 ){.x = PV.m[3] - PV.m[0], .y = PV.m[7] - PV.m[4], .z = PV.m[11] - PV.m[8], .w = PV.m[15] - PV.m[12]};  // right clipping plane
+  planes_xyxd[2] = ( vec4 ){.x = PV.m[3] + PV.m[1], .y = PV.m[7] + PV.m[5], .z = PV.m[11] + PV.m[9], .w = PV.m[15] + PV.m[13]};  // bottom clipping plane
+  planes_xyxd[3] = ( vec4 ){.x = PV.m[3] - PV.m[1], .y = PV.m[7] - PV.m[5], .z = PV.m[11] - PV.m[9], .w = PV.m[15] - PV.m[13]};  // top clipping plane
+  planes_xyxd[4] = ( vec4 ){.x = PV.m[3] + PV.m[2], .y = PV.m[7] + PV.m[6], .z = PV.m[11] + PV.m[10], .w = PV.m[15] + PV.m[14]}; // near clipping plane
+  planes_xyxd[5] = ( vec4 ){.x = PV.m[3] - PV.m[2], .y = PV.m[7] - PV.m[6], .z = PV.m[11] - PV.m[10], .w = PV.m[15] - PV.m[14]}; // far clipping plane
+  if ( normalise_planes ) {
+    for ( int i = 0; i < 6; i++ ) { planes_xyxd[i] = normalise_plane( planes_xyxd[i] ); }
+  }
 }
 
 static inline versor div_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s}; }
@@ -577,13 +601,6 @@ static inline bool ray_aabb( vec3 ray_origin, vec3 ray_direction, vec3 aabb_min,
   return true;
 }
 
-/* Oriented Bounding Box (OBB) volume and orientation definition. */
-typedef struct obb_t {   // A in RTR notation
-  vec3 centre;           // a^c in RTR notation
-  vec3 norm_side_dir[3]; // a^u, a^v, a^w in RTR notation
-  float half_lengths[3]; // centre to face. must be positive. h_u, h_v, h_w in RTR notation
-} obb_t;
-
 /* Ray - oriented bounding box (OBB) geometric intersection test.
 PARAMS
   box      - Definition of a cuboid volume's bounds and orientation.
@@ -627,6 +644,106 @@ static inline bool ray_obb( obb_t box, vec3 ray_o, vec3 ray_d, float* t, int* fa
   }
   *t        = tmin > 0 ? tmin : tmax;
   *face_num = tmin > 0 ? imin + 1 : imax + 1;
+  return true;
+}
+
+/* Derive the Axis-Aligned Bounding Box for a camera frustum.
+PARAMS
+  PV         - Perspective * View virtual camera matrix.
+RETURNS Axis-aligned box surrounding the frustum. Note that this is usually very large. */
+static inline aabb_t frustum_to_aabb( mat4 PV ) {
+  aabb_t aabb = ( aabb_t ){.min.x = 0.0f};
+  vec3 corners_wor[8];
+  frustum_points_from_PV( PV, corners_wor );
+  for ( int i = 1; i < 8; i++ ) {
+    aabb.min.x = APG_M_MIN( aabb.min.x, corners_wor[i].x );
+    aabb.max.x = APG_M_MAX( aabb.max.x, corners_wor[i].x );
+    aabb.min.y = APG_M_MIN( aabb.min.y, corners_wor[i].y );
+    aabb.max.y = APG_M_MAX( aabb.max.y, corners_wor[i].y );
+    aabb.min.z = APG_M_MIN( aabb.min.z, corners_wor[i].z );
+    aabb.max.z = APG_M_MAX( aabb.max.z, corners_wor[i].z );
+  }
+  return aabb;
+}
+
+/* Intersection test for Axis-Oriented Bounding Box with Axis-Oriented Bounding Box.
+PARAMS
+  a, b - The two axis-aligned bounding boxes.
+RETURNS true if box A intersects box B
+*/
+static inline bool aabb_aabb( aabb_t a, aabb_t b ) {
+  return ( a.min.x <= b.max.x && a.max.x >= b.min.x ) && ( a.min.y <= b.max.y && a.max.y >= b.min.y ) && ( a.min.z <= b.max.z && a.max.z >= b.min.z );
+}
+
+/* Distance between a point and a plane. This is a specialised dot product.
+PARAMS
+  planes_xyzd - A plane with coefficients in the form: ax + by + cz + d = 0 (normal xyz,d). Where -d (note the negative) is the distance from the origin to the
+plane surface in the direction of the normal (xyz).
+  point       - The 3D point.
+RETURNS A positive value if the point is in front of the plane, or a negative value if the point is behind the plane
+REMARKS The function does not normalise the input plane, and will operate with non-unit vector normals.
+See also https://mathworld.wolfram.com/Point-PlaneDistance.html.
+*/
+static inline float distance_plane_point( vec4 plane_xyzd, vec3 point ) {
+  return plane_xyzd.x * point.x + plane_xyzd.y * point.y + plane_xyzd.z * point.z + plane_xyzd.w;
+}
+
+/* Intersection test for frustum with Axis-Oriented Bounding Box.
+Using the 'check if each point is on the visible side of each frustum plane' test as described at:
+https://iquilezles.org/www/articles/frustumcorrect/frustumcorrect.htm
+Modified with the " 3.4.2 Distance Between a Point and a Plane" method from FoGED Vol. 1 by Eric Lengyel.
+PARAMS
+  frustum_planes     - A buffer of 6x vec4 to set world space planes. Must not be NULL. The plane coefficients are in the form: ax + by + cz + d = 0 (normal
+xyz,d). Where -d (note the negative) is the distance from the origin to the plane surface in the direction of the normal (xyz).
+  aabb               - Diagonally-opposed corner points of the box.
+RETURNS true if the AABB is in the frustum.
+*/
+static inline bool frustum_vs_aabb( const vec4* frustum_planes, const vec3* frustum_points, aabb_t box ) {
+  for ( int i = 0; i < 6; i++ ) {
+    int out = 0;
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.min.y, box.min.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.min.y, box.max.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.max.y, box.min.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.max.y, box.max.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.min.y, box.min.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.min.y, box.max.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.max.y, box.min.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.max.y, box.max.z} ) < 0.0 ) { out++; }
+    if ( 8 == out ) { return false; }
+  }
+  // check frustum outside/inside box
+  // NOTE: may be wrong
+  int out = 0;
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].x > box.max.x ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].x < box.min.x ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].y > box.max.y ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].y < box.min.y ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].z > box.max.z ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
+  for ( int i = 0, out = 0; i < 8; i++ ) {
+    if ( frustum_points[i].z < box.min.z ) { out++; }
+  }
+  if ( out == 8 ) { return false; }
+
   return true;
 }
 
