@@ -1,6 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
+Version:  0.3
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -123,18 +124,19 @@ static bool _parse_user_entered_instruction( const char* str ) {
   assert( str );
 
   char one[APG_C_STR_MAX], two[APG_C_STR_MAX], three[APG_C_STR_MAX], four[APG_C_STR_MAX];
-  char tmp[APG_C_STR_MAX];
+  char tmp[APG_C_STR_MAX * 2];
   one[0] = two[0] = three[0] = '\0';
   int n                      = sscanf( str, "%s %s %s %s", one, two, three, four );
   switch ( n ) {
-  case 0: return true; // this would be simply '\n'
+  case EOF: return true; // this would be simply '\n' (value usually -1)
+  case 0: return true;   // this would be simply '\n'
   case 1: {
     // search for func match
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( NULL );
       if ( !res ) {
-        snprintf( tmp, APG_C_STR_MAX, "ERROR: function `%s` returned error.", one );
+        snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: function `%s` returned error.", one );
         apg_c_print( tmp );
       }
       return true;
@@ -169,19 +171,19 @@ static bool _parse_user_entered_instruction( const char* str ) {
       tmp[0] = '\0';
       switch ( dt ) {
       case APG_C_BOOL: {
-        snprintf( tmp, APG_C_STR_MAX, "%s %u.", one, *(bool*)var_ptr );
+        snprintf( tmp, APG_C_STR_MAX * 2, "%s %u.", one, *(bool*)var_ptr );
       } break;
       case APG_C_INT32: {
-        snprintf( tmp, APG_C_STR_MAX, "%s %i.", one, *(int32_t*)var_ptr );
+        snprintf( tmp, APG_C_STR_MAX * 2, "%s %i.", one, *(int32_t*)var_ptr );
       } break;
       case APG_C_UINT32: {
-        snprintf( tmp, APG_C_STR_MAX, "%s %u.", one, *(uint32_t*)var_ptr );
+        snprintf( tmp, APG_C_STR_MAX * 2, "%s %u.", one, *(uint32_t*)var_ptr );
       } break;
       case APG_C_FLOAT: {
-        snprintf( tmp, APG_C_STR_MAX, "%s %f.", one, *(float*)var_ptr );
+        snprintf( tmp, APG_C_STR_MAX * 2, "%s %f.", one, *(float*)var_ptr );
       } break;
       default: {
-        snprintf( tmp, APG_C_STR_MAX, "%s OTHER", one );
+        snprintf( tmp, APG_C_STR_MAX * 2, "%s OTHER", one );
       } break; // some other data type
       }        // endswitch
       apg_c_print( tmp );
@@ -189,18 +191,18 @@ static bool _parse_user_entered_instruction( const char* str ) {
     }
 
     // give up
-    snprintf( tmp, APG_C_STR_MAX, "ERROR: `%s` is not a recognised command or variable name.", one );
+    snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: `%s` is not a recognised command or variable name.", one );
     apg_c_print( tmp );
     return false;
   } break;
 
   case 2: {
-    float fval = (float)atof( two );
+    float fval   = (float)atof( two );
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( two ); // give 2nd token as arg string
       if ( !res ) {
-        snprintf( tmp, APG_C_STR_MAX, "ERROR: function `%s` returned error.", one );
+        snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: function `%s` returned error.", one );
         apg_c_print( tmp );
       }
       return true;
@@ -230,15 +232,16 @@ static bool _parse_user_entered_instruction( const char* str ) {
       }               // endswitch
       return true;
     } else {
-      snprintf( tmp, APG_C_STR_MAX, "ERROR: `%s` is not a recognised variable name.", one );
+      snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: `%s` is not a recognised variable name.", one );
       apg_c_print( tmp );
       return false;
     }
   } break;
 
   default: {
-    snprintf( tmp, APG_C_STR_MAX, "ERROR: too many tokens in instruction." );
+    snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: too many tokens in instruction." );
     apg_c_print( tmp );
+    printf( "n=%i\n", n );
     return false;
   } break;
   } // endswitch
