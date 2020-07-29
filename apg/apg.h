@@ -228,6 +228,20 @@ void* apg_scratch_mem_b( size_t sz );
 void* apg_scratch_mem_c( size_t sz );
 
 /*=================================================================================================
+COMPRESSION
+=================================================================================================*/
+/* Apply run-length encoding to an array of bytes pointed to by bytes_in, over size in bytes given by sz_in.
+The result is written to bytes_out, with output size in bytes written to sz_out.
+PARAMS
+  bytes_in  - If NULL then sz_out is set to 0.
+  sz_in     - If 0 then sz_out is set to 0.
+  bytes_out - If NULL then sz_out is reported, but no memory is written to. This is useful for determining the size required for output buffer allocation.
+  sz_out    - Must not be NULL.
+*/
+void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
+void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
+
+/*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
 #ifdef APG_IMPLEMENTATION
@@ -551,6 +565,60 @@ int apg_check_param( const char* check ) {
     if ( strcasecmp( check, g_apg_argv[i] ) == 0 ) { return i; }
   }
   return -1;
+}
+
+/*=================================================================================================
+COMPRESSION
+=================================================================================================*/
+
+void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out ) {
+  assert( sz_out );
+  if ( !sz_out ) { return; }
+  if ( !bytes_in || sz_in == 0 ) { *sz_out = 0; }
+
+  size_t out_n = 0;
+  for ( size_t i = 0; i < sz_in; i++ ) {
+    uint8_t count = 1;
+    if ( ( i < sz_in - 1 ) && ( bytes_in[i] == bytes_in[i + 1] ) ) {
+      count = 2;
+      for ( size_t j = i + 2; j < sz_in && count < UINT8_MAX; j++ ) {
+        if ( bytes_in[j] != bytes_in[i] ) { break; }
+        count++;
+      }
+    }
+    if ( bytes_out ) {
+      bytes_out[out_n] = bytes_in[i];
+      if ( count >= 2 ) { // eg convert AAA to AA3 and AAAA to AA4 but AA stays as AA
+        bytes_out[out_n + 1] = bytes_in[i];
+        bytes_out[out_n + 2] = count;
+      }
+    }
+    out_n++;
+    if ( count >= 2 ) {
+      out_n += 2; // eg DDDD->DD4 so 3 total. D + D4 -> 1 + 2.
+      i += ( count - 1 );
+    }
+  }
+  *sz_out = out_n;
+}
+
+void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out ) {
+  assert( sz_out );
+  if ( !sz_out ) { return; }
+  if ( !bytes_in || sz_in == 0 ) { *sz_out = 0; }
+
+  size_t out_n = 0;
+  for ( size_t i = 0; i < sz_in; i++ ) {
+    uint8_t count = 1;
+    // look for 2 in a row then expect a number
+    if ( ( i < sz_in - 2 ) && ( bytes_in[i] == bytes_in[i + 1] ) ) { count = bytes_in[i + 2]; }
+    if ( bytes_out ) {
+      for ( uint8_t j = 0; j < count; j++ ) { bytes_out[out_n + j] = bytes_in[i]; }
+    }
+    out_n += count;
+    if ( count > 1 ) { i += 2; }
+  }
+  *sz_out = out_n;
 }
 
 #endif /* APG_IMPLEMENTATION */
