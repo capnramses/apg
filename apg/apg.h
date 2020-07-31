@@ -118,11 +118,6 @@ void apg_sleep_ms( int ms );
 /*=================================================================================================
 STRINGS
 =================================================================================================*/
-/* get string from file
-does not do any malloc - fills existing buffer up to length max_len
-returns false on error */
-bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
-
 /* Custom strcmp variant to do a partial match avoid commonly-made == 0 bracket soup bugs.
 PARAMS
 a,b         - Input strings to compare.
@@ -140,6 +135,26 @@ int apg_strnlen( const char* str, int maxlen );
      src_max  - This is the maximum number of bytes to copy from the source string.
 */
 void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max );
+
+/*=================================================================================================
+FILES
+=================================================================================================*/
+/* convenience struct and file->memory function */
+typedef struct apg_file_t {
+  void* data;
+  size_t sz;
+} apg_file_t;
+
+/*
+RETURNS
+- true on success. record->data is allocated memory and must be freed by the caller.
+- false on any error. Any allocated memory is freed if false is returned */
+bool apg_read_entire_file( const char* filename, apg_file_t* record );
+
+/* get string from file
+does not do any malloc - fills existing buffer up to length max_len
+returns false on error */
+bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
 
 /*=================================================================================================
 LOG FILES
@@ -344,25 +359,6 @@ void apg_sleep_ms( int ms ) {
 /*=================================================================================================
 STRINGS IMPLEMENTATION
 =================================================================================================*/
-bool apg_file_to_str( const char* file_name, size_t max_len, char* str ) {
-  FILE* fp = fopen( file_name, "r" );
-  if ( !fp ) {
-    fprintf( stderr, "ERROR: opening file %s\n", file_name );
-    return false;
-  }
-  size_t cnt = fread( str, 1, max_len - 1, fp );
-  if ( cnt >= max_len - 1 ) { fprintf( stderr, "WARNING: file %s too big - truncated.\n", file_name ); }
-  if ( ferror( fp ) ) {
-    fprintf( stderr, "ERROR: reading shader file %s\n", file_name );
-    fclose( fp );
-    return false;
-  }
-  /* append \0 to end of file string */
-  str[cnt] = 0;
-  fclose( fp );
-  return true;
-}
-
 bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max ) {
   size_t len = APG_MAX( strnlen( a, a_max ), strnlen( b, b_max ) );
   for ( size_t i = 0; i < len; i++ ) {
@@ -386,6 +382,48 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
   if ( remainder <= 0 ) { return; }
   const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
   strncat( dst, src, n );                                // strncat manual guarantees null termination.
+}
+
+/*=================================================================================================
+FILES IMPLEMENTATION
+=================================================================================================*/
+bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
+  FILE* fp = fopen( filename, "rb" );
+  if ( !fp ) { return false; }
+  fseek( fp, 0L, SEEK_END );
+  record->sz   = (size_t)ftell( fp );
+  record->data = malloc( record->sz );
+  if ( !record->data ) {
+    fclose( fp );
+    return false;
+  }
+  rewind( fp );
+  size_t nr = fread( record->data, record->sz, 1, fp );
+  fclose( fp );
+  if ( 1 != nr ) {
+    free( record->data );
+    return false;
+  }
+  return true;
+}
+
+bool apg_file_to_str( const char* file_name, size_t max_len, char* str ) {
+  FILE* fp = fopen( file_name, "r" );
+  if ( !fp ) {
+    fprintf( stderr, "ERROR: opening file %s\n", file_name );
+    return false;
+  }
+  size_t cnt = fread( str, 1, max_len - 1, fp );
+  if ( cnt >= max_len - 1 ) { fprintf( stderr, "WARNING: file %s too big - truncated.\n", file_name ); }
+  if ( ferror( fp ) ) {
+    fprintf( stderr, "ERROR: reading shader file %s\n", file_name );
+    fclose( fp );
+    return false;
+  }
+  /* append \0 to end of file string */
+  str[cnt] = 0;
+  fclose( fp );
+  return true;
 }
 
 /*=================================================================================================
