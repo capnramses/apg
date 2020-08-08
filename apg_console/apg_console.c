@@ -10,7 +10,6 @@ Licence:  See bottom of header file.
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -73,18 +72,18 @@ static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
 }
 
 static void _help() {
-  apg_c_print( "APG_C by Anton Gerdelan. Autocomplete supported. Built-in functions are:" );
-  for ( int i = 0; i < _c_n_built_in_commands; i++ ) { apg_c_print( _c_built_in_commands[i] ); }
+  apg_c_printf( "APG_C by Anton Gerdelan. Autocomplete supported. Built-in functions are:" );
+  for ( int i = 0; i < _c_n_built_in_commands; i++ ) { apg_c_printf( "%s", _c_built_in_commands[i] ); }
 }
 
 static void _list_c_vars() {
-  apg_c_print( "=====c_vars=====" );
-  for ( uint32_t i = 0; i < _n_c_vars; i++ ) { apg_c_print( _c_vars[i].str ); }
+  apg_c_printf( "=====c_vars=====" );
+  for ( uint32_t i = 0; i < _n_c_vars; i++ ) { apg_c_printf( "%s", _c_vars[i].str ); }
 }
 
 static void _list_c_funcs() {
-  apg_c_print( "=====c_funcs=====" );
-  for ( uint32_t i = 0; i < _n_c_funcs; i++ ) { apg_c_print( _c_funcs[i].str ); }
+  apg_c_printf( "=====c_funcs=====" );
+  for ( uint32_t i = 0; i < _n_c_funcs; i++ ) { apg_c_printf( "%s", _c_funcs[i].str ); }
 }
 
 // returns index or -1 if did not find
@@ -124,7 +123,6 @@ static bool _parse_user_entered_instruction( const char* str ) {
   assert( str );
 
   char one[APG_C_STR_MAX], two[APG_C_STR_MAX], three[APG_C_STR_MAX], four[APG_C_STR_MAX];
-  char tmp[APG_C_STR_MAX * 2];
   one[0] = two[0] = three[0] = '\0';
   int n                      = sscanf( str, "%s %s %s %s", one, two, three, four );
   switch ( n ) {
@@ -135,10 +133,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( NULL );
-      if ( !res ) {
-        snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: function `%s` returned error.", one );
-        apg_c_print( tmp );
-      }
+      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -168,31 +163,28 @@ static bool _parse_user_entered_instruction( const char* str ) {
       apg_c_var_datatype_t dt = _c_vars[var_idx].datatype;
       void* var_ptr           = _c_vars[var_idx].var_ptr;
       assert( var_ptr );
-      tmp[0] = '\0';
       switch ( dt ) {
       case APG_C_BOOL: {
-        snprintf( tmp, APG_C_STR_MAX * 2, "%s %u.", one, *(bool*)var_ptr );
+        apg_c_printf( "%s %u.", one, *(bool*)var_ptr );
       } break;
       case APG_C_INT32: {
-        snprintf( tmp, APG_C_STR_MAX * 2, "%s %i.", one, *(int32_t*)var_ptr );
+        apg_c_printf( "%s %i.", one, *(int32_t*)var_ptr );
       } break;
       case APG_C_UINT32: {
-        snprintf( tmp, APG_C_STR_MAX * 2, "%s %u.", one, *(uint32_t*)var_ptr );
+        apg_c_printf( "%s %u.", one, *(uint32_t*)var_ptr );
       } break;
       case APG_C_FLOAT: {
-        snprintf( tmp, APG_C_STR_MAX * 2, "%s %f.", one, *(float*)var_ptr );
+        apg_c_printf( "%s %f.", one, *(float*)var_ptr );
       } break;
       default: {
-        snprintf( tmp, APG_C_STR_MAX * 2, "%s OTHER", one );
+        apg_c_printf( "%s OTHER", one );
       } break; // some other data type
       }        // endswitch
-      apg_c_print( tmp );
       return true;
     }
 
     // give up
-    snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: `%s` is not a recognised command or variable name.", one );
-    apg_c_print( tmp );
+    apg_c_printf( "ERROR: `%s` is not a recognised command or variable name.", one );
     return false;
   } break;
 
@@ -201,10 +193,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( two ); // give 2nd token as arg string
-      if ( !res ) {
-        snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: function `%s` returned error.", one );
-        apg_c_print( tmp );
-      }
+      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -214,7 +203,6 @@ static bool _parse_user_entered_instruction( const char* str ) {
       apg_c_var_datatype_t dt = _c_vars[var_idx].datatype;
       void* var_ptr           = _c_vars[var_idx].var_ptr;
       assert( var_ptr );
-      tmp[0] = '\0';
       switch ( dt ) {
       case APG_C_BOOL: {
         *(bool*)var_ptr = (bool)atoi( two );
@@ -232,16 +220,14 @@ static bool _parse_user_entered_instruction( const char* str ) {
       }               // endswitch
       return true;
     } else {
-      snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: `%s` is not a recognised variable name.", one );
-      apg_c_print( tmp );
+      apg_c_printf( "ERROR: `%s` is not a recognised variable name.", one );
       return false;
     }
   } break;
 
   default: {
-    snprintf( tmp, APG_C_STR_MAX * 2, "ERROR: too many tokens in instruction." );
-    apg_c_print( tmp );
-    printf( "n=%i\n", n );
+    apg_c_printf( "ERROR: too many tokens in instruction." );
+    fprintf( stderr, "n=%i\n", n );
     return false;
   } break;
   } // endswitch
@@ -271,7 +257,7 @@ bool apg_c_append_user_entered_text( const char* str ) {
     if ( _c_user_entered_text[i] == '\n' ) {
       _c_user_entered_text[i] = '\0';
       _apg_c_command_hist_append( _c_user_entered_text );
-      apg_c_print( _c_user_entered_text );
+      apg_c_printf( "%s", _c_user_entered_text );
       bool parsed             = _parse_user_entered_instruction( _c_user_entered_text );
       _c_user_entered_text[0] = '\0';
       return parsed;
@@ -329,7 +315,7 @@ void apg_c_autocomplete() {
       n_matching++;
       last_matching_idx = l;
       section_matching  = 0;
-      apg_c_print( _c_built_in_commands[l] );
+      apg_c_printf( "%s", _c_built_in_commands[l] );
     }
   }
 
@@ -340,7 +326,7 @@ void apg_c_autocomplete() {
       n_matching++;
       last_matching_idx = m;
       section_matching  = 1;
-      apg_c_print( _c_funcs[m].str );
+      apg_c_printf( "%s", _c_funcs[m].str );
     }
   }
 
@@ -351,7 +337,7 @@ void apg_c_autocomplete() {
       n_matching++;
       last_matching_idx = o;
       section_matching  = 2;
-      apg_c_print( _c_vars[o].str );
+      apg_c_printf( "%s", _c_vars[o].str );
     }
   }
   if ( 1 == n_matching ) {
@@ -375,14 +361,19 @@ void apg_c_output_clear( void ) {
 
 int apg_c_count_lines( void ) { return c_n_output_lines; }
 
-void apg_c_print( const char* str ) {
-  assert( str );
+void apg_c_printf( const char* message, ... ) {
+  va_list argptr;
+  char buffer[APG_C_STR_MAX];
+
+  va_start( argptr, message );
+  vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
+  va_end( argptr );
 
   c_output_lines_newest = ( c_output_lines_newest + 1 ) % APG_C_OUTPUT_LINES_MAX;
   c_n_output_lines      = c_n_output_lines < APG_C_OUTPUT_LINES_MAX ? c_n_output_lines + 1 : APG_C_OUTPUT_LINES_MAX;
   if ( c_output_lines_newest == c_output_lines_oldest ) { c_output_lines_oldest = ( c_output_lines_oldest + 1 ) % APG_C_OUTPUT_LINES_MAX; }
   if ( -1 == c_output_lines_oldest ) { c_output_lines_oldest = c_output_lines_newest; }
-  strncpy( c_output_lines[c_output_lines_newest], str, APG_C_STR_MAX - 1 );
+  strncpy( c_output_lines[c_output_lines_newest], buffer, APG_C_STR_MAX - 1 );
 
   _c_redraw_required = true;
 }

@@ -78,14 +78,25 @@ This is API-agnostic so must be converted to a texture to be used with 3D APIs.
 extern "C" {
 #endif
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define APG_C_UNUSED( x ) (void)( x ) // to suppress compiler warnings with unused/dummy arguments in callbacks
 #define APG_C_STR_MAX 128             // maximum console string length. commands and variable names must be shorter than this.
 #define APG_C_VARS_MAX 256            // maximum number of variables stored in console
 #define APG_C_FUNCS_MAX 128           // maximum number of console commands
 #define APG_C_OUTPUT_LINES_MAX 32     // maximum number of lines retained in output
+
+/* compiler-specific checks to find missing arguments */
+#if defined( __clang__ )
+#define APG_C_ATTRIB_PRINTF( fmt, args ) __attribute__( ( __format__( __printf__, fmt, args ) ) )
+#elif defined( __GNUC__ )
+#define APG_C_ATTRIB_PRINTF( fmt, args ) __attribute__( ( format( printf, fmt, args ) ) )
+#else
+#define APG_C_ATTRIB_PRINTF( fmt, args )
+#endif
 
 /* =======================================================================================================================
 user-entered text API. call these functions based on eg keyboard input.
@@ -112,7 +123,7 @@ console output text API.
 
 void apg_c_output_clear( void );
 // Appends str as an output line to the scrolling output
-void apg_c_print( const char* str );
+void apg_c_printf( const char* message, ... ) APG_C_ATTRIB_PRINTF( 1, 2 );
 int apg_c_count_lines( void );
 // printf everything in console to stdout stream
 void apg_c_dump_to_stdout( void );
