@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.5
+Version:  0.6
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -392,13 +392,14 @@ void apg_c_printf( const char* message, ... ) {
 }
 
 void apg_c_dump_to_stdout( void ) {
-  if ( c_output_lines_oldest < 0 || c_output_lines_newest < 0 ) { return; }
   int idx = c_output_lines_oldest;
-  for ( int count = 0; count < APG_C_OUTPUT_LINES_MAX; count++ ) {
-    printf( "%i) %s\n", idx, c_output_lines[idx] );
-    if ( idx == c_output_lines_newest ) { return; }
-    idx = ( idx + 1 ) % APG_C_OUTPUT_LINES_MAX;
-  }
+  if ( c_output_lines_oldest >= 0 || c_output_lines_newest >= 0 ) { 
+    for ( int count = 0; count < APG_C_OUTPUT_LINES_MAX; count++ ) {
+      printf( "%i) %s\n", idx, c_output_lines[idx] );
+      if ( idx == c_output_lines_newest ) { return; }
+      idx = ( idx + 1 ) % APG_C_OUTPUT_LINES_MAX;
+    }
+  } // still want to print user entered text, even if no hist, so don't return yet
   printf( "> %s\n", _c_user_entered_text );
 }
 

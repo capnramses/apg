@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.6 - 2020/08/08 - Fixed issue/bug where dumping to stdout didn't print current user entered text if history was empty.
   v0.5 - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
   v0.4 - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
   v0.3 - 2020/06/07 - Doubled length of tmp strings to avoid truncation warnings.

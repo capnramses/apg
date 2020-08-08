@@ -11,6 +11,12 @@ bool anton_func( const char* arg_str ) {
 }
 
 int main() {
+
+  // resolving a prior bug where text wouldn't print until a \n was entered
+  apg_c_append_user_entered_text( "does this print without a slash n?" );
+  apg_c_dump_to_stdout();
+  apg_c_append_user_entered_text("\n");
+
   int anton_var = 666;
   apg_c_register_var( "anton_var", &anton_var, APG_C_INT32 );
   apg_c_var_t* v_ptr = apg_c_get_var( "anton_var" );
