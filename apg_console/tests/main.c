@@ -24,8 +24,8 @@ int main() {
   apg_c_append_user_entered_text( "list_vars\n" );
   apg_c_output_clear();
   apg_c_append_user_entered_text( "list_funcs\n" );
-  apg_c_print( "a line I added" );
-  apg_c_print( "another line I added" );
+  apg_c_printf( "a line I added" );
+  apg_c_printf( "another line I added" );
   apg_c_dump_to_stdout();
   apg_c_append_user_entered_text( "anton_func\n" );
   apg_c_append_user_entered_text( "anton_func 123.456\n" );
