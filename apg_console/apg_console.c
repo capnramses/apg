@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.4
+Version:  0.5
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -28,6 +28,7 @@ static apg_c_func_t _c_funcs[APG_C_FUNCS_MAX];
 static uint32_t _n_c_funcs;
 
 static char c_output_lines[APG_C_OUTPUT_LINES_MAX][APG_C_STR_MAX];
+static uint8_t _c_output_lines_rgba[APG_C_OUTPUT_LINES_MAX * 4];
 static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_lines = 0;
 static char _c_user_entered_text[APG_C_STR_MAX];
 static char _c_command_history[APG_C_MAX_COMMAND_HIST][APG_C_STR_MAX];
@@ -133,7 +134,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( NULL );
-      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
+      if ( !res ) { apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -184,7 +185,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     }
 
     // give up
-    apg_c_printf( "ERROR: `%s` is not a recognised command or variable name.", one );
+    apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: `%s` is not a recognised command or variable name.", one );
     return false;
   } break;
 
@@ -193,7 +194,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( two ); // give 2nd token as arg string
-      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
+      if ( !res ) { apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -220,13 +221,13 @@ static bool _parse_user_entered_instruction( const char* str ) {
       }               // endswitch
       return true;
     } else {
-      apg_c_printf( "ERROR: `%s` is not a recognised variable name.", one );
+      apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: `%s` is not a recognised variable name.", one );
       return false;
     }
   } break;
 
   default: {
-    apg_c_printf( "ERROR: too many tokens in instruction." );
+    apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: too many tokens in instruction." );
     fprintf( stderr, "n=%i\n", n );
     return false;
   } break;
@@ -361,7 +362,7 @@ void apg_c_output_clear( void ) {
 
 int apg_c_count_lines( void ) { return c_n_output_lines; }
 
-void apg_c_printf( const char* message, ... ) {
+void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* message, ... ) {
   va_list argptr;
   char buffer[APG_C_STR_MAX];
 
@@ -375,7 +376,19 @@ void apg_c_printf( const char* message, ... ) {
   if ( -1 == c_output_lines_oldest ) { c_output_lines_oldest = c_output_lines_newest; }
   strncpy( c_output_lines[c_output_lines_newest], buffer, APG_C_STR_MAX - 1 );
 
+  const uint8_t text_colour[4] = { r, g, b, a };
+  memcpy( &_c_output_lines_rgba[c_output_lines_newest * 4], text_colour, 4 );
+
   _c_redraw_required = true;
+}
+
+void apg_c_printf( const char* message, ... ) {
+  va_list argptr;
+  char buffer[APG_C_STR_MAX];
+  va_start( argptr, message );
+  vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
+  va_end( argptr );
+  apg_c_printf_rgba( 0x88, 0x88, 0x88, 0xFF, "%s", buffer ); // grey text
 }
 
 void apg_c_dump_to_stdout( void ) {
@@ -454,7 +467,13 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
     if ( line_idx < 0 ) { line_idx += APG_C_OUTPUT_LINES_MAX; }
     int row_idx = h * row_stride - ( row_height_px * row_stride ) * ( i + 2 );
     if ( row_idx < 0 ) { break; } // don't bother if entire row above upper image bound
-    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines );
+
+    uint8_t r = _c_output_lines_rgba[line_idx * 4 + 0];
+    uint8_t g = _c_output_lines_rgba[line_idx * 4 + 1];
+    uint8_t b = _c_output_lines_rgba[line_idx * 4 + 2];
+    uint8_t a = _c_output_lines_rgba[line_idx * 4 + 3];
+
+    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, r, g, b, a, thickness, outlines );
   }
   { // draw user-entered text on the bottom of the image
     char uet_str[APG_C_STR_MAX];

@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.5 - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
   v0.4 - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
   v0.3 - 2020/06/07 - Doubled length of tmp strings to avoid truncation warnings.
   v0.2 - 2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
@@ -123,9 +124,15 @@ console output text API.
 ======================================================================================================================= */
 
 void apg_c_output_clear( void );
+
 // Appends str as an output line to the scrolling output
 void apg_c_printf( const char* message, ... ) APG_C_ATTRIB_PRINTF( 1, 2 );
+
+// Same as apg_c_printf but with specified colour e.g. use red for errors
+void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* message, ... ) APG_C_ATTRIB_PRINTF( 5, 6 );
+
 int apg_c_count_lines( void );
+
 // printf everything in console to stdout stream
 void apg_c_dump_to_stdout( void );
 
