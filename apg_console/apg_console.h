@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.4 - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
   v0.3 - 2020/06/07 - Doubled length of tmp strings to avoid truncation warnings.
   v0.2 - 2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
   v0.1 - 2020/01/06 - Reduced interface. Moved from stored float cvars to addresses of existing vars. Data type is also specified for bool/int/uint/float support.

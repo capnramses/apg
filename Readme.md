@@ -6,19 +6,19 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## Contents
 
-| Library     | Description                                       | Language | # Files         | Version    | Fuzzed                                        |
-| ----------- | ------------------------------------------------- | -------- | --------------- | ---------- | --------------------------------------------- |
-| apg         | Generic C programming utils.                      | C        | 1               | 1.2        | No                                            |
-| apg_bmp     | BMP bitmap image reader/writer library.           | C        | 2               | 3.1        | Yes - [AFL](https://lcamtuf.coredump.cx/afl/) |
-| apg_console | Quake-style graphical console. API-independent.   | C        | 2 + apg_pixfont | 0.3        | No                                            |
-| apg_gldb    | OpenGL debug drawing (lines, boxes, ... ) | C        | 2               | 0.3        | No                                            |
-| apg_interp  | Interpolation / "tweening" / "easing".            | C, JS    | 1, 1            | 0.7        | No                                            |
-| apg_maths   | 3D maths for graphics/games.                      | C, JS    | 1, 1            | 2.10       | No                                            |
-| apg_pixfont | String-to-image with a pixel font.                | C        | 2               | 0.0.5      | No                                            |
-| apg_ply     | Stanford PLY mesh format read/write.              | C        |                 | ?          | No                                            |
-| apg_tga     | Single-header TGA image reader/writer.            | C        | 1               | 0.3.1      | No                                            |
-| apg_unicode | Unicode codepoint <-> UTF-8 String Functions.     | C        | 2               | 0.2        | No                                            |
-| apg_wav     | WAV file format read/write.                       | C        | 2               | 1          | No                                            |
+| Library     | Description                                     | Language | # Files         | Version | Fuzzed                                        |
+| ----------- | ----------------------------------------------- | -------- | --------------- | ------- | --------------------------------------------- |
+| apg         | Generic C programming utils.                    | C        | 1               | 1.2     | No                                            |
+| apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.1     | Yes - [AFL](https://lcamtuf.coredump.cx/afl/) |
+| apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont | 0.4     | No                                            |
+| apg_gldb    | OpenGL debug drawing (lines, boxes, ... )       | C        | 2               | 0.3     | No                                            |
+| apg_interp  | Interpolation / "tweening" / "easing".          | C, JS    | 1, 1            | 0.7     | No                                            |
+| apg_maths   | 3D maths for graphics/games.                    | C, JS    | 1, 1            | 2.10    | No                                            |
+| apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.0.5   | No                                            |
+| apg_ply     | Stanford PLY mesh format read/write.            | C        |                 | ?       | No                                            |
+| apg_tga     | Single-header TGA image reader/writer.          | C        | 1               | 0.3.1   | No                                            |
+| apg_unicode | Unicode codepoint <-> UTF-8 String Functions.   | C        | 2               | 0.2     | No                                            |
+| apg_wav     | WAV file format read/write.                     | C        | 2               | 1       | No                                            |
 
 ## LICENCE
 
