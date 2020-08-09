@@ -34,8 +34,8 @@ static char _c_user_entered_text[APG_C_STR_MAX];
 static char _c_command_history[APG_C_MAX_COMMAND_HIST][APG_C_STR_MAX];
 static int _c_latest_command_in_history = -1;
 
-#define C_N_BUILT_IN_COMMANDS = 4;
-static char _c_built_in_commands[C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
+#define APG_C_N_BUILT_IN_COMMANDS 4
+static char _c_built_in_commands[APG_C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
 
 static bool _c_redraw_required;
 
@@ -74,7 +74,7 @@ static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
 
 static void _help() {
   apg_c_printf( "APG_C by Anton Gerdelan. Autocomplete supported. Built-in functions are:" );
-  for ( int i = 0; i < C_N_BUILT_IN_COMMANDS; i++ ) { apg_c_printf( "%s", _c_built_in_commands[i] ); }
+  for ( int i = 0; i < APG_C_N_BUILT_IN_COMMANDS; i++ ) { apg_c_printf( "%s", _c_built_in_commands[i] ); }
 }
 
 static void _list_c_vars() {
@@ -110,7 +110,7 @@ static int _console_find_func( const char* str ) {
 static int _console_find_builtin_func( const char* str ) {
   assert( str );
 
-  for ( int i = 0; i < C_N_BUILT_IN_COMMANDS; i++ ) {
+  for ( int i = 0; i < APG_C_N_BUILT_IN_COMMANDS; i++ ) {
     if ( strncmp( str, _c_built_in_commands[i], APG_C_STR_MAX ) == 0 ) { return i; }
   }
   return -1;
@@ -310,7 +310,7 @@ void apg_c_autocomplete() {
   int last_matching_idx = -1;
   int section_matching  = -1;
   // check built-in funcs
-  for ( int l = 0; l < C_N_BUILT_IN_COMMANDS; l++ ) {
+  for ( int l = 0; l < APG_C_N_BUILT_IN_COMMANDS; l++ ) {
     char* res = strstr( _c_built_in_commands[l], token );
     if ( _c_built_in_commands[l] == res ) {
       n_matching++;
