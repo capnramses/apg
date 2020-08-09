@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.7 - 2020/08/09 - Fixed bug where counter of number of built in commands was too high by 1. Updated docs in this file.
   v0.6 - 2020/08/08 - Fixed issue/bug where dumping to stdout didn't print current user entered text if history was empty.
   v0.5 - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
   v0.4 - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
@@ -38,15 +39,14 @@ Autocompletion of user-entered text is supported. e.g. After you application det
 
 Instructions may be of the following forms:
 
-  BUILT-IN-COMMAND [VARIABLE] [VALUE]
-  VARIABLE
-  FUNCTION [VALUE]
+  BUILT-IN-COMMAND
+  VARIABLE         - print the value of a registered variable to the drop-down console
+  VARIABLE VALUE   - change the value of a registered variable
+  FUNCTION [VALUE] - execute a registered function with an optional argument value
 
 Built-in commands include:
 
   "help"           - list built-in commands.
-  "my_var 2.0"     - set the value of a variable 'my_var'.
-  "my_var"         - print the value of variable 'my_var'.
   "clear"          - invoke the 'clear' command.
   "list_vars"      - print registered variables and their values to drop-down console
   "list_funcs"     - print registered variables and their values to drop-down console
@@ -73,7 +73,7 @@ The console text may also be rendered out to an image for use in any graphical a
 This is API-agnostic so must be converted to a texture to be used with 3D APIs.
 
   apg_c_draw_to_image_mem()       - Writes current console text on top of a pre-allocated image.
-  apg_c_image_redraw_required()   - Check if anything has actually changed requiring a redraw. You should also redraw if eg the display area changes size.
+  apg_c_image_redraw_required()   - Check if anything has actually changed requiring a redraw.
 ======================================================================================================================= */
 #pragma once
 
