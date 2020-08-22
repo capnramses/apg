@@ -1,3 +1,10 @@
+/*****************************************************************************\
+Wave file read/write
+Licence: see bottom of file.
+Anton Gerdelan <antonofnote at gmail>
+
+Licence: see header.
+*/
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
