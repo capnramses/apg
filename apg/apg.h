@@ -1,9 +1,10 @@
 /*apg.h - Generic C utility functions.
-Version: 1.2. 4th May 2020.
+Version: 1.3. 4th May 2020.
 Licence: see bottom of file.
 C89 ( Implementation is C99 )
 Licence: see bottom of file.
 History:
+1.3 - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
 1.2 - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
 1.1 -  4 May 2020. Added custom rand() functions.
 1.0 -  8 May 2015. By Anton Gerdelan.
