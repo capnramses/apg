@@ -148,8 +148,15 @@ typedef struct apg_file_t {
 /*
 RETURNS
 - true on success. record->data is allocated memory and must be freed by the caller.
-- false on any error. Any allocated memory is freed if false is returned */
+- false on any error. Any allocated memory is freed if false is returned
+*/
 bool apg_read_entire_file( const char* filename, apg_file_t* record );
+
+/* Loads file_name's contents into a byte array and always ends with a NULL terminator.
+Calls apg_read_entire_file, which allocates memory - fills existing buffer up to length max_len.
+RETURNS false on error
+*/
+bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
 
 /*=================================================================================================
 LOG FILES
@@ -383,6 +390,8 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 FILES IMPLEMENTATION
 =================================================================================================*/
 bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
+  if ( !filename || !record ) { return false; }
+
   FILE* fp = fopen( filename, "rb" );
   if ( !fp ) { return false; }
   fseek( fp, 0L, SEEK_END );
@@ -399,6 +408,22 @@ bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
     free( record->data );
     return false;
   }
+  return true;
+}
+
+bool apg_file_to_str( const char* filename, size_t max_len, char* str ) {
+  if ( !filename || 0 == max_len || !str ) { return false; }
+
+  FILE* fp = fopen( filename, "rb" );
+  if ( !fp ) { return false; }
+  fseek( fp, 0L, SEEK_END );
+  size_t file_sz = (size_t)ftell( fp );
+  size_t read_sz = file_sz > ( max_len - 1 ) ? ( max_len - 1 ) : file_sz;
+  rewind( fp );
+  size_t nr = fread( str, read_sz, 1, fp );
+  fclose( fp );
+  str[read_sz] = '\0';
+  if ( 1 != nr ) { return false; }
   return true;
 }
 
