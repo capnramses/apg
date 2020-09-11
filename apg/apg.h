@@ -151,11 +151,6 @@ RETURNS
 - false on any error. Any allocated memory is freed if false is returned */
 bool apg_read_entire_file( const char* filename, apg_file_t* record );
 
-/* get string from file
-does not do any malloc - fills existing buffer up to length max_len
-returns false on error */
-bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
-
 /*=================================================================================================
 LOG FILES
 =================================================================================================*/
@@ -404,25 +399,6 @@ bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
     free( record->data );
     return false;
   }
-  return true;
-}
-
-bool apg_file_to_str( const char* file_name, size_t max_len, char* str ) {
-  FILE* fp = fopen( file_name, "r" );
-  if ( !fp ) {
-    fprintf( stderr, "ERROR: opening file %s\n", file_name );
-    return false;
-  }
-  size_t cnt = fread( str, 1, max_len - 1, fp );
-  if ( cnt >= max_len - 1 ) { fprintf( stderr, "WARNING: file %s too big - truncated.\n", file_name ); }
-  if ( ferror( fp ) ) {
-    fprintf( stderr, "ERROR: reading shader file %s\n", file_name );
-    fclose( fp );
-    return false;
-  }
-  /* append \0 to end of file string */
-  str[cnt] = 0;
-  fclose( fp );
   return true;
 }
 
