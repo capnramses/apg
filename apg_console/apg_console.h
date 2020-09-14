@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.8 - 2020/09/13 - Removed assert on append empty string. Reduced max str len to suit shorter consoles.
   v0.7 - 2020/08/09 - Fixed bug where counter of number of built in commands was too high by 1. Updated docs in this file.
   v0.6 - 2020/08/08 - Fixed issue/bug where dumping to stdout didn't print current user entered text if history was empty.
   v0.5 - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
@@ -87,7 +88,7 @@ extern "C" {
 #include <stdio.h>
 
 #define APG_C_UNUSED( x ) (void)( x ) // to suppress compiler warnings with unused/dummy arguments in callbacks
-#define APG_C_STR_MAX 128             // maximum console string length. commands and variable names must be shorter than this.
+#define APG_C_STR_MAX 85              // maximum console string length. commands and variable names must be shorter than this.
 #define APG_C_VARS_MAX 256            // maximum number of variables stored in console
 #define APG_C_FUNCS_MAX 128           // maximum number of console commands
 #define APG_C_OUTPUT_LINES_MAX 32     // maximum number of lines retained in output

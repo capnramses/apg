@@ -239,16 +239,13 @@ static bool _parse_user_entered_instruction( const char* str ) {
 }
 
 bool apg_c_append_user_entered_text( const char* str ) {
-  assert( str );
+  if ( !str ) { return false; }
 
   // check for buffer overflow
   int uet_len   = apg_c_strnlen( _c_user_entered_text, APG_C_STR_MAX );
   int len       = apg_c_strnlen( str, APG_C_STR_MAX );
   int total_len = uet_len + len;
-  if ( total_len > APG_C_STR_MAX ) {
-    apg_c_clear_user_entered_text();
-    return false;
-  }
+  if ( ( total_len >= APG_C_STR_MAX - 1 ) && ( str[0] != '\n' ) ) { return false; }
 
   // append
   apg_c_strncat( _c_user_entered_text, str, APG_C_STR_MAX, APG_C_STR_MAX );
