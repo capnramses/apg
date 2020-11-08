@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.7
+Version:  0.9
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -13,7 +13,7 @@ Licence:  See bottom of header file.
 #include <stdlib.h>
 #include <string.h>
 
-#define APG_C_MAX_COMMAND_HIST 4
+#define APG_C_MAX_COMMAND_HIST 16
 
 typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
@@ -32,7 +32,9 @@ static uint8_t _c_output_lines_rgba[APG_C_OUTPUT_LINES_MAX * 4];
 static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_lines = 0;
 static char _c_user_entered_text[APG_C_STR_MAX];
 static char _c_command_history[APG_C_MAX_COMMAND_HIST][APG_C_STR_MAX];
+static int _c_command_history_n         = 0;
 static int _c_latest_command_in_history = -1;
+static int _hist_curr_rewind_idx        = -1; // for scrolling through history with eg cursor up/down keys.
 
 #define APG_C_N_BUILT_IN_COMMANDS 4
 static char _c_built_in_commands[APG_C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
@@ -70,6 +72,8 @@ static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
   _c_latest_command_in_history                        = ( _c_latest_command_in_history + 1 ) % APG_C_MAX_COMMAND_HIST;
   _c_command_history[_c_latest_command_in_history][0] = '\0';
   apg_c_strncat( _c_command_history[_c_latest_command_in_history], _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
+  _c_command_history_n++;
+  if ( _c_command_history_n >= APG_C_MAX_COMMAND_HIST ) { _c_command_history_n = APG_C_MAX_COMMAND_HIST - 1; }
 }
 
 static void _help() {
@@ -239,16 +243,13 @@ static bool _parse_user_entered_instruction( const char* str ) {
 }
 
 bool apg_c_append_user_entered_text( const char* str ) {
-  assert( str );
+  if ( !str ) { return false; }
 
   // check for buffer overflow
   int uet_len   = apg_c_strnlen( _c_user_entered_text, APG_C_STR_MAX );
   int len       = apg_c_strnlen( str, APG_C_STR_MAX );
   int total_len = uet_len + len;
-  if ( total_len > APG_C_STR_MAX ) {
-    apg_c_clear_user_entered_text();
-    return false;
-  }
+  if ( ( total_len >= APG_C_STR_MAX - 1 ) && ( str[0] != '\n' ) ) { return false; }
 
   // append
   apg_c_strncat( _c_user_entered_text, str, APG_C_STR_MAX, APG_C_STR_MAX );
@@ -261,6 +262,7 @@ bool apg_c_append_user_entered_text( const char* str ) {
       apg_c_printf( "%s", _c_user_entered_text );
       bool parsed             = _parse_user_entered_instruction( _c_user_entered_text );
       _c_user_entered_text[0] = '\0';
+      _hist_curr_rewind_idx   = -1; // reset history rewind
       return parsed;
     }
   }
@@ -269,12 +271,25 @@ bool apg_c_append_user_entered_text( const char* str ) {
   return true;
 }
 
-void apg_c_reuse_hist( int hist ) {
-  int32_t idx             = _c_latest_command_in_history - hist;
-  idx                     = idx < 0 ? APG_C_MAX_COMMAND_HIST - 1 : idx % APG_C_MAX_COMMAND_HIST;
+void apg_c_reuse_hist( int hist_steps ) {
+  int32_t idx = _c_latest_command_in_history - hist_steps;
+  while ( idx < 0 ) { idx += APG_C_MAX_COMMAND_HIST; }
+  idx                     = idx % APG_C_MAX_COMMAND_HIST;
   _c_user_entered_text[0] = '\0';
   apg_c_strncat( _c_user_entered_text, _c_command_history[idx], APG_C_STR_MAX, APG_C_STR_MAX );
   _c_redraw_required = true;
+}
+
+void apg_c_reuse_hist_back_one() {
+  _hist_curr_rewind_idx++;
+  if ( _hist_curr_rewind_idx >= _c_command_history_n ) { _hist_curr_rewind_idx = _c_command_history_n - 1; }
+  apg_c_reuse_hist( _hist_curr_rewind_idx );
+}
+
+void apg_c_reuse_hist_ahead_one() {
+  _hist_curr_rewind_idx--;
+  if ( _hist_curr_rewind_idx < 0 ) { _hist_curr_rewind_idx = 0; }
+  apg_c_reuse_hist( _hist_curr_rewind_idx );
 }
 
 // WARNING(Anton) not unicode-aware!
@@ -288,6 +303,7 @@ void apg_c_backspace( void ) {
 void apg_c_clear_user_entered_text( void ) {
   _c_user_entered_text[0] = '\0';
   _c_redraw_required      = true;
+  _hist_curr_rewind_idx   = -1; // reset history rewind
 }
 
 // WARNING(Anton) - assumes string is ASCII
