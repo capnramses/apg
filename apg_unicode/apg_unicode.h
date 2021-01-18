@@ -27,6 +27,8 @@ History:
 #pragma once
 #include <stdint.h>
 
+#define APG_UNICODE_MAX_STR 2048 // max length of string. for avoiding infinite loops.
+
 /* Converts a unicode codepoint to an UTF-8 encoded multi-byte sequence.
 PARAMS
 mbs - Pointer to a buffer location that can hold the UTF-8 multi-byte sequence + null terminator (max 5 bytes).

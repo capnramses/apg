@@ -13,8 +13,6 @@ C99
 #include <stdlib.h>
 #include <string.h>
 
-#define APG_UNICODE_MAX_STR 2048 // max length of string. for avoiding infinite loops.
-
 // clang-format off
 #define MASK_FIRST_ONE   128 // 128 or 10000000
 #define MASK_FIRST_TWO   192 // 192 or 11000000
