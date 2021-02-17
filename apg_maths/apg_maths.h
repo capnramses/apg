@@ -104,22 +104,22 @@ static inline void print_mat4( mat4 m ) {
 }
 static inline void print_quat( versor q ) { printf( "[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z ); }
 
-static inline vec3 v3_v4( vec4 v ) { return ( vec3 ){.x = v.x, .y = v.y, .z = v.z}; }
-static inline vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){.x = v.x, .y = v.y, .z = v.z, .w = f}; }
+static inline vec3 v3_v4( vec4 v ) { return ( vec3 ){ .x = v.x, .y = v.y, .z = v.z }; }
+static inline vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){ .x = v.x, .y = v.y, .z = v.z, .w = f }; }
 
-static inline vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x + b, .y = a.y + b, .z = a.z + b}; }
-static inline vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z}; }
+static inline vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
+static inline vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z }; }
 
-static inline vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x - b, .y = a.y - b, .z = a.z - b}; }
-static inline vec2 sub_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){.x = a.x - b.x, .y = a.y - b.y}; }
-static inline vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z}; }
+static inline vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
+static inline vec2 sub_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x - b.x, .y = a.y - b.y }; }
+static inline vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z }; }
 
-static inline vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x * b, .y = a.y * b, .z = a.z * b}; }
-static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z}; }
+static inline vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x * b, .y = a.y * b, .z = a.z * b }; }
+static inline vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z }; }
 
-static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){.x = a.x / b, .y = a.y / b, .z = a.z / b}; }
-static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z}; }
-static inline vec4 div_vec4_f( vec4 v, float f ) { return ( vec4 ){.x = v.x / f, .y = v.y / f, .z = v.z / f, .w = v.w / f}; }
+static inline vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x / b, .y = a.y / b, .z = a.z / b }; }
+static inline vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x / b.x, .y = a.y / b.y, .z = a.z / b.z }; }
+static inline vec4 div_vec4_f( vec4 v, float f ) { return ( vec4 ){ .x = v.x / f, .y = v.y / f, .z = v.z / f, .w = v.w / f }; }
 
 /* magnitude or length of a vec2 */
 static inline float length_vec2( vec2 v ) { return sqrt( v.x * v.x + v.y * v.y ); }
@@ -133,7 +133,7 @@ static inline float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z 
 static inline vec3 normalise_vec3( vec3 v ) {
   vec3 vb;
   float l = length_vec3( v );
-  if ( 0.0f == l ) { return ( vec3 ){.x = 0.0f, .y = 0.0f, .z = 0.0f}; }
+  if ( 0.0f == l ) { return ( vec3 ){ .x = 0.0f, .y = 0.0f, .z = 0.0f }; }
   vb.x = v.x / l;
   vb.y = v.y / l;
   vb.z = v.z / l;
@@ -158,18 +158,18 @@ static inline vec4 normalise_plane( vec4 xyzd ) {
 
 static inline float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){.x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x}; }
+static inline vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x }; }
 
 /* Converts an un-normalised direction vector's X,Z components into a heading in degrees. */
 static inline float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * APG_M_ONE_RAD_IN_DEG; }
 /* Very informal function to convert a heading (e.g. y-axis orientation) into a 3d vector with components in x and z axes. */
 static inline vec3 heading_to_vec3( float degrees ) {
   float rad = degrees * APG_M_ONE_DEG_IN_RAD;
-  return ( vec3 ){.x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad )};
+  return ( vec3 ){ .x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad ) };
 }
 
 static inline mat4 identity_mat4() {
-  mat4 r  = {{0}};
+  mat4 r  = { { 0 } };
   r.m[0]  = 1.0f;
   r.m[5]  = 1.0f;
   r.m[10] = 1.0f;
@@ -178,7 +178,7 @@ static inline mat4 identity_mat4() {
 }
 
 static inline mat4 mult_mat4_mat4( mat4 a, mat4 b ) {
-  mat4 r      = {{0}};
+  mat4 r      = { { 0 } };
   int r_index = 0;
   for ( int col = 0; col < 4; col++ ) {
     for ( int row = 0; row < 4; row++ ) {
@@ -196,7 +196,7 @@ static inline vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
   float y = m.m[1] * v.x + m.m[5] * v.y + m.m[9] * v.z + m.m[13] * v.w;
   float z = m.m[2] * v.x + m.m[6] * v.y + m.m[10] * v.z + m.m[14] * v.w;
   float w = m.m[3] * v.x + m.m[7] * v.y + m.m[11] * v.z + m.m[15] * v.w;
-  return ( vec4 ){.x = x, .y = y, .z = z, .w = w};
+  return ( vec4 ){ .x = x, .y = y, .z = z, .w = w };
 }
 
 static inline float det_mat4( mat4 mm ) {
@@ -317,7 +317,7 @@ static inline mat4 scale_mat4( vec3 v ) {
 
 /* Creates a view matrix, using typical "look at" parameters. Most graphics mathematics libraries have a similar function. */
 static inline mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
-  mat4 p    = translate_mat4( ( vec3 ){.x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z} );
+  mat4 p    = translate_mat4( ( vec3 ){ .x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z } );
   vec3 d    = sub_vec3_vec3( targ_pos, cam_pos );
   vec3 f    = normalise_vec3( d );
   vec3 r    = normalise_vec3( cross_vec3( f, up ) );
@@ -342,7 +342,7 @@ static inline mat4 perspective( float fovy, float aspect, float near_plane, floa
   float sy      = near_plane / range;
   float sz      = -( far_plane + near_plane ) / ( far_plane - near_plane );
   float pz      = -( 2.0f * far_plane * near_plane ) / ( far_plane - near_plane );
-  mat4 m        = {{0}};
+  mat4 m        = { { 0 } };
   m.m[0]        = sx;
   m.m[5]        = sy;
   m.m[10]       = sz;
@@ -365,7 +365,7 @@ static inline mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp
   float subvp_w_ndc = ( (float)subvp_w / (float)vp_w ) * 2.0f;
   float subvp_h_ndc = ( (float)subvp_h / (float)vp_h ) * 2.0f;
   // Create a scale and translation transform which maps the range [x_ndc, x_ndc+a_ndc] to [-1,1], and similar for y
-  mat4 M  = {{0}};
+  mat4 M  = { { 0 } };
   M.m[0]  = 2.0f / subvp_w_ndc;
   M.m[5]  = 2.0f / subvp_h_ndc;
   M.m[10] = 1.0f;
@@ -394,14 +394,14 @@ static inline void frustum_points_from_PV( mat4 PV, vec3* corners_wor ) {
 
   // Start in clip space. First four have -1 in Z for OpenGL. should be 0 for D3D
   vec4 corners_clip[8] = {
-    ( vec4 ){-1, -1, -1, 1}, // will be nbl 0
-    ( vec4 ){-1, 1, -1, 1},  // will be ntl 1
-    ( vec4 ){1, 1, -1, 1},   // will be ntr 2
-    ( vec4 ){1, -1, -1, 1},  // will be nbr 3
-    ( vec4 ){-1, -1, 1, 1},  // will be fbl 4
-    ( vec4 ){-1, 1, 1, 1},   // will be ftl 5
-    ( vec4 ){1, 1, 1, 1},    // will be ftr 6
-    ( vec4 ){1, -1, 1, 1}    // will be fbr 7
+    ( vec4 ){ -1, -1, -1, 1 }, // will be nbl 0
+    ( vec4 ){ -1, 1, -1, 1 },  // will be ntl 1
+    ( vec4 ){ 1, 1, -1, 1 },   // will be ntr 2
+    ( vec4 ){ 1, -1, -1, 1 },  // will be nbr 3
+    ( vec4 ){ -1, -1, 1, 1 },  // will be fbl 4
+    ( vec4 ){ -1, 1, 1, 1 },   // will be ftl 5
+    ( vec4 ){ 1, 1, 1, 1 },    // will be ftr 6
+    ( vec4 ){ 1, -1, 1, 1 }    // will be fbr 7
   };
   for ( int i = 0; i < 8; i++ ) {
     corners_clip[i] = mult_mat4_vec4( clip_to_world, corners_clip[i] );
@@ -421,20 +421,20 @@ REMARKS Note that plane normalisation also affects the d component of the plane,
 static inline void frustum_planes_from_PV( mat4 PV, vec4* planes_xyxd, bool normalise_planes ) {
   assert( planes_xyxd );
 
-  planes_xyxd[0] = ( vec4 ){.x = PV.m[3] + PV.m[0], .y = PV.m[7] + PV.m[4], .z = PV.m[11] + PV.m[8], .w = PV.m[15] + PV.m[12]};  // left clipping plane
-  planes_xyxd[1] = ( vec4 ){.x = PV.m[3] - PV.m[0], .y = PV.m[7] - PV.m[4], .z = PV.m[11] - PV.m[8], .w = PV.m[15] - PV.m[12]};  // right clipping plane
-  planes_xyxd[2] = ( vec4 ){.x = PV.m[3] + PV.m[1], .y = PV.m[7] + PV.m[5], .z = PV.m[11] + PV.m[9], .w = PV.m[15] + PV.m[13]};  // bottom clipping plane
-  planes_xyxd[3] = ( vec4 ){.x = PV.m[3] - PV.m[1], .y = PV.m[7] - PV.m[5], .z = PV.m[11] - PV.m[9], .w = PV.m[15] - PV.m[13]};  // top clipping plane
-  planes_xyxd[4] = ( vec4 ){.x = PV.m[3] + PV.m[2], .y = PV.m[7] + PV.m[6], .z = PV.m[11] + PV.m[10], .w = PV.m[15] + PV.m[14]}; // near clipping plane
-  planes_xyxd[5] = ( vec4 ){.x = PV.m[3] - PV.m[2], .y = PV.m[7] - PV.m[6], .z = PV.m[11] - PV.m[10], .w = PV.m[15] - PV.m[14]}; // far clipping plane
+  planes_xyxd[0] = ( vec4 ){ .x = PV.m[3] + PV.m[0], .y = PV.m[7] + PV.m[4], .z = PV.m[11] + PV.m[8], .w = PV.m[15] + PV.m[12] };  // left clipping plane
+  planes_xyxd[1] = ( vec4 ){ .x = PV.m[3] - PV.m[0], .y = PV.m[7] - PV.m[4], .z = PV.m[11] - PV.m[8], .w = PV.m[15] - PV.m[12] };  // right clipping plane
+  planes_xyxd[2] = ( vec4 ){ .x = PV.m[3] + PV.m[1], .y = PV.m[7] + PV.m[5], .z = PV.m[11] + PV.m[9], .w = PV.m[15] + PV.m[13] };  // bottom clipping plane
+  planes_xyxd[3] = ( vec4 ){ .x = PV.m[3] - PV.m[1], .y = PV.m[7] - PV.m[5], .z = PV.m[11] - PV.m[9], .w = PV.m[15] - PV.m[13] };  // top clipping plane
+  planes_xyxd[4] = ( vec4 ){ .x = PV.m[3] + PV.m[2], .y = PV.m[7] + PV.m[6], .z = PV.m[11] + PV.m[10], .w = PV.m[15] + PV.m[14] }; // near clipping plane
+  planes_xyxd[5] = ( vec4 ){ .x = PV.m[3] - PV.m[2], .y = PV.m[7] - PV.m[6], .z = PV.m[11] - PV.m[10], .w = PV.m[15] - PV.m[14] }; // far clipping plane
   if ( normalise_planes ) {
     for ( int i = 0; i < 6; i++ ) { planes_xyxd[i] = normalise_plane( planes_xyxd[i] ); }
   }
 }
 
-static inline versor div_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s}; }
+static inline versor div_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s }; }
 
-static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){.w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s}; }
+static inline versor mult_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s }; }
 
 /* Rotates vector v using quaternion q by calculating the sandwich product: v' = qvq^-1
 From pg 89 in E.Lengyel's "FOGED: Mathematics".
@@ -445,7 +445,7 @@ found https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-m
 attributed to a post by Fabian Giesen (no longer online).
 TODO(Anton) WARNING not tested. */
 static inline vec3 mult_quat_vec3( versor q, vec3 v ) {
-  vec3 b      = ( vec3 ){.x = q.x, .y = q.y, .z = q.z};
+  vec3 b      = ( vec3 ){ .x = q.x, .y = q.y, .z = q.z };
   float b2    = b.x * b.x + b.y * b.y + b.z * b.z;
   vec3 part_a = mult_vec3_f( v, q.w * q.w - b2 );
   vec3 part_b = mult_vec3_f( b, dot_vec3( v, b ) * 2.0f );
@@ -612,29 +612,31 @@ PARAMS
 RETURNS true if the ray intersects with the box. */
 static inline bool ray_obb( obb_t box, vec3 ray_o, vec3 ray_d, float* t, int* face_num ) {
   assert( t );
-  *t         = 0.0f;
-  float tmin = -INFINITY;
-  float tmax = INFINITY;
-  int imin = 0, imax = 0;
+  *t             = 0.0f;
+  float tmin     = -INFINITY;
+  float tmax     = INFINITY;
+  int slab_min_i = 0, slab_max_i = 0;
   vec3 p = sub_vec3_vec3( box.centre, ray_o );
   for ( int i = 0; i < 3; i++ ) { // 3 "slabs" (pair of front/back planes)
     float e = dot_vec3( box.norm_side_dir[i], p );
     float f = dot_vec3( box.norm_side_dir[i], ray_d );
     if ( fabs( f ) > FLT_EPSILON ) {
-      float t1 = ( e + box.half_lengths[i] ) / f; // intersection on front
-      float t2 = ( e - box.half_lengths[i] ) / f; // and back side of slab
+      float t1    = ( e + box.half_lengths[i] ) / f; // intersection on front
+      float t2    = ( e - box.half_lengths[i] ) / f; // and back side of slab
+      int t1_side = 1;                               // t1 is front
       if ( t1 > t2 ) {
         float tmp = t1;
         t1        = t2;
         t2        = tmp;
+        t1_side   = -1; // t1 is back face of slab (opposing the slab normal)
       }
       if ( t1 > tmin ) {
-        tmin = t1;
-        imin = i;
+        tmin       = t1;
+        slab_min_i = ( i + 1 ) * t1_side;
       }
       if ( t2 < tmax ) {
-        tmax = t2;
-        imax = -i;
+        tmax       = t2;
+        slab_max_i = ( i + 1 ) * -t1_side;
       }
       if ( tmin > tmax ) { return false; }
       if ( tmax < 0 ) { return false; }
@@ -643,7 +645,7 @@ static inline bool ray_obb( obb_t box, vec3 ray_o, vec3 ray_d, float* t, int* fa
     }
   }
   *t        = tmin > 0 ? tmin : tmax;
-  *face_num = tmin > 0 ? imin + 1 : imax + 1;
+  *face_num = tmin > 0 ? slab_min_i : slab_max_i; // max is back side of slab (opposing face)
   return true;
 }
 
@@ -652,7 +654,7 @@ PARAMS
   PV         - Perspective * View virtual camera matrix.
 RETURNS Axis-aligned box surrounding the frustum. Note that this is usually very large. */
 static inline aabb_t frustum_to_aabb( mat4 PV ) {
-  aabb_t aabb = ( aabb_t ){.min.x = 0.0f};
+  aabb_t aabb = ( aabb_t ){ .min.x = 0.0f };
   vec3 corners_wor[8];
   frustum_points_from_PV( PV, corners_wor );
   for ( int i = 1; i < 8; i++ ) {
@@ -701,14 +703,14 @@ RETURNS true if the AABB is in the frustum.
 static inline bool frustum_vs_aabb( const vec4* frustum_planes, const vec3* frustum_points, aabb_t box ) {
   for ( int i = 0; i < 6; i++ ) {
     int out = 0;
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.min.y, box.min.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.min.y, box.max.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.max.y, box.min.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.min.x, box.max.y, box.max.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.min.y, box.min.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.min.y, box.max.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.max.y, box.min.z} ) < 0.0 ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], ( vec3 ){box.max.x, box.max.y, box.max.z} ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.min.x, box.min.y, box.min.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.min.x, box.min.y, box.max.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.min.x, box.max.y, box.min.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.min.x, box.max.y, box.max.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.max.x, box.min.y, box.min.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.max.x, box.min.y, box.max.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.max.x, box.max.y, box.min.z } ) < 0.0 ) { out++; }
+    if ( distance_plane_point( frustum_planes[i], ( vec3 ){ box.max.x, box.max.y, box.max.z } ) < 0.0 ) { out++; }
     if ( 8 == out ) { return false; }
   }
   // check frustum outside/inside box
