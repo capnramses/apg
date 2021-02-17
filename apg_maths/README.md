@@ -1,12 +1,12 @@
 # apg_maths #
 
-Minimal maths functions header for 3d graphics.
+Minimal maths functions for 3d graphics.
 Functions designed to resemble GLSL and GLU.
 Column-major matrix operations and memory layout.
 
-* `apg_maths.h` - C99
+* `apg_maths.h,.c` - C99
 * `apg_maths.js` - mostly complete port to JavaScript for use with WebGL
-* `test.c` - tests for the C99 header
+* `test.c` - tests for the C99 functions.
 
 ## data types ##
 

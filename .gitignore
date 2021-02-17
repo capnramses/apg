@@ -37,3 +37,7 @@ apg_pixfont/tests/4.png
 apg_pixfont/tests/5.png
 apg_pixfont/tests/6.png
 apg_pixfont/tests/7.png
+apg/tests/anton_24bpp.bmp
+apg/tests/anton2022.sav
+apg/tests/out2.rle
+apg_bmp/test_images/

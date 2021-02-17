@@ -32,7 +32,7 @@ cd ..
 
 echo "building apg_maths tests..."
 cd apg_maths
-$CC $FLAGS -std=c99 -I./ tests/test.c -lm
+$CC $FLAGS -std=c99 -I./ tests/test.c apg_maths.c -lm
 cd ..
 
 echo "building apg_pixfont tests..."
