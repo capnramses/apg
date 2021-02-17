@@ -11,10 +11,10 @@ v0.9 -  2 Feb 2021 - Orthographic.
 v0.8 - 21 May 2020 - AABB intersection and frustum bounds and plane-extraction functions.
 v0.7 - 19 Apr 2020 - Removed M_PI, replaced with APG_PI. Added prefix to macros to avoid redefinition vulnerability.
 v0.6 -  9 Apr 2020 - Frustum extraction functions.
-v0.5 - 11 Apr 2016 - Compacted.
-v0.4 - 12 Apr 2016 - Switched to .x .y .z notation for vectors and quaternions.
-v0.3 - 17 Jul 2019 - Updated with maths code from voxel game project.
-v0.2 - 20 Nov 2019 - Added a cpp clause.
+v0.5 - 20 Nov 2019 - Added a cpp clause.
+v0.4 - 17 Jul 2019 - Updated with maths code from voxel game project.
+v0.3 - 11 Apr 2016 - Compacted.
+v0.2 - 12 Apr 2016 - Switched to .x .y .z notation for vectors and quaternions.
 v0.1 -  5 May 2015 - Branched from C++ original.
 ==================================================================================================
 TODO:
