@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.11
+Version: 0.12
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -52,7 +52,7 @@ vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x / b.x, .y = a.y
 vec4 div_vec4_f( vec4 v, float f ) { return ( vec4 ){ .x = v.x / f, .y = v.y / f, .z = v.z / f, .w = v.w / f }; }
 
 /* magnitude or length of a vec2 */
-float length_vec2( vec2 v ) { return sqrt( v.x * v.x + v.y * v.y ); }
+float length_vec2( vec2 v ) { return sqrtf( v.x * v.x + v.y * v.y ); }
 
 /* squared length */
 float length2_vec2( vec2 v ) { return v.x * v.x + v.y * v.y; }
@@ -78,7 +78,7 @@ vec4 normalise_plane( vec4 xyzd ) {
   // "To normalize a plane we multiply _all four_ components by 1/||n|| (where n is the 3d part) but only n has unit length after normalization".
   float mag = length_vec3( v3_v4( xyzd ) );
   if ( fabsf( mag ) > 0.0f ) {
-    float one_over_mag = 1.0 / mag;
+    float one_over_mag = 1.0f / mag;
     out.x *= one_over_mag;
     out.y *= one_over_mag;
     out.z *= one_over_mag;
@@ -394,10 +394,10 @@ versor add_quat_quat( versor a, versor b ) {
 
 versor quat_from_axis_rad( float radians, vec3 axis ) {
   versor result;
-  result.w = cosf( radians / 2.0 );
-  result.x = sinf( radians / 2.0 ) * axis.x;
-  result.y = sinf( radians / 2.0 ) * axis.y;
-  result.z = sinf( radians / 2.0 ) * axis.z;
+  result.w = cosf( radians / 2.0f );
+  result.x = sinf( radians / 2.0f ) * axis.x;
+  result.y = sinf( radians / 2.0f ) * axis.y;
+  result.z = sinf( radians / 2.0f ) * axis.z;
   return result;
 }
 
@@ -584,33 +584,34 @@ bool frustum_vs_aabb_extra_check( const vec4* frustum_planes, const vec3* frustu
   if ( !frustum_vs_aabb( frustum_planes, box ) ) { return false; }
 
   // check frustum outside/inside box
+  // NOTE: may be wrong
   int out = 0;
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].x > box.max.x ) { out++; }
   }
   if ( out == 8 ) { return false; }
-
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  out = 0;
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].x < box.min.x ) { out++; }
   }
   if ( out == 8 ) { return false; }
-
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  out = 0;
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].y > box.max.y ) { out++; }
   }
   if ( out == 8 ) { return false; }
-
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  out = 0;
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].y < box.min.y ) { out++; }
   }
   if ( out == 8 ) { return false; }
-
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  out = 0;
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].z > box.max.z ) { out++; }
   }
   if ( out == 8 ) { return false; }
-
-  for ( int i = 0, out = 0; i < 8; i++ ) {
+  out = 0;
+  for ( int i = 0; i < 8; i++ ) {
     if ( frustum_points[i].z < box.min.z ) { out++; }
   }
   if ( out == 8 ) { return false; }

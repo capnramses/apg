@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 ==================================================================================================
 History:
+v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
 v0.11  17 Feb 2021 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
 v0.10   7 Feb 2021 - Tidied docs.
 v0.9 -  2 Feb 2021 - Orthographic.
@@ -43,9 +44,9 @@ extern "C" {
 #include <stdbool.h> // `bool` in C99
 #include <stdio.h>   // Used for printing vectors to stdout.
 
-#define APG_M_PI 3.14159265358979323846                 /** Stable pi. C99 removed M_PI and it is .: not stable between builds. */
-#define APG_M_ONE_DEG_IN_RAD ( 2.0 * APG_M_PI ) / 360.0 /** 0.017444444 */
-#define APG_M_ONE_RAD_IN_DEG 360.0 / ( 2.0 * APG_M_PI ) /** 57.2957795 */
+#define APG_M_PI 3.14159265358979323846f                  // Stable pi. C99 removed M_PI and it is .: not stable between builds.
+#define APG_M_ONE_DEG_IN_RAD ( 2.0f * APG_M_PI ) / 360.0f // 0.017444444
+#define APG_M_ONE_RAD_IN_DEG 360.0f / ( 2.0f * APG_M_PI ) // 57.2957795
 
 #define APG_M_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define APG_M_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
