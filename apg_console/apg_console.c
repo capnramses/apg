@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.9
+Version:  0.11
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -14,6 +14,10 @@ Licence:  See bottom of header file.
 #include <string.h>
 
 #define APG_C_MAX_COMMAND_HIST 16
+#define APG_C_HIST_TEXT_R 0xCC
+#define APG_C_HIST_TEXT_G 0xCC
+#define APG_C_HIST_TEXT_B 0xCC
+#define APG_C_HIST_TEXT_A 0xFF
 
 typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
@@ -66,12 +70,12 @@ static void apg_c_strncat( char* dst, const char* src, const int dest_max_len, c
   strncat( dst, src, n - 1 );                                                    // strncat manual guarantees null termination.
 }
 
-static void _apg_c_command_hist_append( const char* _c_user_entered_text ) {
-  assert( _c_user_entered_text );
+static void _apg_c_command_hist_append( const char* c_user_entered_text ) {
+  assert( c_user_entered_text );
 
   _c_latest_command_in_history                        = ( _c_latest_command_in_history + 1 ) % APG_C_MAX_COMMAND_HIST;
   _c_command_history[_c_latest_command_in_history][0] = '\0';
-  apg_c_strncat( _c_command_history[_c_latest_command_in_history], _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
+  apg_c_strncat( _c_command_history[_c_latest_command_in_history], c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
   _c_command_history_n++;
   if ( _c_command_history_n >= APG_C_MAX_COMMAND_HIST ) { _c_command_history_n = APG_C_MAX_COMMAND_HIST - 1; }
 }
@@ -233,12 +237,9 @@ static bool _parse_user_entered_instruction( const char* str ) {
   default: {
     apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: too many tokens in instruction." );
     fprintf( stderr, "n=%i\n", n );
-    return false;
   } break;
   } // endswitch
 
-  // shouldn't get here
-  assert( false );
   return false;
 }
 
@@ -312,11 +313,11 @@ void apg_c_autocomplete() {
   if ( 0 == len ) { return; }
 
   int i;
-  for ( i = len - 1; i >= 0; i-- ) {
+  for ( i = (int)len - 1; i >= 0; i-- ) {
     if ( isspace( _c_user_entered_text[i] ) ) { break; }
   }
   i++;
-  int token_span = len - i;
+  int token_span = (int)len - i;
   if ( 0 == token_span ) { return; }
   char token[APG_C_STR_MAX + 1];
   for ( int k = 0; k < token_span; k++ ) { token[k] = _c_user_entered_text[k + i]; }
@@ -390,7 +391,8 @@ void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* 
   c_n_output_lines      = c_n_output_lines < APG_C_OUTPUT_LINES_MAX ? c_n_output_lines + 1 : APG_C_OUTPUT_LINES_MAX;
   if ( c_output_lines_newest == c_output_lines_oldest ) { c_output_lines_oldest = ( c_output_lines_oldest + 1 ) % APG_C_OUTPUT_LINES_MAX; }
   if ( -1 == c_output_lines_oldest ) { c_output_lines_oldest = c_output_lines_newest; }
-  strncpy( c_output_lines[c_output_lines_newest], buffer, APG_C_STR_MAX - 1 );
+  c_output_lines[c_output_lines_newest][0] = '\0';
+  strncat( c_output_lines[c_output_lines_newest], buffer, APG_C_STR_MAX );
 
   const uint8_t text_colour[4] = { r, g, b, a };
   memcpy( &_c_output_lines_rgba[c_output_lines_newest * 4], text_colour, 4 );
@@ -404,7 +406,7 @@ void apg_c_printf( const char* message, ... ) {
   va_start( argptr, message );
   vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
   va_end( argptr );
-  apg_c_printf_rgba( 0x88, 0x88, 0x88, 0xFF, "%s", buffer ); // grey text
+  apg_c_printf_rgba( APG_C_HIST_TEXT_R, APG_C_HIST_TEXT_G, APG_C_HIST_TEXT_B, APG_C_HIST_TEXT_A, "%s", buffer ); // grey text
 }
 
 void apg_c_dump_to_stdout( void ) {
