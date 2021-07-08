@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 ==================================================================================================
 History:
+v0.13   8 Jul 2022 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
 v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
 v0.11  17 Feb 2021 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
 v0.10   7 Feb 2021 - Tidied docs.
@@ -72,7 +73,7 @@ typedef struct mat4 {
   float m[16];
 } mat4;
 
-/** 'Versor' is the proper name for a unit quaternion (the kind used for geometric rotations). */
+/** A 'versor' is the proper name for a unit quaternion (the kind used for geometric rotations). */
 typedef struct versor {
   float w, x, y, z;
 } versor;
@@ -95,8 +96,11 @@ void print_vec4( vec4 v );
 void print_mat4( mat4 m );
 void print_quat( versor q );
 
-vec3 v3_v4( vec4 v );
-vec4 v4_v3f( vec3 v, float f );
+/** Truncate a vec4 to a vec3. */
+vec3 vec3_from_vec4( vec4 v );
+
+/** Expand a vec3 to a vec4 by specifying a w component. */
+vec4 vec4_from_vec3f( vec3 v, float w );
 
 vec3 add_vec3_f( vec3 a, float b );
 vec3 add_vec3_vec3( vec3 a, vec3 b );
@@ -163,13 +167,25 @@ mat4 rot_z_deg_mat4( float deg );
 
 mat4 scale_mat4( vec3 v );
 
-/** Creates a view matrix, using typical "look at" parameters. Most graphics mathematics libraries have a similar function. */
+/** Creates a camera view matrix, using typical "look at" parameters. Most graphics mathematics libraries have a similar function. */
 mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up );
 
-/** Creates an orthographic projection matrix. */
+/** Creates an orthographic projection matrix. From axis-aligned bounding box constraints.
+ * @param l,b,n  The minimum corner of the bounding box.
+ * @param r,t,f  The maximum corner of the bounding box.
+ * @warning      This function asserts if n < f. We must have n > f because we are looking down the negative z-axis at this volume of space.
+ * @note         See "Real Time Rendering", 4th ed pp. 94, eq. (4.63).
+ * @note         This matrix uses depth mapping [-1,1]. For a version suitable for DirectX mapping of z [0,1] see eq. (4.66).
+ */
 mat4 orthographic( float l, float r, float b, float t, float n, float f );
 
-/** Creates a perspective projection matrix. */
+/** Creates a perspective projection matrix.
+ * @param fovy       The vertical (y) field of view, in degrees. 66 is a typical value.
+ * @param aspect     The aspect ratio of the display area (width / height). Be sure not to use integer division to determine the aspect ratio.
+ * @param near_plane Distance from camera origin to the near cut-off plane of the frustum.
+ * @param far_plane  Distance from camera origin to the far cut-off plane of the frustum.
+ * @note             This matrix uses depth mapping [-1,1]. For a version suitable for DirectX mapping of z [0,1] see RTR eq. (4.76).
+ */
 mat4 perspective( float fovy, float aspect, float near_plane, float far_plane );
 
 /** Create a standard *asymmetric* perspective projection matrix for special case of a subwindow viewport

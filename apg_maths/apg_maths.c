@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.12
+Version: 0.13
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -27,9 +27,9 @@ void print_mat4( mat4 m ) {
 
 void print_quat( versor q ) { printf( "[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z ); }
 
-vec3 v3_v4( vec4 v ) { return ( vec3 ){ .x = v.x, .y = v.y, .z = v.z }; }
+vec3 vec3_from_vec4( vec4 v ) { return ( vec3 ){ .x = v.x, .y = v.y, .z = v.z }; }
 
-vec4 v4_v3f( vec3 v, float f ) { return ( vec4 ){ .x = v.x, .y = v.y, .z = v.z, .w = f }; }
+vec4 vec4_from_vec3f( vec3 v, float w ) { return ( vec4 ){ .x = v.x, .y = v.y, .z = v.z, .w = w }; }
 
 vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
 
@@ -76,7 +76,7 @@ vec3 normalise_vec3( vec3 v ) {
 vec4 normalise_plane( vec4 xyzd ) {
   vec4 out = xyzd;
   // "To normalize a plane we multiply _all four_ components by 1/||n|| (where n is the 3d part) but only n has unit length after normalization".
-  float mag = length_vec3( v3_v4( xyzd ) );
+  float mag = length_vec3( vec3_from_vec4( xyzd ) );
   if ( fabsf( mag ) > 0.0f ) {
     float one_over_mag = 1.0f / mag;
     out.x *= one_over_mag;
@@ -264,7 +264,10 @@ mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
 }
 
 mat4 orthographic( float l, float r, float b, float t, float n, float f ) {
-  mat4 m    = { { 0 } };
+  assert( n > f && "n must be > f because we are looking down -z axis" );
+
+  mat4 m = ( mat4 ){ .m = { 0 } };
+
   float rml = r - l;
   float tmb = t - b;
   float fmn = f - n;
@@ -334,7 +337,7 @@ void frustum_points_from_PV( mat4 PV, vec3* corners_wor ) {
   };
   for ( int i = 0; i < 8; i++ ) {
     corners_clip[i] = mult_mat4_vec4( clip_to_world, corners_clip[i] );
-    corners_wor[i]  = v3_v4( div_vec4_f( corners_clip[i], corners_clip[i].w ) ); // perspective division
+    corners_wor[i]  = vec3_from_vec4( div_vec4_f( corners_clip[i], corners_clip[i].w ) ); // perspective division
   }
 }
 
