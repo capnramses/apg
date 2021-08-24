@@ -12,19 +12,22 @@
  *
  * The goal is something as simple as possible plus some telemetry hooks.
  * The original use case is for processing path-finding AI in a voxel game.
- * 
+ *
  * For a good explanation of simple thread pools in C, see John Schember's work at
  * https://nachtimwald.com/2019/04/12/thread-pool-in-c/
  * Which uses detached threads and signals, which I'm also adopting here because it is
  * simpler than my previous library.
  * For a more sophisticated task scheduler library example, see Doug Binks' enkiTS:
  * https://github.com/dougbinks/enkiTSExamples
- * 
  *
  * TODO:
+ * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
  * - windows MSVC batch file build.
- * - test programs
+ * - unit test program for all API functions
+ * - run-time test program with fake loads
+ * - queue flood test program
  * - real time? chart output similar to Remotery
+ * - test building as a .dll/.so/.a etc works.
  */
 
 #pragma once
@@ -37,7 +40,7 @@
 
 #include <stdbool.h>
 
-/// Forward-declaration of struct context (used internally).
+/// Forward-declaration of internal-use context struct (used internally).
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t;
 
 /// The main context struct for this library. Instantiate one of these on you main thread.
@@ -130,17 +133,17 @@ https://nachtimwald.com/2019/04/12/thread-pool-in-c/
 The website states any code not otherwise-specified is licenced under MIT:
 
 > Copyright John Schember <john@nachtimwald.com>
-> 
+>
 > Permission is hereby granted, free of charge, to any person obtaining a copy of
 > this software and associated documentation files (the "Software"), to deal in
 > the Software without restriction, including without limitation the rights to
 > use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
 > of the Software, and to permit persons to whom the Software is furnished to do
 > so, subject to the following conditions:
-> 
+>
 > The above copyright notice and this permission notice shall be included in all
 > copies or substantial portions of the Software.
-> 
+>
 > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 > IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 > FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
