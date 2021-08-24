@@ -1,3 +1,15 @@
+/** @file apg_jobs.c
+ * apg_jobs is a simple jobs/worker system using a thread pool.
+ *
+ * apg_jobs  | Threaded jobs/worker library.
+ * --------- | ----------
+ * Version   | 0.1  (2021/08/24)
+ * Authors   | Anton Gerdelan https://github.com/capnramses
+ * Copyright | 2021, Anton Gerdelan
+ * Language  | C99
+ * Files     | 2
+ * Licence   | See header file.
+ */
 #include "apg_jobs.h"
 #ifndef _WIN32
 #include <pthread.h>
