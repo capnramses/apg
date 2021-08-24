@@ -67,13 +67,18 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers ) {
 
   pool_ptr->context_ptr = calloc( 1, sizeof( apg_jobs_pool_internal_t ) );
   if ( !pool_ptr->context_ptr ) { return false; }
+  pool_ptr->context_ptr->queue_ptr = malloc( sizeof( _job_t ) * n_workers );
+  if ( !pool_ptr->context_ptr->queue_ptr ) {
+    free( pool_ptr->context_ptr );
+    return false;
+  }
 
   for ( int i = 0; i < n_workers; i++ ) {
 #ifndef _WIN32
     pthread_t thread;
     int ret = pthread_create( &thread, NULL, _worker_thread_func, pool_ptr );
     if ( 0 != ret ) {
-      // TODO handle this thread not starting e.g. close threads up to i.
+      // TODO handle this thread not starting e.g. delete threads up to i.
       return false;
     }
     ret = pthread_detach( thread ); // these clean up on exit
@@ -88,12 +93,44 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers ) {
 }
 
 bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
-  if ( !pool_ptr || !pool_ptr->context_ptr ) { return false; }
+  if ( !pool_ptr || !pool_ptr->context_ptr || !pool_ptr->context_ptr->queue_ptr ) { return false; }
 
-  //
+  // delete work backlog and signal all threads to stop
+  pthread_mutex_lock( &( pool_ptr->context_ptr->work_mutex ) );
+  {
+    free( pool_ptr->context_ptr->queue_ptr );
+    pool_ptr->context_ptr->queue_ptr = NULL;
+    pool_ptr->context_ptr->stop      = true;
+    pthread_cond_broadcast( &( pool_ptr->context_ptr->work_cond ) );
+  }
+  pthread_mutex_unlock( &( pool_ptr->context_ptr->work_mutex ) );
+
+  // wait for any threads that were already processing
+  apg_jobs_wait( pool_ptr );
+
+#ifndef _WIN32
+  pthread_mutex_destroy( &( pool_ptr->context_ptr->work_mutex ) );
+  pthread_cond_destroy( &( pool_ptr->context_ptr->work_cond ) );
+  pthread_cond_destroy( &( pool_ptr->context_ptr->working_cond ) );
+#endif
 
   free( pool_ptr->context_ptr );
   pool_ptr->context_ptr = NULL;
 
   return true;
+}
+
+// TODO(Anton) revise
+void apg_jobs_wait( apg_jobs_pool_t* pool_ptr ) {
+  if ( !pool_ptr ) { return; }
+
+  pthread_mutex_lock( &( pool_ptr->context_ptr->work_mutex ) );
+  while ( true ) { // this loops in case any thread woke up after the wait call.
+    if ( ( !pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_working != 0 ) || ( pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_threads != 0 ) ) {
+      pthread_cond_wait( &( pool_ptr->context_ptr->working_cond ), &( pool_ptr->context_ptr->work_mutex ) );
+    } else {
+      break;
+    }
+  }
+  pthread_mutex_unlock( &( pool_ptr->context_ptr->work_mutex ) );
 }

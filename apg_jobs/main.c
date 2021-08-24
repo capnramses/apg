@@ -14,7 +14,11 @@ int main() {
     return 1;
   }
 
-	
+  ret = apg_jobs_free( &thread_pool );
+  if ( !ret ) {
+    fprintf( stderr, "ERROR: failed to free pool\n" );
+    return 1;
+  }
 
   printf( "normal halt\n" );
   return 0;
