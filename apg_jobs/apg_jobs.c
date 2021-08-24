@@ -20,8 +20,10 @@
 
 /// Description of a job in the job queue.
 typedef struct _job_t {
+  /// Function representing the job that is called by the worker thread.
   apg_jobs_work job_func_ptr;
-  void* args_ptr;
+  /// Arguments to the function.
+  void* args_ptr; // TODO(Anton) -- is a pointer really actually for realsies safe here to be accessed from a thread.
 } _job_t;
 
 /// Thread pool context. Includes queue of work.
