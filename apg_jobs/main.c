@@ -1,14 +1,21 @@
 #include "apg_jobs.h"
 #include <stdio.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 int main() {
-	// similar to `lscpu` command, where my machine has 1 socket with 4 cores per socket
-	// and 2 threads per core (8 logical, 4 physical).
-  int n_procs = sysconf( _SC_NPROCESSORS_ONLN );
+  // similar to `lscpu` command, where my machine has 1 socket with 4 cores per socket
+  // and 2 threads per core (8 logical, 4 physical).
+  int n_procs = apg_jobs_n_logical_procs();
   printf( "n_procs = %i\n", n_procs );
 
+  apg_jobs_pool_t thread_pool;
+  bool ret = apg_jobs_init( &thread_pool, n_procs + 1 );
+  if ( !ret ) {
+    fprintf( stderr, "ERROR: failed to init pool\n" );
+    return 1;
+  }
+
+	
+
+  printf( "normal halt\n" );
   return 0;
 }

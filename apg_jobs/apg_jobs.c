@@ -5,13 +5,16 @@
  * --------- | ----------
  * Version   | 0.1  (2021/08/24)
  * Authors   | Anton Gerdelan https://github.com/capnramses
- * Copyright | 2021, Anton Gerdelan
  * Language  | C99
  * Files     | 2
  * Licence   | See header file.
  */
 #include "apg_jobs.h"
-#ifndef _WIN32
+#include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
 #include <pthread.h>
 #endif
 
@@ -22,7 +25,7 @@ typedef struct _job_t {
 } _job_t;
 
 /// Thread pool context. Includes queue of work.
-struct apg_jobs_pool_t {
+struct apg_jobs_pool_internal_t {
   _job_t* queue_ptr;
   int queue_max_items;
   int queue_front_idx;
@@ -43,3 +46,52 @@ struct apg_jobs_pool_t {
   /// Flag to stop threads.
   bool stop;
 };
+
+static void* _worker_thread_func( void* args_ptr ) { return NULL; }
+
+// Further examples: https://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+unsigned int apg_jobs_n_logical_procs() {
+#ifdef _WIN32
+  SYSTEM_INFO sys_info;
+  GetSystemInfo( &sys_info );
+  return sys_info.dwNumberOfProcessors;
+#else
+  return (unsigned int)sysconf( _SC_NPROCESSORS_ONLN );
+#endif
+}
+
+bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers ) {
+  if ( !pool_ptr || n_workers < 1 ) { return false; }
+
+  pool_ptr->context_ptr = calloc( 1, sizeof( apg_jobs_pool_internal_t ) );
+  if ( !pool_ptr->context_ptr ) { return false; }
+
+  for ( int i = 0; i < n_workers; i++ ) {
+#ifndef _WIN32
+    pthread_t thread;
+    int ret = pthread_create( &thread, NULL, _worker_thread_func, pool_ptr );
+    if ( 0 != ret ) {
+      // TODO handle this thread not starting e.g. close threads up to i.
+      return false;
+    }
+    ret = pthread_detach( thread ); // these clean up on exit
+    if ( 0 != ret ) {
+      // TODO handle this thread not detaching e.g. close threads up to i.
+      return false;
+    }
+#endif
+  }
+
+  return true;
+}
+
+bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
+  if ( !pool_ptr || !pool_ptr->context_ptr ) { return false; }
+
+  //
+
+  free( pool_ptr->context_ptr );
+  pool_ptr->context_ptr = NULL;
+
+  return true;
+}
