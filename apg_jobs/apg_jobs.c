@@ -95,6 +95,7 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers ) {
 bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
   if ( !pool_ptr || !pool_ptr->context_ptr || !pool_ptr->context_ptr->queue_ptr ) { return false; }
 
+#ifndef _WIN32
   // delete work backlog and signal all threads to stop
   pthread_mutex_lock( &( pool_ptr->context_ptr->work_mutex ) );
   {
@@ -104,6 +105,7 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
     pthread_cond_broadcast( &( pool_ptr->context_ptr->work_cond ) );
   }
   pthread_mutex_unlock( &( pool_ptr->context_ptr->work_mutex ) );
+#endif
 
   // wait for any threads that were already processing
   apg_jobs_wait( pool_ptr );
@@ -124,6 +126,7 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
 void apg_jobs_wait( apg_jobs_pool_t* pool_ptr ) {
   if ( !pool_ptr ) { return; }
 
+#ifndef _WIN32
   pthread_mutex_lock( &( pool_ptr->context_ptr->work_mutex ) );
   while ( true ) { // this loops in case any thread woke up after the wait call.
     if ( ( !pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_working != 0 ) || ( pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_threads != 0 ) ) {
@@ -133,4 +136,5 @@ void apg_jobs_wait( apg_jobs_pool_t* pool_ptr ) {
     }
   }
   pthread_mutex_unlock( &( pool_ptr->context_ptr->work_mutex ) );
+#endif
 }
