@@ -97,7 +97,7 @@ static void* _worker_thread_func( void* args_ptr ) {
       if ( pool_ptr->context_ptr->stop ) {
         pool_ptr->context_ptr->n_threads--;
         // TODO(Anton) this feels like it could cause a problem if a wait() and a stop are combined since it's fired when the _first_ thread has finished.
-				// TODO(Anton) use the same if(){} as below to test from n_working == 0 first so only the final thread to stop fires this signal?
+        // TODO(Anton) use the same if(){} as below to test from n_working == 0 first so only the final thread to stop fires this signal?
         pthread_cond_signal( &pool_ptr->context_ptr->workers_finished_cond ); // signal that no threads are processing
         pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );          // remember to unlock mutex
         break;
