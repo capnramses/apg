@@ -21,6 +21,7 @@
  * https://github.com/dougbinks/enkiTSExamples
  *
  * TODO:
+ * - i'm not sure this is really working asynchronously...no output appears out of order
  * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
  * - windows MSVC batch file build.
  * - unit test program for all API functions

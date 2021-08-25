@@ -138,20 +138,22 @@ static void* _worker_thread_func( void* args_ptr ) {
 bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs ) {
   if ( !pool_ptr || n_workers < 1 || queue_max_jobs < 1 ) { return false; }
 
-  pool_ptr->context_ptr->queue_max_items = queue_max_jobs;
-
   pool_ptr->context_ptr = calloc( 1, sizeof( apg_jobs_pool_internal_t ) );
   if ( !pool_ptr->context_ptr ) { return false; }
-  pool_ptr->context_ptr->queue_ptr = calloc( pool_ptr->context_ptr->queue_max_items, sizeof( _job_t ) );
+
+  pool_ptr->context_ptr->queue_max_items = queue_max_jobs;
+  pool_ptr->context_ptr->queue_ptr       = calloc( pool_ptr->context_ptr->queue_max_items, sizeof( _job_t ) );
   if ( !pool_ptr->context_ptr->queue_ptr ) {
     free( pool_ptr->context_ptr );
     return false;
   }
+  printf( "created queue of length %i elements, size %lu bytes\n", pool_ptr->context_ptr->queue_max_items,
+    (unsigned long)pool_ptr->context_ptr->queue_max_items * sizeof( _job_t ) );
 
+  // NB - can use pthread_self() to identify a thread's id integer.
   for ( int i = 0; i < n_workers; i++ ) {
 #ifndef _WIN32
     pthread_t thread;
-    // TODO could sneak in the thread index number in the args field here
     int ret = pthread_create( &thread, NULL, _worker_thread_func, pool_ptr );
     if ( 0 != ret ) {
       // TODO handle this thread not starting e.g. delete threads up to i.
@@ -182,6 +184,7 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
     pool_ptr->context_ptr->queue_ptr = NULL;
     pool_ptr->context_ptr->n_queued  = 0;
     pool_ptr->context_ptr->stop      = true;
+    fprintf( stderr, "STOP! flag raised\n" );
     // wake up all threads waiting for a job to be queued so they can see the stop flag is raised.
     pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
   }
@@ -225,7 +228,7 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
       pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
       pushed = true;
     } else {
-      fprintf( stderr, "ERROR: queue full - can't push job\n" ); // TMP
+      fprintf( stderr, "ERROR: queue full (%i/%i) - can't push job\n", pool_ptr->context_ptr->n_queued, pool_ptr->context_ptr->queue_max_items ); // TMP
     }
   }
   pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
