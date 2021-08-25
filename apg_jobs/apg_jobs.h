@@ -22,12 +22,13 @@
  *
  * TODO:
  * - wait on push when queue full and signal when slot opens (pop)
+ * - queue flood test program
  * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
  * - windows MSVC batch file build.
  * - unit test program for all API functions
- * - queue flood test program
- * - real time? chart output similar to Remotery
+ * - real time? thread usage timeline chart output similar to Remotery
  * - test building as a .dll/.so/.a etc works.
+ * - test on OS X & with .dylibs.
  */
 
 #pragma once
@@ -46,7 +47,7 @@ APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t
 /// The main context struct for this library. Instantiate one of these on you main thread.
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* context_ptr; } apg_jobs_pool_t;
 
-/// All jobs for workers are defined as a function of this format.
+/** All jobs for workers are defined as a function of this format. */
 APG_JOBS_EXPORT typedef void ( *apg_jobs_work )( void* args_ptr );
 
 /** @return The number of logical processors on the system. */
@@ -54,29 +55,29 @@ APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs();
 
 /** Start the jobs system and its threads.
  * @param pool_ptr       The pool pointed to will be initialised by this function. Must not be NULL.
- * @param n_workers      The number of worker threads to create. A good number is 1 per logical core on the machine. Must not be NULL.
- * @param queue_max_jobs Size reserved in the queue. Allocates about 16 bytes per job.
- * @return               False on error.
+ * @param n_workers      The number of worker threads to create. A good number is 1 per logical core on the machine. Must not be 0.
+ * @param queue_max_jobs Size reserved in the queue. Allocates about 16 bytes per job. Must not be 0.
+ * @return               False on any error or invalid argument value.
  * @note                 To query the number of cores use `apg_jobs_count_logical_procs()`.
- * @note                 Allocates heap memory internally in this function.
+ * @note                 This function allocates heap memory internally, which is freed with a call to apg_jobs_free().
  */
 APG_JOBS_EXPORT bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs );
 
-/** Stop the jobs system and stop its threads.
+/** Stop the jobs system and stop its threads, and free memory allocated by apg_jobs_init().
  * @param pool_ptr  Pointer to the thread pool to shut down. Must not be NULL.
- * @return          False on error.
+ * @return          False on any error.
  */
 APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
 
-/** Add a job to the work queue.
+/** Add a job to the work queue. A worker thread will pick this up eventually and call your function with your argument.
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.
- * @param job_func_ptr Function comprising the job to execute.
- * @param args_ptr     ... TODO
- * @returns            ... TODO -- maybe block if the queue is full?
+ * @param job_func_ptr A pointer to your function to execute as the 'job'.
+ * @param args_ptr     Any arguments you want to pass on as the argument of job_func_ptr.
+ * @returns            False on any error.
  */
 APG_JOBS_EXPORT bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, void* args_ptr );
 
-/** Block until all the work in the queue is completed.
+/** Block the calling thread until all the work in the queue is completed.
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.
  */
 APG_JOBS_EXPORT void apg_jobs_wait( apg_jobs_pool_t* pool_ptr );

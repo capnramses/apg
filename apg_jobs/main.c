@@ -1,3 +1,8 @@
+/** @file main.c
+ * Test program for apg_jobs.
+ * Only runs on *nix machines since it uses pthread and usleep().
+ */
+
 #include "apg_jobs.h"
 #include <pthread.h>
 #include <stdio.h>
