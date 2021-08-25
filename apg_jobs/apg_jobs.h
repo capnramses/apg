@@ -21,11 +21,10 @@
  * https://github.com/dougbinks/enkiTSExamples
  *
  * TODO:
- * - i'm not sure this is really working asynchronously...no output appears out of order
+ * - wait on push when queue full and signal when slot opens (pop)
  * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
  * - windows MSVC batch file build.
  * - unit test program for all API functions
- * - run-time test program with fake loads
  * - queue flood test program
  * - real time? chart output similar to Remotery
  * - test building as a .dll/.so/.a etc works.
