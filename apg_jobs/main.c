@@ -8,7 +8,8 @@ int main() {
   printf( "n_procs = %i\n", n_procs );
 
   apg_jobs_pool_t thread_pool;
-  bool ret = apg_jobs_init( &thread_pool, n_procs + 1 );
+	int queue_max = 128;
+  bool ret = apg_jobs_init( &thread_pool, n_procs + 1, queue_max );
   if ( !ret ) {
     fprintf( stderr, "ERROR: failed to init pool\n" );
     return 1;

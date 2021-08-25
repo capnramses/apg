@@ -53,13 +53,14 @@ APG_JOBS_EXPORT typedef void ( *apg_jobs_work )( void* args_ptr );
 APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs();
 
 /** Start the jobs system and its threads.
- * @param pool_ptr  The pool pointed to will be initialised by this function. Must not be NULL.
- * @param n_workers The number of worker threads to create. A good number is 1 per logical core on the machine. Must not be NULL.
- * @return          False on error.
- * @note            To query the number of cores use `apg_jobs_count_logical_procs()`.
- * @note            Allocates heap memory internally in this function.
+ * @param pool_ptr       The pool pointed to will be initialised by this function. Must not be NULL.
+ * @param n_workers      The number of worker threads to create. A good number is 1 per logical core on the machine. Must not be NULL.
+ * @param queue_max_jobs Size reserved in the queue. Allocates about 16 bytes per job.
+ * @return               False on error.
+ * @note                 To query the number of cores use `apg_jobs_count_logical_procs()`.
+ * @note                 Allocates heap memory internally in this function.
  */
-APG_JOBS_EXPORT bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers );
+APG_JOBS_EXPORT bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs );
 
 /** Stop the jobs system and stop its threads.
  * @param pool_ptr  Pointer to the thread pool to shut down. Must not be NULL.
