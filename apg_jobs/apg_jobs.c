@@ -43,6 +43,8 @@ struct apg_jobs_pool_internal_t {
 #ifndef _WIN32
   /// Single mutex used for all locking.
   pthread_mutex_t queue_mutex;
+  /// When a space is cleared in the queue fire this off to clear a blocked main thread.
+  pthread_cond_t space_in_queue_signal;
   /// Signals the threads that there is work to be processed.
   pthread_cond_t job_queued_signal;
   /// Signals when there are no threads processing.
@@ -70,6 +72,7 @@ static bool _apg_jobs_pop_job( apg_jobs_pool_t* pool_ptr, _job_t* job_ptr ) {
     pool_ptr->context_ptr->queue_front_idx = ( pool_ptr->context_ptr->queue_front_idx + 1 ) % pool_ptr->context_ptr->queue_max_items;
     pool_ptr->context_ptr->n_queued--;
     popped = true;
+    pthread_cond_broadcast( &pool_ptr->context_ptr->space_in_queue_signal );
   }
 
   return popped;
@@ -105,12 +108,10 @@ static void* _worker_thread_func( void* args_ptr ) {
 
       // retrieve next job from queue
       if ( !_apg_jobs_pop_job( pool_ptr, &job ) ) {
-        fprintf( stderr, "ERROR: popping job from queue\n" );
-        //
-        //  TODO
+        fprintf( stderr, "ERROR: popping job from queue -- we have an unexpected exception/regression\n" );
+      } else {
+        pool_ptr->context_ptr->n_working++;
       }
-      pool_ptr->context_ptr->n_working++;
-
       pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
     }
 
@@ -213,12 +214,17 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
 
   bool pushed = false;
 
+  // space_in_queue_signal
+
   pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
   {
     // queue full
-    // TODO(Anton) block and wait here instead --> maybe another conditional 'space in queue'
-    if ( pool_ptr->context_ptr->n_queued < pool_ptr->context_ptr->queue_max_items ) {
-      // push to end of queue
+    // block and wait here if there is no space in the queue
+    if ( pool_ptr->context_ptr->n_queued >= pool_ptr->context_ptr->queue_max_items ) {
+      // The cond unlocks the mutex when first called, and re-locks the mutex when signalled and awoken.
+      pthread_cond_wait( &pool_ptr->context_ptr->space_in_queue_signal, &pool_ptr->context_ptr->queue_mutex );
+    }
+    { // push to end of queue
       int end_idx = ( pool_ptr->context_ptr->queue_front_idx + pool_ptr->context_ptr->n_queued ) % pool_ptr->context_ptr->queue_max_items;
       assert( end_idx >= 0 && end_idx < pool_ptr->context_ptr->queue_max_items );
       pool_ptr->context_ptr->queue_ptr[end_idx].args_ptr     = args_ptr;
@@ -227,8 +233,6 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
       // wake up all threads waiting for a job to be queued.
       pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
       pushed = true;
-    } else {
-      fprintf( stderr, "ERROR: queue full (%i/%i) - can't push job\n", pool_ptr->context_ptr->n_queued, pool_ptr->context_ptr->queue_max_items ); // TMP
     }
   }
   pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );

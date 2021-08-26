@@ -21,8 +21,6 @@
  * https://github.com/dougbinks/enkiTSExamples
  *
  * TODO:
- * - wait on push when queue full and signal when slot opens (pop)
- * - queue flood test program
  * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
  * - windows MSVC batch file build.
  * - unit test program for all API functions
@@ -41,10 +39,10 @@
 
 #include <stdbool.h>
 
-/// Forward-declaration of internal-use context struct (used internally).
+/** Forward-declaration of internal-use context struct (used internally). */
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t;
 
-/// The main context struct for this library. Instantiate one of these on you main thread.
+/** The main context struct for this library. Instantiate one of these on you main thread. */
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* context_ptr; } apg_jobs_pool_t;
 
 /** All jobs for workers are defined as a function of this format. */
@@ -55,7 +53,7 @@ APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs();
 
 /** Start the jobs system and its threads.
  * @param pool_ptr       The pool pointed to will be initialised by this function. Must not be NULL.
- * @param n_workers      The number of worker threads to create. A good number is 1 per logical core on the machine. Must not be 0.
+ * @param n_workers      The number of worker threads to create. In the test program my optimal processing time is with ~4x the number of logical cores.
  * @param queue_max_jobs Size reserved in the queue. Allocates about 16 bytes per job. Must not be 0.
  * @return               False on any error or invalid argument value.
  * @note                 To query the number of cores use `apg_jobs_count_logical_procs()`.
@@ -74,6 +72,8 @@ APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
  * @param job_func_ptr A pointer to your function to execute as the 'job'.
  * @param args_ptr     Any arguments you want to pass on as the argument of job_func_ptr.
  * @returns            False on any error.
+ * @note               If there is no space left in the queue then this function will block and
+ *                     wait for a space to be freed as a job is popped by a worker thread.
  */
 APG_JOBS_EXPORT bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, void* args_ptr );
 
