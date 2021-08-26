@@ -16,17 +16,18 @@
  * For a good explanation of simple thread pools in C, see John Schember's work at:
  * https://nachtimwald.com/2019/04/12/thread-pool-in-c/
  * Which uses detached threads and signals, which I'm also adopting here because it is
- * simpler than my previous library.
+ * simpler than my previous library. apg_jobs uses an up-front allocated queue instead of the original
+ * linked list, and a wait condition when pushing to a full array.
  * For a more sophisticated task scheduler library example, see Doug Binks' enkiTS:
  * https://github.com/dougbinks/enkiTSExamples
  *
- * TODO:
- * - copy windows thread startup from my older threads library (note to self - it's here: thetechnodrome:/home/anton/apg_threads/)
- * - windows MSVC batch file build.
- * - unit test program for all API functions
- * - real time? thread usage timeline chart output similar to Remotery
- * - test building as a .dll/.so/.a etc works.
- * - test on OS X & with .dylibs.
+ * TODO
+ * ----
+ * - MSVC batch file build.
+ * - See if it works on Windows.
+ * - Test building as a .dll/.so/.a etc works.
+ * - Test on OS X & with .dylibs.
+ * - Real time? thread usage timeline chart output similar to or using Remotery.
  */
 
 #pragma once
