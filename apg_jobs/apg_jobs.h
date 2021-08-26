@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.1  (2021/08/24)
+ * Version   | 0.1  (2021/08/26)
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -20,6 +20,13 @@
  * linked list, and a wait condition when pushing to a full array.
  * For a more sophisticated task scheduler library example, see Doug Binks' enkiTS:
  * https://github.com/dougbinks/enkiTSExamples
+ *
+ * LIMITATIONS
+ * -----------
+ * - On Windows MinGW doesn't see synchapi functions (conditionals, etc) so won't build.
+ *   I think these might be replaced by https://docs.microsoft.com/en-us/windows/win32/sync/using-condition-variables
+ * - And Critical Section by Mutex perhaps.
+ * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
  *
  * TODO
  * ----
