@@ -13,8 +13,12 @@ apg_console/testuserenteredtext.png
 apg_bmp/tests_fuzzing/fuzz_24bpp_outputs/
 apg_bmp/tests_fuzzing/fuzz_32bpp_outputs/
 #binaries
-test
 a.out
+*.dll
+*.7z
+*.zip
+*.exe
+*.sav
 apg_bmp/test_read_bmp
 apg_bmp/test_write_bmp
 apg_bmp/tests_fuzzing/fuzz_24bpp
