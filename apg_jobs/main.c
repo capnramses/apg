@@ -54,18 +54,23 @@ int main() {
     fprintf( stderr, "ERROR: failed to init pool\n" );
     return 1;
   }
+  printf( "apg_jobs initialised. pushing jobs:\n" );
 
   int num_items = 100;
   int* vals     = malloc( sizeof( int ) * num_items );
   for ( int i = 0; i < num_items; i++ ) {
     vals[i] = i;
+    printf( "apg_jobs pushing %i\n", i );
     apg_jobs_push_job( &thread_pool, work_cb, &vals[i] );
   }
+
+  printf( "apg_jobs waiting for all jobs\n" );
 
   apg_jobs_wait( &thread_pool );
 
   for ( int i = 0; i < num_items; i++ ) { printf( "%d\n", vals[i] ); }
 
+  printf( "apg_jobs free\n" );
   ret = apg_jobs_free( &thread_pool );
   if ( !ret ) {
     fprintf( stderr, "ERROR: failed to free pool\n" );

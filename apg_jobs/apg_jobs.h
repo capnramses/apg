@@ -23,11 +23,8 @@
  *
  * TODO
  * ----
- * - MSVC batch file build.
- * - See if it works on Windows.
- * - Test building as a .dll/.so/.a etc works.
  * - Test on OS X & with .dylibs.
- * - Real time? thread usage timeline chart output similar to or using Remotery.
+ * - Real time? thread usage timeline chart output hooks similar to or using Remotery.
  */
 
 #pragma once

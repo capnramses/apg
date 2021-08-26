@@ -38,16 +38,16 @@ typedef void pthread_rwlockattr_t;
 typedef HANDLE pthread_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
 
-/** Timing used for timed conditionals. */
+/** Timing used for timed conditionals.
 struct timespec {
   long tv_sec;
   long tv_nsec;
-};
+}; */
 
 /** pthread_cond_timedwait takes a struct timespec but SleepConditionVariableCS takes a DWORD of ms. */
 static DWORD timespec_to_ms( const struct timespec* abstime ) {
   if ( abstime == NULL ) { return INFINITE; }
-  DWORD t = ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 );
+  DWORD t = (DWORD)( ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 ) );
   if ( t < 0 ) { t = 1; }
   return t;
 }
@@ -85,7 +85,10 @@ int pthread_join( pthread_t thread, void** value_ptr ) {
  * It will keep running without interruption (and without having this function block)
  * and once finished be cleaned up."
  */
-int pthread_detach( pthread_t thread ) { CloseHandle( thread ); }
+int pthread_detach( pthread_t thread ) {
+  CloseHandle( thread );
+  return 0;
+}
 
 /** "Mutexes on Windows are known as Critical Sections and we can directly wrap them."
  * NOTE(Anton) in an earlier wrapper I used CreateMutex() etc.
@@ -285,6 +288,10 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs
     return false;
   }
 
+  pthread_mutex_init( &pool_ptr->context_ptr->queue_mutex, NULL );
+  pthread_cond_init( &pool_ptr->context_ptr->job_queued_signal, NULL );
+  pthread_cond_init( &pool_ptr->context_ptr->workers_finished_cond, NULL );
+
   // NB - can use pthread_self() to identify a thread's id integer.
   for ( int i = 0; i < n_workers; i++ ) {
     pthread_t thread;
@@ -340,8 +347,6 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
   if ( !pool_ptr || !job_func_ptr ) { return false; }
 
   bool pushed = false;
-
-  // space_in_queue_signal
 
   pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
   {
