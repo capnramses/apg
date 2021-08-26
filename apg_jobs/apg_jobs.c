@@ -21,6 +21,183 @@
 #include <pthread.h>
 #endif
 
+/* The follow ifdef section is from a wrapper of pthread for Windows by John Schember:
+https://nachtimwald.com/2019/04/05/cross-platform-thread-wrapper/
+NOTE(Anton) It's tidier than my earlier multi-platform code that used containers/abstractions -
+that added a layer of data structure stuff and custom calls - it's nicer for the brain to just work
+with pthread directly.
+*/
+#ifdef _WIN32
+typedef CRITICAL_SECTION pthread_mutex_t;
+typedef void pthread_mutexattr_t;
+typedef void pthread_condattr_t;
+typedef void pthread_rwlockattr_t;
+typedef HANDLE pthread_t;
+typedef CONDITION_VARIABLE pthread_cond_t;
+
+typedef struct {
+  SRWLock lock;
+  bool exclusive;
+} pthread_rwlock_t;
+
+/** Timing used for timed conditionals. */
+struct timespec {
+  long tv_sec;
+  long tv_nsec;
+};
+
+/** NOTE(Anton) I did the same thing last time but with more ugly casting. */
+int pthread_create( pthread_t* thread, pthread_attr_t* attr, void* ( *start_routine )(void*), void* arg ) {
+  void( attr );
+  if ( thread == NULL || start_routine == NULL ) { return 1; }
+  *thread = CreateThread( NULL, 0, start_routine, arg, 0, NULL );
+  if ( *thread == NULL ) return 1;
+  return 0;
+}
+
+/** "For join we will wait for the thread to stop (blocking) and destroy it."
+ * NOTE(Anton) I did the same thing last time.
+ */
+int pthread_join( pthread_t thread, void** value_ptr ) {
+  (void)value_ptr;
+  WaitForSingleObject( thread, INFINITE );
+  CloseHandle( thread );
+  return 0;
+}
+
+/** "Detach is a bit odd because it looks like we’re destroying the thread.
+ * This is partly true this will cause the thread to be cleaned up but CloseHandle does not stop the thread.
+ * It will keep running without interruption (and without having this function block)
+ * and once finished be cleaned up."
+ */
+int pthread_detach( pthread_t thread ) { CloseHandle( thread ); }
+
+/** "Mutexes on Windows are known as Critical Sections and we can directly wrap them."
+ * NOTE(Anton) in an earlier wrapper I used CreateMutex() etc.
+ */
+int pthread_mutex_init( pthread_mutex_t* mutex, pthread_mutexattr_t* attr ) {
+  (void)attr;
+  if ( mutex == NULL ) { return 1; }
+  InitializeCriticalSection( mutex );
+  return 0;
+}
+
+/** NOTE(Anton) last time I used CloseHandle() on my mutex created with CreateMutex(). */
+int pthread_mutex_destroy( pthread_mutex_t* mutex ) {
+  if ( mutex == NULL ) { return 1; }
+  DeleteCriticalSection( mutex );
+  return 0;
+}
+
+/** NOTE(Anton) last time I used WaitForSingleObject() on my mutex created with CreateMutex(). */
+int pthread_mutex_lock( pthread_mutex_t* mutex ) {
+  if ( mutex == NULL ) { return 1; }
+  EnterCriticalSection( mutex );
+  return 0;
+}
+
+/** NOTE(Anton) last time I used ReleaseMutex() on my mutex created with CreateMutex(). */
+int pthread_mutex_unlock( pthread_mutex_t* mutex ) {
+  if ( mutex == NULL ) { return 1; }
+  LeaveCriticalSection( mutex );
+  return 0;
+}
+
+int pthread_cond_init( thread_cond_t* cond, pthread_condattr_t* attr ) {
+  (void)attr;
+  if ( cond == NULL ) { return 1; }
+  InitializeConditionVariable( cond );
+  return 0;
+}
+
+/** "Windows does not have a destroy for conditionals." */
+int pthread_cond_destroy( thread_cond_t* cond ) {
+  (void)cond;
+  return 0;
+}
+
+int pthread_cond_wait( thread_cond_t* cond, pthread_mutex_t* mutex ) {
+  if ( cond == NULL || mutex == NULL ) { return 1; }
+  return pthread_cond_timedwait( cond, mutex, NULL );
+}
+
+int pthread_cond_timedwait( thread_cond_t* cond, pthread_mutex_t* mutex, const struct timespec* abstime ) {
+  if ( cond == NULL || mutex == NULL ) { return 1; }
+  if ( !SleepConditionVariableCS( cond, mutex, timespec_to_ms( abstime ) ) ) { return 1; }
+  return 0;
+}
+
+int pthread_cond_signal( thread_cond_t* cond ) {
+  if ( cond == NULL ) { return 1; }
+  WakeConditionVariable( cond );
+  return 0;
+}
+
+int pthread_cond_broadcast( thread_cond_t* cond ) {
+  if ( cond == NULL ) { return 1; }
+  WakeAllConditionVariable( cond );
+  return 0;
+}
+
+/** pthread_cond_timedwait takes a struct timespec but SleepConditionVariableCS takes a DWORD of ms. */
+static DWORD timespec_to_ms( const struct timespec* abstime ) {
+  if ( abstime == NULL ) { return INFINITE; }
+  DWORD t = ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 );
+  if ( t < 0 ) { t = 1; }
+  return t;
+}
+
+int pthread_rwlock_init( pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr ) {
+  (void)attr;
+  if ( rwlock == NULL ) { return 1; }
+  InitializeSRWLock( &rwlock->lock );
+  rwlock->exclusive = false;
+  return 0;
+}
+
+int pthread_rwlock_destroy( pthread_rwlock_t* rwlock ) { (void)rwlock; }
+
+int pthread_rwlock_rdlock( pthread_rwlock_t* rwlock ) {
+  if ( rwlock == NULL ) { return 1; }
+  AcquireSRWLockShared( &rwlock->lock );
+}
+
+int pthread_rwlock_tryrdlock( pthread_rwlock_t* rwlock ) {
+  if ( rwlock == NULL ) { return 1; }
+  return !TryAcquireSRWLockShared( &rwlock->lock );
+}
+
+int pthread_rwlock_wrlock( pthread_rwlock_t* rwlock ) {
+  if ( rwlock == NULL ) { return 1; }
+  AcquireSRWLockExclusive(  rwlock->lock ) );
+  rwlock->exclusive = true;
+}
+
+int pthread_rwlock_trywrlock( pthread_rwlock_t* rwlock ) {
+  if ( rwlock == NULL ) { return 1; }
+  BOOLEAN ret = TryAcquireSRWLockExclusive( &rwlock->lock );
+  if ( ret ) { rwlock->exclusive = true; }
+  return ret;
+}
+
+int pthread_rwlock_unlock( pthread_rwlock_t* rwlock ) {
+  if ( rwlock == NULL ) { return 1; }
+  if ( rwlock->exclusive ) {
+    rwlock->exclusive = false;
+    ReleaseSRWLockExclusive( &rwlock->lock );
+  } else {
+    ReleaseSRWLockShared( &rwlock->lock );
+  }
+}
+
+/** Timing can be used for conditionals. */
+void ms_to_timespec( struct timespec* ts, unsigned int ms ) {
+  if ( ts == NULL ) { return; }
+  ts->tv_sec  = ( ms / 1000 ) + time( NULL );
+  ts->tv_nsec = ( ms % 1000 ) * 1000000
+}
+#endif
+
 /// Description of a job in the job queue.
 typedef struct _job_t {
   /// Function representing the job that is called by the worker thread.
@@ -40,7 +217,6 @@ struct apg_jobs_pool_internal_t {
   /// Number of elements in queue_ptr where a job is stored. These can wrap around back past index zero. @warning Must be accessed inside locked queue_mutex.
   int n_queued;
 
-#ifndef _WIN32
   /// Single mutex used for all locking.
   pthread_mutex_t queue_mutex;
   /// When a space is cleared in the queue fire this off to clear a blocked main thread.
@@ -49,7 +225,7 @@ struct apg_jobs_pool_internal_t {
   pthread_cond_t job_queued_signal;
   /// Signals when there are no threads processing.
   pthread_cond_t workers_finished_cond;
-#endif
+
   /// Number of threads that are currently working on a job.
   int n_working;
   /// Number of live threads, counting those working and not working.
@@ -151,7 +327,6 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs
 
   // NB - can use pthread_self() to identify a thread's id integer.
   for ( int i = 0; i < n_workers; i++ ) {
-#ifndef _WIN32
     pthread_t thread;
     int ret = pthread_create( &thread, NULL, _worker_thread_func, pool_ptr );
     if ( 0 != ret ) {
@@ -164,7 +339,6 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs
       // TODO handle this thread not detaching e.g. close threads up to i.
       return false;
     }
-#endif
   }
 
   return true;
@@ -175,7 +349,6 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs
 bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
   if ( !pool_ptr || !pool_ptr->context_ptr || !pool_ptr->context_ptr->queue_ptr ) { return false; }
 
-#ifndef _WIN32
   // delete work backlog and signal all threads to stop
   pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
   {
@@ -187,16 +360,13 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
     pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
   }
   pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
-#endif
 
   // wait for any threads that were already processing
   apg_jobs_wait( pool_ptr );
 
-#ifndef _WIN32
   pthread_mutex_destroy( &pool_ptr->context_ptr->queue_mutex );
   pthread_cond_destroy( &pool_ptr->context_ptr->job_queued_signal );
   pthread_cond_destroy( &pool_ptr->context_ptr->workers_finished_cond );
-#endif
 
   free( pool_ptr->context_ptr );
   pool_ptr->context_ptr = NULL;
@@ -237,8 +407,9 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
   return pushed;
 }
 
-//
-// Further examples: https://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+/** Further OS examples:
+ * https://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+ */
 unsigned int apg_jobs_n_logical_procs() {
 #ifdef _WIN32
   SYSTEM_INFO sys_info;
@@ -254,7 +425,6 @@ unsigned int apg_jobs_n_logical_procs() {
 void apg_jobs_wait( apg_jobs_pool_t* pool_ptr ) {
   if ( !pool_ptr ) { return; }
 
-#ifndef _WIN32
   pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
   while ( true ) { // this loops in case any thread woke up after the wait call.
     if ( ( !pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_working != 0 ) || ( pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_threads != 0 ) ) {
@@ -265,5 +435,4 @@ void apg_jobs_wait( apg_jobs_pool_t* pool_ptr ) {
     }
   }
   pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
-#endif
 }
