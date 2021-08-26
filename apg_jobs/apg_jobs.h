@@ -13,7 +13,7 @@
  * The goal is something as simple as possible plus some telemetry hooks.
  * The original use case is for processing path-finding AI in a voxel game.
  *
- * For a good explanation of simple thread pools in C, see John Schember's work at
+ * For a good explanation of simple thread pools in C, see John Schember's work at:
  * https://nachtimwald.com/2019/04/12/thread-pool-in-c/
  * Which uses detached threads and signals, which I'm also adopting here because it is
  * simpler than my previous library.

@@ -148,8 +148,6 @@ bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, int queue_max_jobs
     free( pool_ptr->context_ptr );
     return false;
   }
-  printf( "created queue of length %i elements, size %lu bytes\n", pool_ptr->context_ptr->queue_max_items,
-    (unsigned long)pool_ptr->context_ptr->queue_max_items * sizeof( _job_t ) );
 
   // NB - can use pthread_self() to identify a thread's id integer.
   for ( int i = 0; i < n_workers; i++ ) {
@@ -185,7 +183,6 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
     pool_ptr->context_ptr->queue_ptr = NULL;
     pool_ptr->context_ptr->n_queued  = 0;
     pool_ptr->context_ptr->stop      = true;
-    fprintf( stderr, "STOP! flag raised\n" );
     // wake up all threads waiting for a job to be queued so they can see the stop flag is raised.
     pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
   }
