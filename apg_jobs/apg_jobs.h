@@ -13,12 +13,12 @@
  * The goal is something as simple as possible plus some telemetry hooks.
  * The original use case is for processing path-finding AI in a voxel game.
  *
- * For a good explanation of simple thread pools in C, see John Schember's work at:
+ * For a good explanation of simple Posix thread pools in C, see John Schember's work at:
  * https://nachtimwald.com/2019/04/12/thread-pool-in-c/
- * Which uses detached threads and signals, which I'm also adopting here because it is
- * simpler than my previous library. apg_jobs uses an up-front allocated queue instead of the original
- * linked list, and a wait condition when pushing to a full array.
- * For a more sophisticated task scheduler library example, see Doug Binks' enkiTS:
+ * Which uses detached threads and conditions as signals.
+ * The Microsoft example is more of less the same code but in Windows thread form:
+ * https://docs.microsoft.com/en-us/windows/win32/sync/using-condition-variables
+ * For a more sophisticated task scheduler library, see Doug Binks' enkiTS:
  * https://github.com/dougbinks/enkiTSExamples
  *
  * LIMITATIONS
