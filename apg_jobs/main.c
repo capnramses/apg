@@ -4,19 +4,41 @@
  */
 
 #include "apg_jobs.h"
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <pthread.h>
+#include <unistd.h> // usleep
+#endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> // usleep
+
+void apg_sleep_ms( int ms ) {
+#ifdef WIN32
+  Sleep( ms ); /* NOTE(Anton) may not need this since using gcc on Windows and usleep() works */
+#elif _POSIX_C_SOURCE >= 199309L
+  struct timespec ts;
+  ts.tv_sec  = ms / 1000;
+  ts.tv_nsec = ( ms % 1000 ) * 1000000;
+  nanosleep( &ts, NULL );
+#else
+  usleep( ms * 1000 );
+#endif
+}
 
 void work_cb( void* arg_ptr ) {
   int* val = arg_ptr;
   int old  = *val;
   *val += 1000;
+
+#ifndef _WIN32
   unsigned long pid = pthread_self();
-  fprintf( stderr, "starting job tid=%p, old=%d, val=%d\n", (void*)pid, old, *val );
-  usleep( rand() % 1000000 );
-  fprintf( stderr, "ending job tid=%p, old=%d, val=%d\n", (void*)pid, old, *val );
+#else
+  unsigned long pid = 0;
+#endif
+  fprintf( stderr, "starting job tid=0x%x, old=%d, val=%d\n", pid, old, *val );
+  apg_sleep_ms( rand() % 1000 );
+  fprintf( stderr, "ending job tid=0x%x, old=%d, val=%d\n", pid, old, *val );
 }
 
 int main() {

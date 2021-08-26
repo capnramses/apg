@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -28,17 +29,14 @@ that added a layer of data structure stuff and custom calls - it's nicer for the
 with pthread directly.
 */
 #ifdef _WIN32
+
 typedef CRITICAL_SECTION pthread_mutex_t;
 typedef void pthread_mutexattr_t;
+typedef void pthread_attr_t;
 typedef void pthread_condattr_t;
 typedef void pthread_rwlockattr_t;
 typedef HANDLE pthread_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
-
-typedef struct {
-  SRWLock lock;
-  bool exclusive;
-} pthread_rwlock_t;
 
 /** Timing used for timed conditionals. */
 struct timespec {
@@ -46,11 +44,28 @@ struct timespec {
   long tv_nsec;
 };
 
+/** pthread_cond_timedwait takes a struct timespec but SleepConditionVariableCS takes a DWORD of ms. */
+static DWORD timespec_to_ms( const struct timespec* abstime ) {
+  if ( abstime == NULL ) { return INFINITE; }
+  DWORD t = ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 );
+  if ( t < 0 ) { t = 1; }
+  return t;
+}
+
+/** Timing can be used for conditionals. */
+void ms_to_timespec( struct timespec* ts, unsigned int ms ) {
+  if ( ts == NULL ) { return; }
+  ts->tv_sec  = ( ms / 1000 ) + time( NULL );
+  ts->tv_nsec = ( ms % 1000 ) * 1000000;
+}
+
 /** NOTE(Anton) I did the same thing last time but with more ugly casting. */
 int pthread_create( pthread_t* thread, pthread_attr_t* attr, void* ( *start_routine )(void*), void* arg ) {
-  void( attr );
+  (void)attr;
   if ( thread == NULL || start_routine == NULL ) { return 1; }
-  *thread = CreateThread( NULL, 0, start_routine, arg, 0, NULL );
+  // NOTE(Anton) this ugly cast is so i can use the same routine for both platforms
+  long unsigned int ( *routine_wrapper )( void* ) = (long unsigned int ( * )( void* ))start_routine;
+  *thread                                         = CreateThread( NULL, 0, routine_wrapper, arg, 0, NULL );
   if ( *thread == NULL ) return 1;
   return 0;
 }
@@ -103,7 +118,7 @@ int pthread_mutex_unlock( pthread_mutex_t* mutex ) {
   return 0;
 }
 
-int pthread_cond_init( thread_cond_t* cond, pthread_condattr_t* attr ) {
+int pthread_cond_init( pthread_cond_t* cond, pthread_condattr_t* attr ) {
   (void)attr;
   if ( cond == NULL ) { return 1; }
   InitializeConditionVariable( cond );
@@ -111,91 +126,36 @@ int pthread_cond_init( thread_cond_t* cond, pthread_condattr_t* attr ) {
 }
 
 /** "Windows does not have a destroy for conditionals." */
-int pthread_cond_destroy( thread_cond_t* cond ) {
+int pthread_cond_destroy( pthread_cond_t* cond ) {
   (void)cond;
   return 0;
 }
 
-int pthread_cond_wait( thread_cond_t* cond, pthread_mutex_t* mutex ) {
-  if ( cond == NULL || mutex == NULL ) { return 1; }
-  return pthread_cond_timedwait( cond, mutex, NULL );
-}
-
-int pthread_cond_timedwait( thread_cond_t* cond, pthread_mutex_t* mutex, const struct timespec* abstime ) {
+int pthread_cond_timedwait( pthread_cond_t* cond, pthread_mutex_t* mutex, const struct timespec* abstime ) {
   if ( cond == NULL || mutex == NULL ) { return 1; }
   if ( !SleepConditionVariableCS( cond, mutex, timespec_to_ms( abstime ) ) ) { return 1; }
   return 0;
 }
 
-int pthread_cond_signal( thread_cond_t* cond ) {
+int pthread_cond_wait( pthread_cond_t* cond, pthread_mutex_t* mutex ) {
+  if ( cond == NULL || mutex == NULL ) { return 1; }
+  return pthread_cond_timedwait( cond, mutex, NULL );
+}
+
+int pthread_cond_signal( pthread_cond_t* cond ) {
   if ( cond == NULL ) { return 1; }
   WakeConditionVariable( cond );
   return 0;
 }
 
-int pthread_cond_broadcast( thread_cond_t* cond ) {
+int pthread_cond_broadcast( pthread_cond_t* cond ) {
   if ( cond == NULL ) { return 1; }
   WakeAllConditionVariable( cond );
   return 0;
 }
 
-/** pthread_cond_timedwait takes a struct timespec but SleepConditionVariableCS takes a DWORD of ms. */
-static DWORD timespec_to_ms( const struct timespec* abstime ) {
-  if ( abstime == NULL ) { return INFINITE; }
-  DWORD t = ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 );
-  if ( t < 0 ) { t = 1; }
-  return t;
-}
-
-int pthread_rwlock_init( pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr ) {
-  (void)attr;
-  if ( rwlock == NULL ) { return 1; }
-  InitializeSRWLock( &rwlock->lock );
-  rwlock->exclusive = false;
-  return 0;
-}
-
-int pthread_rwlock_destroy( pthread_rwlock_t* rwlock ) { (void)rwlock; }
-
-int pthread_rwlock_rdlock( pthread_rwlock_t* rwlock ) {
-  if ( rwlock == NULL ) { return 1; }
-  AcquireSRWLockShared( &rwlock->lock );
-}
-
-int pthread_rwlock_tryrdlock( pthread_rwlock_t* rwlock ) {
-  if ( rwlock == NULL ) { return 1; }
-  return !TryAcquireSRWLockShared( &rwlock->lock );
-}
-
-int pthread_rwlock_wrlock( pthread_rwlock_t* rwlock ) {
-  if ( rwlock == NULL ) { return 1; }
-  AcquireSRWLockExclusive(  rwlock->lock ) );
-  rwlock->exclusive = true;
-}
-
-int pthread_rwlock_trywrlock( pthread_rwlock_t* rwlock ) {
-  if ( rwlock == NULL ) { return 1; }
-  BOOLEAN ret = TryAcquireSRWLockExclusive( &rwlock->lock );
-  if ( ret ) { rwlock->exclusive = true; }
-  return ret;
-}
-
-int pthread_rwlock_unlock( pthread_rwlock_t* rwlock ) {
-  if ( rwlock == NULL ) { return 1; }
-  if ( rwlock->exclusive ) {
-    rwlock->exclusive = false;
-    ReleaseSRWLockExclusive( &rwlock->lock );
-  } else {
-    ReleaseSRWLockShared( &rwlock->lock );
-  }
-}
-
-/** Timing can be used for conditionals. */
-void ms_to_timespec( struct timespec* ts, unsigned int ms ) {
-  if ( ts == NULL ) { return; }
-  ts->tv_sec  = ( ms / 1000 ) + time( NULL );
-  ts->tv_nsec = ( ms % 1000 ) * 1000000
-}
+// NOTE(Anton) I left out the pthread_rwlock...() stuff because the impl relied on a C++ Windows class.
+// https://docs.microsoft.com/en-us/cpp/cppcx/wrl/srwlock-class?view=msvc-160
 #endif
 
 /// Description of a job in the job queue.

@@ -47,7 +47,7 @@ APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* context_ptr; } apg_jobs_pool_t;
 
 /** All jobs for workers are defined as a function of this format. */
-APG_JOBS_EXPORT typedef void ( *apg_jobs_work )( void* args_ptr );
+typedef void ( *apg_jobs_work )( void* args_ptr );
 
 /** @return The number of logical processors on the system. */
 APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs();
