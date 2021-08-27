@@ -165,8 +165,8 @@ int pthread_cond_broadcast( pthread_cond_t* cond ) {
 typedef struct _job_t {
   /// Function representing the job that is called by the worker thread.
   apg_jobs_work job_func_ptr;
-  /// Arguments to the function.
-  void* args_ptr; // TODO(Anton) -- is a pointer really actually for realsies safe here to be accessed from a thread.
+  /// Arguments to the function. Note that this is not mutex-protected between threads.
+  void* args_ptr;
 } _job_t;
 
 /// Thread pool context. Includes queue of work.
