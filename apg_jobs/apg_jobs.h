@@ -44,10 +44,10 @@
 
 #include <stdbool.h>
 
-/** Forward-declaration of internal-use context struct (used internally). */
+/** Forward-declaration of internal-use context struct. */
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t;
 
-/** The main context struct for this library. Instantiate one of these on you main thread. */
+/** The main context struct for this library. Instantiate one of these on your main thread. */
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* context_ptr; } apg_jobs_pool_t;
 
 /** All jobs for workers are defined as a function of this format. */
