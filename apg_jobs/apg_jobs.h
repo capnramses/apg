@@ -79,6 +79,9 @@ APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
  * @returns            False on any error.
  * @note               If there is no space left in the queue then this function will block and
  *                     wait for a space to be freed as a job is popped by a worker thread.
+ * @note               apg_jobs provides no memory protection on args_ptr, so if you have multiple jobs queued that write/ready
+ *                     the same memory, or if you access theat memory in your main thread without waiting for the work to be completed,
+ *                     you can trigger a race condition.
  */
 APG_JOBS_EXPORT bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, void* args_ptr );
 
