@@ -5,7 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 ==================================================================================================
 History:
-v0.13   8 Jul 2022 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
+v0.13   8 Jul 2021 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
 v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
 v0.11  17 Feb 2021 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
 v0.10   7 Feb 2021 - Tidied docs.
