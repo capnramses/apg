@@ -25,10 +25,10 @@
  * -----------
  * On most systems just include apg_jobs.h in your source code and add apg_job.c to your compiled source files.
  * Windows will Windows threads under a pthread wrapper.
- * If you have a system implementation of Posix threads for e.g. MinGW GCC on Windows already then define USE_WIN32_PTHREAD,
+ * If you have a system implementation of Posix threads for e.g. MinGW GCC on Windows already then define APG_JOBS_USE_WIN32_PTHREAD,
  * which will exclude the wrapper and use pthreads directly.
  * Link against `-pthread` on *nix systems.
- * 
+ *
  * USAGE EXAMPLE
  * -------------
  * See `main.c` for an example. Basic usage:
@@ -41,7 +41,7 @@
  *    If no job can write to the memory, it is okay for multiple jobs to read the same memory.
  * 3. Call `apg_jobs_wait()` from your main thread if you want to wait until all jobs in the queue have been completed.
  * 4. Call `apg_jobs_free()` from your main thread when you want to shut down the pool and close the worker threads.
- * 
+ *
  * LIMITATIONS
  * -----------
  * - On Windows MinGW GCC warns it doesn't see SDK v10 synchapi.h functions (conditionals, etc) *but it still compiles and runs*.
@@ -51,10 +51,10 @@
  * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
  * - Test on OS X & with .dylibs.
  * - Real time? thread usage timeline chart output hooks similar to or using Remotery.
- * 
+ *
  * HISTORY
  * -------
- * 
+ *
  * 0.2 (2021/08/28) - Compliation option of use of native pthread library on Windows.
  * 0.1 (2021/08/26) - First functional version.
  */
