@@ -7,7 +7,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <pthread.h>
 #include <unistd.h> // usleep
 #endif
 #include <stdio.h>
@@ -31,14 +30,9 @@ void work_cb( void* arg_ptr ) {
   int old  = *val;
   *val += 1000;
 
-#ifndef _WIN32
-  unsigned long pid = pthread_self();
-#else
-  unsigned long pid = 0;
-#endif
-  fprintf( stderr, "starting job tid=0x%x, old=%d, val=%d\n", pid, old, *val );
+  fprintf( stderr, "starting job, old=%d, val=%d\n", old, *val );
   apg_sleep_ms( rand() % 1000 );
-  fprintf( stderr, "ending job tid=0x%x, old=%d, val=%d\n", pid, old, *val );
+  fprintf( stderr, "ending job, old=%d, val=%d\n", old, *val );
 }
 
 int main() {
