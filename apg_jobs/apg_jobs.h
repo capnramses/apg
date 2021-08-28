@@ -50,7 +50,6 @@
  *
  * HISTORY
  * -------
- *
  * 0.2 (2021/08/28) - Compliation option of use of native pthread library on Windows.
  * 0.1 (2021/08/26) - First functional version.
  */
