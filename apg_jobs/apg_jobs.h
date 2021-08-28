@@ -42,10 +42,6 @@
  * 3. Call `apg_jobs_wait()` from your main thread if you want to wait until all jobs in the queue have been completed.
  * 4. Call `apg_jobs_free()` from your main thread when you want to shut down the pool and close the worker threads.
  *
- * LIMITATIONS
- * -----------
- * - On Windows MinGW GCC warns it doesn't see SDK v10 synchapi.h functions (conditionals, etc) *but it still compiles and runs*.
- *
  * TODO
  * ----
  * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
