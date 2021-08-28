@@ -48,7 +48,6 @@ struct timespec {
 static DWORD timespec_to_ms( const struct timespec* abstime ) {
   if ( abstime == NULL ) { return INFINITE; }
   DWORD t = (DWORD)( ( ( abstime->tv_sec - time( NULL ) ) * 1000 ) + ( abstime->tv_nsec / 1000000 ) );
-  if ( t < 0 ) { t = 1; }
   return t;
 }
 
