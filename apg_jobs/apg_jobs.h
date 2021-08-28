@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.1  (2021/08/26)
+ * Version   | 0.1.1 (2021/08/28)
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -23,13 +23,11 @@
  *
  * LIMITATIONS
  * -----------
- * - On Windows MinGW doesn't see synchapi functions (conditionals, etc) so won't build.
- *   I think these might be replaced by https://docs.microsoft.com/en-us/windows/win32/sync/using-condition-variables
- * - And Critical Section by Mutex perhaps.
- * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
+ * - On Windows MinGW GCC warns it doesn't see SDK v10 synchapi.h functions (conditionals, etc) *but it still compiles and runs*.
  *
  * TODO
  * ----
+ * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
  * - Test on OS X & with .dylibs.
  * - Real time? thread usage timeline chart output hooks similar to or using Remotery.
  */

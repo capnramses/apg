@@ -43,7 +43,7 @@ int main() {
 
   apg_jobs_pool_t thread_pool;
   int queue_max = 256; // make this really short ( like 2 ) to test queue block/wait behaviour
-  bool ret      = apg_jobs_init( &thread_pool, n_procs * 4, queue_max );
+  bool ret      = apg_jobs_init( &thread_pool, n_procs * 8, queue_max );
   if ( !ret ) {
     fprintf( stderr, "ERROR: failed to init pool\n" );
     return 1;

@@ -210,6 +210,7 @@ static bool _apg_jobs_pop_job( apg_jobs_pool_t* pool_ptr, _job_t* job_ptr ) {
     pool_ptr->context_ptr->queue_front_idx = ( pool_ptr->context_ptr->queue_front_idx + 1 ) % pool_ptr->context_ptr->queue_max_items;
     pool_ptr->context_ptr->n_queued--;
     popped = true;
+    // wake all threads waiting to push a job (usually it's just one - the main thread)
     pthread_cond_broadcast( &pool_ptr->context_ptr->space_in_queue_signal );
   }
 
@@ -351,10 +352,11 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
   {
     // queue full
     // block and wait here if there is no space in the queue
-    if ( pool_ptr->context_ptr->n_queued >= pool_ptr->context_ptr->queue_max_items ) {
+    while ( pool_ptr->context_ptr->n_queued >= pool_ptr->context_ptr->queue_max_items ) {
       // The cond unlocks the mutex when first called, and re-locks the mutex when signalled and awoken.
       pthread_cond_wait( &pool_ptr->context_ptr->space_in_queue_signal, &pool_ptr->context_ptr->queue_mutex );
-    }
+    } // loop just in case a thread was awoken but the queue is empty because e.g. another thread emptied it first or some bad queue state.
+
     { // push to end of queue
       int end_idx = ( pool_ptr->context_ptr->queue_front_idx + pool_ptr->context_ptr->n_queued ) % pool_ptr->context_ptr->queue_max_items;
       assert( end_idx >= 0 && end_idx < pool_ptr->context_ptr->queue_max_items );
