@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.1.1 (2021/08/28)
+ * Version   | 0.2   (2021/08/28)
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -21,6 +21,27 @@
  * For a more sophisticated task scheduler library, see Doug Binks' enkiTS:
  * https://github.com/dougbinks/enkiTSExamples
  *
+ * COMPILATION
+ * -----------
+ * On most systems just include apg_jobs.h in your source code and add apg_job.c to your compiled source files.
+ * Windows will Windows threads under a pthread wrapper.
+ * If you have a system implementation of Posix threads for e.g. MinGW GCC on Windows already then define USE_WIN32_PTHREAD,
+ * which will exclude the wrapper and use pthreads directly.
+ * Link against `-pthread` on *nix systems.
+ * 
+ * USAGE EXAMPLE
+ * -------------
+ * See `main.c` for an example. Basic usage:
+ * 1. Call `apg_jobs_init()` from your main thread to create a pool (comprising a queue for jobs and a number of worker threads).
+ * 2. Call `apg_jobs_push_job()` any number of times from your main thread to assign new jobs for the waiting workers to complete.
+ *    Jobs are defined as function you supply with a particular format: `void ( *apg_jobs_work )( void* args_ptr )`,
+ *    Your function will be called when the job is popped from the queue by a worker.
+ *    Be careful with the arguments you supply to `args_ptr`.
+ *    If multiple jobs can read and write to the same or overlapping memory you may get a race condition.
+ *    If no job can write to the memory, it is okay for multiple jobs to read the same memory.
+ * 3. Call `apg_jobs_wait()` from your main thread if you want to wait until all jobs in the queue have been completed.
+ * 4. Call `apg_jobs_free()` from your main thread when you want to shut down the pool and close the worker threads.
+ * 
  * LIMITATIONS
  * -----------
  * - On Windows MinGW GCC warns it doesn't see SDK v10 synchapi.h functions (conditionals, etc) *but it still compiles and runs*.
@@ -30,6 +51,12 @@
  * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
  * - Test on OS X & with .dylibs.
  * - Real time? thread usage timeline chart output hooks similar to or using Remotery.
+ * 
+ * HISTORY
+ * -------
+ * 
+ * 0.2 (2021/08/28) - Compliation option of use of native pthread library on Windows.
+ * 0.1 (2021/08/26) - First functional version.
  */
 
 #pragma once

@@ -15,10 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef _WIN32
+#if defined _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <pthread.h>
+#endif
+#ifdef USE_WIN32_PTHREAD
 #include <pthread.h>
 #endif
 
@@ -28,7 +31,7 @@ NOTE(Anton) It's tidier than my earlier multi-platform code that used containers
 that added a layer of data structure stuff and custom calls - it's nicer for the brain to just work
 with pthread directly.
 */
-#ifdef _WIN32
+#if defined _WIN32 && !defined USE_WIN32_PTHREAD
 
 typedef CRITICAL_SECTION pthread_mutex_t;
 typedef void pthread_mutexattr_t;
