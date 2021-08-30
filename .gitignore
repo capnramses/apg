@@ -15,6 +15,7 @@ apg_bmp/tests_fuzzing/fuzz_32bpp_outputs/
 #binaries
 a.out
 *.dll
+*.dylib
 *.7z
 *.zip
 *.exe
