@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2   (2021/08/28)
+ * Version   | 0.2.1 (2021/08/28)
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -45,7 +45,6 @@
  * TODO
  * ----
  * - The threads are detached...I'm note sure that's really useful here - joining threads on 'stop' would be safer to be sure all work is done.
- * - Test on OS X & with .dylibs.
  * - Real time? thread usage timeline chart output hooks similar to or using Remotery.
  *
  * HISTORY
