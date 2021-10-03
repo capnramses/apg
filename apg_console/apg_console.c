@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.11
+Version:  0.12
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -386,6 +386,7 @@ void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* 
   va_start( argptr, message );
   vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
   va_end( argptr );
+  buffer[APG_C_STR_MAX - 1] = '\0';
 
   c_output_lines_newest = ( c_output_lines_newest + 1 ) % APG_C_OUTPUT_LINES_MAX;
   c_n_output_lines      = c_n_output_lines < APG_C_OUTPUT_LINES_MAX ? c_n_output_lines + 1 : APG_C_OUTPUT_LINES_MAX;
