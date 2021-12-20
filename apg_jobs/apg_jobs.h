@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.1 (2021/08/28)
+ * Version   | 0.2.2 (2021/12/20)
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -49,7 +49,7 @@
  *
  * HISTORY
  * -------
- * 0.2 (2021/08/28) - Compliation option of use of native pthread library on Windows.
+ * 0.2 (2021/08/28) - Compilation option to use native pthread library on Windows.
  * 0.1 (2021/08/26) - First functional version.
  */
 
