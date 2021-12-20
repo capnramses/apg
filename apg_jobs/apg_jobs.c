@@ -26,7 +26,7 @@
 #endif
 
 /* The follow ifdef section is from a wrapper of pthread for Windows by John Schember:
-https://nachtimwald.com/2019/04/05/cross-platform-thread-wrapper/
+https://nachtimwald.com/2019/04/05/cross-platform-thread-wrapper/ (MIT License).
 NOTE(Anton) It's tidier than my earlier multi-platform code that used containers/abstractions -
 that added a layer of data structure stuff and custom calls - it's nicer for the brain to just work
 with pthread directly.
