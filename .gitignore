@@ -19,6 +19,7 @@ a.out
 *.7z
 *.zip
 *.exe
+*.bin
 *.sav
 *.lib
 *.obj

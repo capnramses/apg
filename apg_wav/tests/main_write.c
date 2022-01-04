@@ -18,6 +18,8 @@ int main() {
     wav_data[i] = (int16_t)vf;
   }
 
-  int result = apg_write_wav( "testout.wav", wav_data, n_chans, sample_rate, n_samples, bits_per_sample );
-  return result;
+  bool result = apg_wav_write( "testout.wav", wav_data, 1024 * sizeof( int16_t ), n_chans, sample_rate, n_samples, bits_per_sample );
+  if ( !result ) { return 1; }
+  printf( "normal exit\n" );
+  return 0;
 }

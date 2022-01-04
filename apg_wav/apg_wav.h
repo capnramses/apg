@@ -1,16 +1,66 @@
 /*****************************************************************************\
-Wave file read/write
-Licence: see bottom of file.
-Anton Gerdelan <antonofnote at gmail>
+apg_wav - Waveform Audio File Format read & write
+Anton Gerdelan <antonofnote at gmail> 2022
+C99
+Licence: See bottom of this file or LICENSE file.
 
-Licence: see bottom of file.
-*/
+History
+-------
+0.2 - 04 Jan 2022 - Tidied up and testing reading with a PortAudio example.
+0.1 - ???         - First version on GitHub.
+\*****************************************************************************/
 
 #ifndef _APG_WAV_H_
 #define _APG_WAV_H_
 
-int apg_write_wav( const char* filename, const void* data, int n_chans, int sample_rate, int n_samples, int bits_per_sample );
-unsigned char* apg_read_wav( const char* filename, int* n_chans, int* sample_rate, int* n_samples, int* bits_per_sample );
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#pragma pack( push, 1 )
+/// Header from a .wav file. 44-bytes.
+typedef struct apg_wav_header_t {
+  char riff_magic_num[4];   // "RIFF"
+  uint32_t file_sz;         // Overall file size in bytes.
+  char wave_magic_num[4];   // "WAVE"
+  char fmt_magic_num[4];    // "fmt\0" includes trailing null. Marks start of format subchunk.
+  uint32_t fmt_sz;          // Size of this format subchunk in bytes.
+  uint16_t fmt_type;        // 1=PCM. Other numbers indicate compression (not supported).
+  uint16_t n_chans;         // Number of audio channels. 2 for stereo.
+  uint32_t sample_rate_hz;  // 44100 (CD) 48000 (DAT) ...
+  uint32_t byte_rate;       // ( sample_rate_hz * bytes per sample * n_chans )
+  uint16_t block_align;     // (BitsPerSample * Channels) / 8. ->> 1 = 8-bit mono. 2 = 8-bit stereo. 3 = 8-bit stereo or 16-bit mono. 4 = 16-bit stereo.
+  uint16_t bits_per_sample; // Usually 16 but can be 8.
+  char data_magic_num[4];   // "data"
+  uint32_t data_sz;         // Size of PCM data section in bytes.
+} apg_wav_header_t;
+#pragma pack( pop )
+
+typedef struct apg_wav_t {
+  apg_wav_header_t* header_ptr; // Use for playback settings.
+  uint8_t* file_data_ptr;       // Pointer to entire file
+  uint8_t* pcm_data_ptr;        // Pointer to the data section (44 bytes on from top of file data).
+} apg_wav_t;
+
+/// Information returned when reading a file that can be used for playing it back correctly.
+
+bool apg_wav_write( const char* filename, const void* data_ptr, uint32_t data_sz, uint16_t n_chans, uint32_t sample_rate_hz, uint32_t n_samples, uint16_t bits_per_sample );
+
+/**
+ * @param wav_data_ptr Pointer to a previously unused struct to fill out, including allocating memory to store file contents.
+ * @return Returns false on error.
+ * @warning This function allocates memory. Call apg_wav_free() on your apg_wav_data_t when done with playback, to release memory.
+ */
+bool apg_wav_read( const char* filename, apg_wav_t* wav_data_ptr );
+
+bool apg_wav_free( apg_wav_t* wav_data_ptr );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
