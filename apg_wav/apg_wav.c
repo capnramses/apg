@@ -52,7 +52,7 @@ bool apg_wav_write( const char* filename, const void* data_ptr, uint32_t data_sz
     .byte_rate       = sample_rate_hz * n_chans * bytes_per_sample, //
     .block_align     = ( bits_per_sample * n_chans ) / 8,           //
     .bits_per_sample = bits_per_sample,                             //
-    .data_sz         = data_sz                                      //
+    .data_sz         = data_sz                                      // Can't trust converters (ffmpeg!) to do this correctly!
   };
   memcpy( wav_header.riff_magic_num, "RIFF", 4 );
   memcpy( wav_header.wave_magic_num, "WAVE", 4 );
@@ -100,7 +100,7 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
   uint8_t* byte_ptr = record.data_ptr;
 
   wav_ptr->header_ptr = (apg_wav_header_t*)record.data_ptr;
-  // too small for reported data
+  // too small for reported data (not reliable! - might need to remove this validation check).
   if ( record.sz < wav_ptr->header_ptr->file_sz || record.sz < wav_ptr->header_ptr->data_sz + 44 ) { return false; }
   // unsupported type
   if ( wav_ptr->header_ptr->fmt_type != 1 || wav_ptr->header_ptr->fmt_sz != 16 ) {
@@ -115,7 +115,10 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
 }
 
 bool apg_wav_free( apg_wav_t* wav_ptr ) {
-  if ( !wav_ptr || wav_ptr->file_data_ptr ) { return false; }
+  if ( !wav_ptr || !wav_ptr->file_data_ptr ) {
+    fprintf( stderr, "ERROR freeing wav - wav_ptr is %p and file_data_ptr is %p\n", wav_ptr, wav_ptr->file_data_ptr );
+    return false;
+  }
 
   free( wav_ptr->file_data_ptr );
   memset( wav_ptr, 0, sizeof( apg_wav_t ) );

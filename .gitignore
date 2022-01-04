@@ -6,7 +6,7 @@
 *.exp
 #runtime generated
 apg.log
-testout.wav
+*.wav
 out.*
 apg_console/testoutput.png
 apg_console/testuserenteredtext.png
