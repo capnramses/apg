@@ -116,7 +116,7 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
 
 bool apg_wav_free( apg_wav_t* wav_ptr ) {
   if ( !wav_ptr || !wav_ptr->file_data_ptr ) {
-    fprintf( stderr, "ERROR freeing wav - wav_ptr is %p and file_data_ptr is %p\n", wav_ptr, wav_ptr->file_data_ptr );
+    fprintf( stderr, "ERROR freeing wav - wav_ptr is %p and file_data_ptr is %p\n", (void*)wav_ptr, (void*)wav_ptr->file_data_ptr );
     return false;
   }
 
