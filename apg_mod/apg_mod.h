@@ -11,10 +11,13 @@ Modules are music files started by Karsten Obarski's "Ultimate SoundTracker"
 for Commodore Amiga in 1987. Similar to MIDI files, except they store the
 sample sounds in the music file itself, rather than relying on sound banks
 that come with the sound device. That means they always sound the same on
-different devices.
+different devices, and can have custom digital samples.
 
 A good description, by Norman Lin, of the Amiga MOD format, is found here:
 https://www.ocf.berkeley.edu/~eek/index.html/tiny_examples/ptmod/ap12.html
+
+Format details here:
+http://fileformats.archiveteam.org/wiki/Amiga_Module
 
 ToDo
 ---------------------
