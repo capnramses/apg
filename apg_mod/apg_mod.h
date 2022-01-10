@@ -4,11 +4,32 @@ Anton Gerdelan <antonofnote at gmail> 2022
 C99
 Licence: See bottom of this file or LICENSE file.
 
+What are Modules?
+---------------------
+
+Modules are music files started by Karsten Obarski's "Ultimate SoundTracker"
+for Commodore Amiga in 1987. Similar to MIDI files, except they store the
+sample sounds in the music file itself, rather than relying on sound banks
+that come with the sound device. That means they always sound the same on
+different devices.
+
+A good description, by Norman Lin, of the Amiga MOD format, is found here:
+https://www.ocf.berkeley.edu/~eek/index.html/tiny_examples/ptmod/ap12.html
+
+ToDo
+---------------------
+
+* XM support.
+* IT support.
+* Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
+* Interactive visual track editor demo.
+* File writing.
+
 History
--------
+---------------------
+
 0.0 - 10 Jan 2022 - Added skeleton to apg_libraries.
 \*****************************************************************************/
-
 
 #ifndef _APG_MOD_H_
 #define _APG_MOD_H_
@@ -17,8 +38,10 @@ History
 extern "C" {
 #endif
 
-void apg_mod_read_file( const char* filename );
-void apg_mod_write_file( const char* filename );
+#include <stdbool.h>
+
+bool apg_mod_read_file( const char* filename );
+bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus
 }
