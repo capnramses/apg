@@ -2,8 +2,6 @@
 
 Small utility libraries and copy-paste snippets of reusable code.
 
-[![Build Status](https://travis-ci.com/capnramses/apg.svg?branch=master)](https://travis-ci.com/capnramses/apg)
-
 ## Contents
 
 | Library     | Description                                     | Language | # Files         | Version | Fuzzed                                        |
