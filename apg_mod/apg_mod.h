@@ -16,6 +16,10 @@ different devices, and can have custom digital samples.
 A good description, by Norman Lin, of the Amiga MOD format, is found here:
 https://www.ocf.berkeley.edu/~eek/index.html/tiny_examples/ptmod/ap12.html
 
+Brett Paterson (CEO of Firelight) wrote a tutorial .txt in 1995 which is very
+useful and shows the origins of FMOD, which still looks like it supports various
+module formats.
+
 Format details here:
 http://fileformats.archiveteam.org/wiki/Amiga_Module
 
