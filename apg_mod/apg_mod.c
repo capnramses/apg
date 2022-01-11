@@ -152,19 +152,48 @@ bool apg_mod_read_file( const char* filename ) {
 #endif
 
   // Determine n of patterns stored in file by looking through order table for biggest pattern index played.
-  int n_patterns = 0;
+  int max_pattern = 0;
   printf( "Orders:\n" );
-	// NOTE(Anton) could probably stop at song_length here, not the full 128
+  // NOTE(Anton) could probably stop at song_length here, not the full 128
   for ( int i = 0; i < 128; i++ ) {
-    if ( hdr_ptr->orders_table[i] > n_patterns ) { n_patterns = hdr_ptr->orders_table[i]; }
-    printf( "%i ", hdr_ptr->orders_table[i] );
+    if ( hdr_ptr->orders_table[i] > max_pattern ) { max_pattern = hdr_ptr->orders_table[i]; }
+    printf( "%02i", hdr_ptr->orders_table[i] );
+    if ( ( 0 == ( i + 1 ) % 32 ) ) {
+      printf( "\n" );
+    } else {
+      printf( " " );
+    }
   }
-  printf( "\n" );
-  printf( "n Patterns:  %u\n", n_patterns );
+  int n_patterns = max_pattern + 1;
+  printf( "# Patterns:  %u\n", n_patterns );
 
   // TODO(Anton) UP TO HERE*********
 
-	// Load Pattern Data
+  // Load Pattern Data
+  // Note formats newer than MOD/S3M use patterns of variable extended sizes.
+  // "at most a pattern could be is 8192 bytes! -
+  // and that's a 32 channel pattern with 64 rows and 4 bytes per note)"
+
+  // mem per pattern = n_chans * 4 * 64 * n_patterns
+	// pattern i offset = n_chans * 4 * 64 * i; 
+
+	// A note is stored in the actual file as 4 bytes:
+	// byte 0   byte 1   byte 2   byte 3
+	// aaaaBBBB cccccccc DDDDeeee FFFFFFFF
+	// where:
+	// aaaaDDDD     = sample number
+	// BBBBCCCCCCCC = sample period value (12 bits?) -> convert to a note number
+	// eeee         = effect number
+	// FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
+
+	// loop over all n_patterns
+	// - loop over each pattern: 64 * n_chans
+	//   - read a 4-byte note
+	//   - store sample_number as ( byte[0] & 0xF0 ) + ( byte[2] >> 4 )
+	//   - store period_freq   as ( ( byte[0] & 0x0F ) << 8 ) + byte[1]
+	//   - store effect_num    as byte[2] & 0x0F 
+	//   - store effect_params as byte[3]
+	//   - increment to next 4-byte-note
 
   free( record.data_ptr );
   return true;

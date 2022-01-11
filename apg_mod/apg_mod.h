@@ -22,8 +22,9 @@ http://fileformats.archiveteam.org/wiki/Amiga_Module
 ToDo
 ---------------------
 
-* XM support.
-* IT support.
+* S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
+* XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
+* IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
 * Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
 * Interactive visual track editor demo.
 * File writing.
