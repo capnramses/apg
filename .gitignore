@@ -53,3 +53,5 @@ apg/tests/anton2022.sav
 apg/tests/out2.rle
 apg_bmp/test_images/
 apg_maths/tests/tmp/
+apg_mod/*.raw
+apg_mod/*.mp3

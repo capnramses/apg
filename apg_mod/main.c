@@ -7,9 +7,9 @@ int main( int argc, char** argv ) {
     return 0;
   }
   const char* filename_ptr = argv[1];
-	
 
-  if ( !apg_mod_read_file( filename_ptr ) ) {
+  apg_mod_t mod = ( apg_mod_t ){ .sample_data_ptrs[0] = NULL };
+  if ( !apg_mod_read_file( filename_ptr, &mod ) ) {
     fprintf( stderr, "ERROR: could not open file %s\n", filename_ptr );
     return 1;
   }

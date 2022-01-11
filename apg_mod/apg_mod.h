@@ -45,6 +45,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
@@ -61,7 +62,11 @@ typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_MAX
 } apg_mod_fmt_t;
 
-bool apg_mod_read_file( const char* filename );
+typedef struct apg_mod_t {
+  int8_t* sample_data_ptrs[31]; // PCM 8-bit signed samples for *Paula* Amiga chip.
+} apg_mod_t;
+
+bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
 bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus

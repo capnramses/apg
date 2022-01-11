@@ -8,31 +8,35 @@ Licence: see header.
 
 #include "apg_mod.h"
 #include <ctype.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+// note: samples have no fixed frequency. there's a formula to work it out based on period, and a magic number for PAL or NSTC
+
+// https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
+
 // 30 bytes.
 typedef struct sample_t {
-  char _name[22];       // Pad with nul byte(s).
-  uint16_t length;      // This is the number of 2-byte *words*. Multiply x2 to get bytes.
-  uint8_t finetune;     // Lower 4 bits stored as signed 4-bit number. Upper 4-bits are set to 0.
-  uint8_t volume;       // Range is 0x00-0x40 or 0-64 decimal.
-  uint16_t loop_start;  // Stored as n of words offset from start of sample. x2 = offset in bytes.
-  uint16_t loop_length; // Stored as n of words offset from start of sample. x2 = offset in bytes.
+  char _name[22];          // Pad with nul byte(s).
+  uint16_t length_be;      // This is the number of 2-byte *words*. Multiply x2 to get bytes. Big-endian - swap the bytes for LE.
+  uint8_t finetune;        // Lower 4 bits stored as signed 4-bit number. Upper 4-bits are set to 0.
+  uint8_t volume;          // Range is 0x00-0x40 or 0-64 decimal.
+  uint16_t loop_start_be;  // n words offset from start of sample. x2 = offset in bytes. Big-endian.
+  uint16_t loop_length_be; // n of words. x2 = offset in bytes. Big-endian.
 } sample_t;
 
 // The MOD format is headerless so not technically a 'header' but I refer to it as one.
 // This seems to reliably map to .mod files, but not "Extended Module" .xm files, which
 // look like they have more data per field e.g. longer songname etc.
+//
 typedef struct protracker_1_1b_hdr_t {
   char _songname[20];        // Should include trailing nul byte(s).
   sample_t samples[31];      // Sample numbers are 1-31. Early versions had only 15 samples.
   uint8_t song_length;       // Range is 1-128. This is the number of pattern orders (from orders_table) to play in the song, including repeated patterns.
   uint8_t unused;            // Set to 127 to make old trackers parse all patterns. PT used it to mean 'restart'.
   uint8_t orders_table[128]; // Positions 0-127.  Values are a number 0-63 to indicate pattern to play at that position.
-  char magicletters[4];      // "M.K." (or "FLT4" or "FLT8"). If not here assume song uses only 15 samples or text was removed to obfuscate the music.
+  char magicletters[4]; // address 1080. "M.K." (or "FLT4" or "FLT8"). If not here assume song uses only 15 samples or text was removed to obfuscate the music.
 } protracker_1_1b_hdr_t;
 
 typedef struct record_t {
@@ -40,6 +44,7 @@ typedef struct record_t {
   size_t sz;
 } record_t;
 
+// TODO(Anton) if M.K. not there at all assume it's older 15-samples?
 static char _magic_strs[APG_MOD_FMT_MAX][4]    = { "M.K.", "2CHN", "6CHN", "8CHN", "CD81", "FLT4", "FLT8", "M!K!", "OCTA", "TDZx", "????" };
 static int _magic_str_n_chans[APG_MOD_FMT_MAX] = { 4, 2, 6, 8, 8, 4, 8, 0, 8, 0, 0 };
 
@@ -89,17 +94,18 @@ static apg_mod_fmt_t _mod_type( char magic_str[4], int* n_chans ) {
 /* "To get the real value in bytes, calculate it with (byte1*100h + byte2) * 2"
  * Applies to sample name, sample length, loop start, loop length.
  */
-static int _words_val_to_bytes( uint16_t words_val ) {
-  uint8_t lsb = ( uint8_t )( words_val & 0xFF ); // Mask the lower byte.
-  uint8_t msb = ( uint8_t )( words_val >> 8 );   // Shift the higher byte.
-  return ( 256 * (int)msb + (int)lsb ) * 2;      // NOTE(Anton) other guide did this differently...
+static uint32_t _words_val_to_bytes_le( uint16_t word_be ) {
+  uint16_t le = ( word_be << 8 ) | ( word_be >> 8 );
+  return (uint32_t)le * 2; // and x2 to get value in bytes
 }
 
 /* Sample finetune values are stored as 4-bit signed integers: 0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1
  * NOTE(Anton) this could be a #define for an inline. */
 static int _fine_tune_bits_to_int( uint8_t finetune ) { return finetune < 8 ? (int)finetune : (int)finetune - 16; }
 
-bool apg_mod_read_file( const char* filename ) {
+bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
+  if ( !filename || !mod_ptr ) { return false; }
+
   record_t record = _read_entire_file( filename );
   if ( !record.data_ptr ) { return false; }
 
@@ -126,19 +132,6 @@ bool apg_mod_read_file( const char* filename ) {
 
   printf( "Song name:   \"%s\"\n", songname );
   printf( "Song length: %u\n", (uint32_t)hdr_ptr->song_length );
-#ifdef PRINT_SAMPLE_INFO
-  for ( int i = 0; i < 31; i++ ) {
-    char samplename[23];
-    samplename[22] = '\0'; // Song names are usually not nul-terminated.
-    memcpy( samplename, hdr_ptr->samples[i]._name, 22 );
-    printf( "  Sample %i name: \"%s\"\n", i + 1, samplename );
-    printf( "    Length:         %u\n", (uint32_t)hdr_ptr->samples[i].length );
-    printf( "    Finetune:       %u\n", (uint32_t)hdr_ptr->samples[i].finetune );
-    printf( "    Volume:         %u\n", (uint32_t)hdr_ptr->samples[i].finetune );
-    printf( "    Loop point:     %u\n", (uint32_t)hdr_ptr->samples[i].loop_start );
-    printf( "    Loop length:    %u\n", (uint32_t)hdr_ptr->samples[i].loop_length );
-  }
-#endif
 
   // Determine n of patterns stored in file by looking through order table for biggest pattern index played.
   int max_pattern = 0;
@@ -186,7 +179,55 @@ bool apg_mod_read_file( const char* filename ) {
   //   - store effect_params as byte[3]
   //   - increment to next 4-byte-note
 
-  // seems like samples are stored after the patterns
+  // example code for notes is here https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
+
+  // TODO copy patterns to the convenience structure
+
+  // samples are stored after the patterns.
+  // samples always start with 2 zeroes
+
+  // TODO(Anton)! if older type then offset is only + 600 not + 1084!
+  uint32_t offset = 1084 + n_patterns * 64 * n_chans * 4; // 1024*n_patterns+header's offset of 1084
+
+  // offset &or size is slightly off here somehow
+  // some samples i output seemed to be correct as 8-bit signed 1200Hz or 8000Hz PCM waves.
+  for ( int i = 0; i < 31; i++ ) {
+    char samplename[23];
+    samplename[22] = '\0'; // Song names are usually not nul-terminated.
+    memcpy( samplename, hdr_ptr->samples[i]._name, 22 );
+    printf( "  Sample %i name: \"%s\"\n", i + 1, samplename );
+
+    mod_ptr->sample_data_ptrs[i] = &record.data_ptr[offset];
+    uint32_t sample_sz           = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
+    if ( sample_sz != 0 ) {
+      if ( offset + sample_sz > record.sz ) {
+        fprintf( stderr, "sample to write is outside range of file memory.\n" );
+        return false;
+      }
+
+      printf( "address at data_ptr[%u] is %p\n", offset, &record.data_ptr[offset] );
+      char tmp[64];
+      sprintf( tmp, "sample%i.raw", i );
+      FILE* of_ptr = fopen( tmp, "wb" );
+      if ( !of_ptr ) { return false; }
+      printf( "writing %s size %u\n", tmp, sample_sz );
+      int n = fwrite( &record.data_ptr[offset], sample_sz, 1, of_ptr );
+      if ( 1 != n ) { return false; }
+      fclose( of_ptr );
+    }
+
+    offset += sample_sz;
+
+    if ( offset == record.sz ) { printf( "reached EOF\n" ); }
+
+#ifdef PRINT_SAMPLE_INFO
+    printf( "    Length (bytes): %u\n", sample_sz );
+    printf( "    Finetune:       %u\n", (uint32_t)hdr_ptr->samples[i].finetune );
+    printf( "    Volume:         %u\n", (uint32_t)hdr_ptr->samples[i].finetune );
+    printf( "    Loop point:     %u\n", (uint32_t)hdr_ptr->samples[i].loop_start_be );
+    printf( "    Loop length:    %u\n", (uint32_t)hdr_ptr->samples[i].loop_length_be );
+#endif
+  }
 
   free( record.data_ptr );
   return true;
