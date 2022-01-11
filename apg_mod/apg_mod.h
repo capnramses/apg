@@ -13,9 +13,6 @@ sample sounds in the music file itself, rather than relying on sound banks
 that come with the sound device. That means they always sound the same on
 different devices, and can have custom digital samples.
 
-A good description, by Norman Lin, of the Amiga MOD format, is found here:
-https://www.ocf.berkeley.edu/~eek/index.html/tiny_examples/ptmod/ap12.html
-
 Brett Paterson (CEO of Firelight) wrote a tutorial .txt in 1995 which is very
 useful and shows the origins of FMOD, which still looks like it supports various
 module formats.
@@ -26,9 +23,10 @@ http://fileformats.archiveteam.org/wiki/Amiga_Module
 ToDo
 ---------------------
 
+* IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
 * S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
 * XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
-* IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
+* Other formats here https://en.wikipedia.org/wiki/Module_file
 * Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
 * Interactive visual track editor demo.
 * File writing.
@@ -47,6 +45,21 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+
+typedef enum apg_mod_fmt_t {
+  APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
+  APG_MOD_FMT_FASTTRACKER_2CH,
+  APG_MOD_FMT_FASTTRACKER_6CH,
+  APG_MOD_FMT_FASTTRACKER_8CH,
+  APG_MOD_FMT_FALCON_8CH,
+  APG_MOD_FMT_STARTREKKER_4CH,
+  APG_MOD_FMT_STARTREKKER_8CH,
+  APG_MOD_FMT_PROTRACKER_GT64CH,
+  APG_MOD_FMT_OCTA_8CH,
+  APG_MOD_FMT_TAKETRACKER_xCH,
+  APG_MOD_FMT_UNKNOWN,
+  APG_MOD_FMT_MAX
+} apg_mod_fmt_t;
 
 bool apg_mod_read_file( const char* filename );
 bool apg_mod_write_file( const char* filename );

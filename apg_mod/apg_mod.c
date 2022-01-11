@@ -7,6 +7,7 @@ Licence: see header.
 \*****************************************************************************/
 
 #include "apg_mod.h"
+#include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,9 @@ typedef struct record_t {
   size_t sz;
 } record_t;
 
+static char _magic_strs[APG_MOD_FMT_MAX][4]    = { "M.K.", "2CHN", "6CHN", "8CHN", "CD81", "FLT4", "FLT8", "M!K!", "OCTA", "TDZx", "????" };
+static int _magic_str_n_chans[APG_MOD_FMT_MAX] = { 4, 2, 6, 8, 8, 4, 8, 0, 8, 0, 0 };
+
 // If returned record has a NULL ptr or sz == 0 then it failed to read.
 static record_t _read_entire_file( const char* filename ) {
   record_t record = ( record_t ){ .sz = 0 };
@@ -62,13 +66,33 @@ static record_t _read_entire_file( const char* filename ) {
   return record;
 }
 
+static apg_mod_fmt_t _mod_type( char magic_str[4], int* n_chans ) {
+  for ( int i = 0; i < APG_MOD_FMT_MAX; i++ ) {
+    if ( strncmp( magic_str, _magic_strs[i], 4 ) == 0 ) {
+      *n_chans = _magic_str_n_chans[i];
+      return (apg_mod_fmt_t)i;
+    }
+  }
+  if ( magic_str[0] == 'T' && magic_str[1] == 'D' && magic_str[2] == 'Z' && isdigit( magic_str[3] ) ) {
+    *n_chans = magic_str[3] - '0';
+    return APG_MOD_FMT_TAKETRACKER_xCH;
+  } else if ( isdigit( magic_str[0] ) && magic_str[1] == 'C' && magic_str[2] == 'H' && magic_str[3] == 'N' ) {
+    *n_chans = magic_str[0] - '0';
+    return APG_MOD_FMT_TAKETRACKER_xCH;
+  } else if ( isdigit( magic_str[0] ) && isdigit( magic_str[1] ) && magic_str[2] == 'C' && magic_str[3] == 'H' ) {
+    *n_chans = atoi( magic_str );
+    return APG_MOD_FMT_TAKETRACKER_xCH;
+  }
+  return APG_MOD_FMT_UNKNOWN;
+}
+
 /* "To get the real value in bytes, calculate it with (byte1*100h + byte2) * 2"
  * Applies to sample name, sample length, loop start, loop length.
  */
 static int _words_val_to_bytes( uint16_t words_val ) {
-  uint8_t lsb = (uint8_t)( words_val & 0xFF ); // Mask the lower byte.
-  uint8_t msb = (uint8_t)( words_val >> 8 );   // Shift the higher byte.
-  return ( 256 * (int)msb + (int)lsb ) * 2;    // NOTE(Anton) other guide did this differently...
+  uint8_t lsb = ( uint8_t )( words_val & 0xFF ); // Mask the lower byte.
+  uint8_t msb = ( uint8_t )( words_val >> 8 );   // Shift the higher byte.
+  return ( 256 * (int)msb + (int)lsb ) * 2;      // NOTE(Anton) other guide did this differently...
 }
 
 /* Sample finetune values are stored as 4-bit signed integers: 0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1
@@ -84,54 +108,18 @@ bool apg_mod_read_file( const char* filename ) {
     return false;
   }
 
-  // Get offset at 1080 to determine MOD format.
-  char magic_str[5];
-  magic_str[4] = '\0';
-  memcpy( magic_str, &record.data_ptr[1080], 4 );
-  int n_chans = 0;
+  protracker_1_1b_hdr_t* hdr_ptr = (protracker_1_1b_hdr_t*)record.data_ptr;
 
-  if ( 0 == strcmp( magic_str, "M.K." ) ) {
-    printf( "Standard 4-channel module\n" );
-    n_chans = 4;
-  } else if ( 0 == strcmp( magic_str, "2CHN" ) ) {
-    printf( "2-channel FastTracker module\n" );
-    n_chans = 2;
-  } else if ( 0 == strcmp( magic_str, "6CHN" ) ) {
-    printf( "6-channel FastTracker module\n" );
-    n_chans = 6;
-  } else if ( 0 == strcmp( magic_str, "8CHN" ) ) {
-    printf( "8-channel FastTracker module\n" );
-    n_chans = 8;
-  } else if ( 0 == strcmp( magic_str, "CD81" ) ) {
-    printf( "8-channel Falcon module\n" );
-    n_chans = 8;
-  } else if ( 0 == strcmp( magic_str, "FLT4" ) ) {
-    printf( "4-channel Startrekker module\n" );
-    n_chans = 4;
-  } else if ( 0 == strcmp( magic_str, "FLT8" ) ) {
-    printf( "8-channel Startrekker module\n" );
-    n_chans = 8;
-  } else if ( 0 == strcmp( magic_str, "M!K!" ) ) {
-    printf( ">64 pattern ProTracker module\n" );
-  } else if ( 0 == strcmp( magic_str, "OCTA" ) ) {
-    printf( "8-channel module\n" );
-    n_chans = 48;
-  } else if ( magic_str[0] == 'T' && magic_str[1] == 'D' && magic_str[2] == 'Z' ) {
-    sscanf( magic_str, "TDZ%i", &n_chans );
-    printf( "%i-channel TakeTracker module\n", n_chans );
-  } else if ( magic_str[1] == 'C' && magic_str[2] == 'H' && magic_str[3] == 'N' ) {
-    sscanf( magic_str, "%iCHN", &n_chans );
-    printf( "%i-channel TakeTracker module\n", n_chans );
-  } else if ( magic_str[2] == 'C' && magic_str[3] == 'H' ) {
-    sscanf( magic_str, "%iCH", &n_chans );
-    printf( "%i-channel TakeTracker module\n", n_chans );
-  } else {
-    fprintf( stderr, "ERROR: Could not detect module type from \"%s\".\n", magic_str );
+  int n_chans       = 0;
+  apg_mod_fmt_t fmt = _mod_type( hdr_ptr->magicletters, &n_chans );
+  if ( fmt == APG_MOD_FMT_UNKNOWN ) {
+    fprintf( stderr, "Module format %c%c%c%c unknown.\n", hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2], hdr_ptr->magicletters[3] );
     free( record.data_ptr );
     return false;
   }
+  printf( "Module format type %i: %c%c%c%c.\n", (int)fmt, hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2], hdr_ptr->magicletters[3] );
+  printf( "# Channels:  %i\n", n_chans );
 
-  protracker_1_1b_hdr_t* hdr_ptr = (protracker_1_1b_hdr_t*)record.data_ptr;
   char songname[21];
   songname[20] = '\0'; // Song names are usually not nul-terminated.
   memcpy( songname, hdr_ptr->_songname, 20 );
@@ -187,6 +175,8 @@ bool apg_mod_read_file( const char* filename ) {
   // eeee         = effect number
   // FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
 
+  // Each note is stored as 4 bytes, and all four notes at each position in the pattern are stored after each other.
+
   // loop over all n_patterns
   // - loop over each pattern: 64 * n_chans
   //   - read a 4-byte note
@@ -195,6 +185,8 @@ bool apg_mod_read_file( const char* filename ) {
   //   - store effect_num    as byte[2] & 0x0F
   //   - store effect_params as byte[3]
   //   - increment to next 4-byte-note
+
+  // seems like samples are stored after the patterns
 
   free( record.data_ptr );
   return true;
