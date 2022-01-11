@@ -68,6 +68,7 @@ static record_t _read_entire_file( const char* filename ) {
 static int _words_val_to_bytes( uint16_t words_val ) {
   uint8_t lsb = (uint8_t)( words_val & 0xFF ); // Mask the lower byte.
   uint8_t msb = (uint8_t)( words_val >> 8 );   // Shift the higher byte.
+  return ( 256 * (int)msb + (int)lsb ) * 2;    // NOTE(Anton) other guide did this differently...
 }
 
 /* Sample finetune values are stored as 4-bit signed integers: 0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1
@@ -175,25 +176,25 @@ bool apg_mod_read_file( const char* filename ) {
   // and that's a 32 channel pattern with 64 rows and 4 bytes per note)"
 
   // mem per pattern = n_chans * 4 * 64 * n_patterns
-	// pattern i offset = n_chans * 4 * 64 * i; 
+  // pattern i offset = n_chans * 4 * 64 * i;
 
-	// A note is stored in the actual file as 4 bytes:
-	// byte 0   byte 1   byte 2   byte 3
-	// aaaaBBBB cccccccc DDDDeeee FFFFFFFF
-	// where:
-	// aaaaDDDD     = sample number
-	// BBBBCCCCCCCC = sample period value (12 bits?) -> convert to a note number
-	// eeee         = effect number
-	// FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
+  // A note is stored in the actual file as 4 bytes:
+  // byte 0   byte 1   byte 2   byte 3
+  // aaaaBBBB cccccccc DDDDeeee FFFFFFFF
+  // where:
+  // aaaaDDDD     = sample number
+  // BBBBCCCCCCCC = sample period value (12 bits?) -> convert to a note number
+  // eeee         = effect number
+  // FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
 
-	// loop over all n_patterns
-	// - loop over each pattern: 64 * n_chans
-	//   - read a 4-byte note
-	//   - store sample_number as ( byte[0] & 0xF0 ) + ( byte[2] >> 4 )
-	//   - store period_freq   as ( ( byte[0] & 0x0F ) << 8 ) + byte[1]
-	//   - store effect_num    as byte[2] & 0x0F 
-	//   - store effect_params as byte[3]
-	//   - increment to next 4-byte-note
+  // loop over all n_patterns
+  // - loop over each pattern: 64 * n_chans
+  //   - read a 4-byte note
+  //   - store sample_number as ( byte[0] & 0xF0 ) + ( byte[2] >> 4 )
+  //   - store period_freq   as ( ( byte[0] & 0x0F ) << 8 ) + byte[1]
+  //   - store effect_num    as byte[2] & 0x0F
+  //   - store effect_params as byte[3]
+  //   - increment to next 4-byte-note
 
   free( record.data_ptr );
   return true;
