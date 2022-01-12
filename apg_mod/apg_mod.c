@@ -16,6 +16,7 @@ Licence: see header.
 
 // https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
 
+// Note the module files are Motorola format (big-endian) so any variables >1 byte need a conversion (there are only a few).
 // 30 bytes.
 typedef struct sample_t {
   char _name[22];          // Pad with nul byte(s).
@@ -29,7 +30,7 @@ typedef struct sample_t {
 // The MOD format is headerless so not technically a 'header' but I refer to it as one.
 // This seems to reliably map to .mod files, but not "Extended Module" .xm files, which
 // look like they have more data per field e.g. longer songname etc.
-//
+// 1084 bytes.
 typedef struct protracker_1_1b_hdr_t {
   char _songname[20];        // Should include trailing nul byte(s).
   sample_t samples[31];      // Sample numbers are 1-31. Early versions had only 15 samples.
