@@ -2,7 +2,7 @@
 // http://portaudio.com/
 // Ubuntu: `sudo apt install portaudio19-dev`
 // Compile e.g.:
-// gcc tests/main_play_file.c apg_wav.c -o test_play_file.bin -I ./ -lm -lportaudio
+// gcc examples/main_play_file.c apg_wav.c -o test_play_file.bin -I ./ -lm -lportaudio
 
 #include "portaudio.h"
 #include "apg_wav.h"
