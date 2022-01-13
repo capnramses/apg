@@ -4,10 +4,10 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## Contents
 
-| Library     | Description                                     | Language | # Files         | Version | Fuzzed                                        |
+| Library     | Description                                     | Language | # Files         | Version | Fuzzed With                                   |
 | ----------- | ----------------------------------------------- | -------- | --------------- | ------- | --------------------------------------------- |
 | apg         | Generic C programming utils.                    | C        | 1               | 1.3     | No                                            |
-| apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.1     | Yes - [AFL](https://lcamtuf.coredump.cx/afl/) |
+| apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.1     | [AFL](https://lcamtuf.coredump.cx/afl/) |
 | apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont | 0.12    | No                                            |
 | apg_jobs    | Simple worker/jobs thread pool system.          | C        | 2               | 0.2     | No                                            |
 | apg_gldb    | OpenGL debug drawing (lines, boxes, ... )       | C        | 2               | 0.3     | No                                            |
@@ -22,10 +22,8 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## LICENCE
 
-Some files in this repository may be from third-party libraries.
-It is the user's responsibility to determine and respect the licences of these files.
-All other files are are dual-licenced and may be used by you under the terms of your
-choice of licence:
+Libraries is this repository are dual-licenced and may be used by you under the terms of your
+choice of licence. See subsections below for licences of optional third-party components.
 
 -------------------------------------------------------------------------------------
 FIRST LICENCE OPTION
@@ -71,3 +69,64 @@ SECOND LICENCE OPTION
 > 
 > For more information, please refer to <http://unlicense.org>
 -------------------------------------------------------------------------------------
+
+## Dependencies Used In Example Programs
+
+Please note that some optional test and demonstration programs contained in this repository make use of third-party libraries with their own licences,
+and it is the users responsibility to also meet these requirements if you use or reproduce these works.
+
+### PortAudio
+
+[PortAudio](http://portaudio.com/) is used here under its V19 Licence:
+
+> PortAudio Portable Real-Time Audio Library
+> Copyright (c) 1999-2011 Ross Bencina and Phil Burk
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in > the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the > Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+> IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### stb_image and stb_image_write
+
+[stb](https://github.com/nothings/stb) libraries `stb_image.h` and `stb_image_write.h` are used here under the Public Domain licence option:
+
+> This software is available under 2 licenses -- choose whichever you prefer.
+> 
+> ALTERNATIVE A - MIT License
+> Copyright (c) 2017 Sean Barrett
+> Permission is hereby granted, free of charge, to any person obtaining a copy of
+> this software and associated documentation files (the "Software"), to deal in
+> the Software without restriction, including without limitation the rights to
+> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+> of the Software, and to permit persons to whom the Software is furnished to do
+> so, subject to the following conditions:
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+>
+> ALTERNATIVE B - Public Domain (www.unlicense.org)
+> This is free and unencumbered software released into the public domain.
+> Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+> software, either in source code form or as a compiled binary, for any purpose,
+> commercial or non-commercial, and by any means.
+> In jurisdictions that recognize copyright laws, the author or authors of this
+> software dedicate any and all copyright interest in the software to the public
+> domain. We make this dedication for the benefit of the public at large and to
+> the detriment of our heirs and successors. We intend this dedication to be an
+> overt act of relinquishment in perpetuity of all present and future rights to
+> this software under copyright law.
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+> ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+> WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+> 
