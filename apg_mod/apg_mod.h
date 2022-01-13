@@ -40,6 +40,13 @@ History
 #ifndef _APG_MOD_H_
 #define _APG_MOD_H_
 
+#ifdef _WIN32
+/** Explicit symbol export for building .DLLs with MSVC so it generates a corresponding .LIB. */
+#define APG_MOD_EXPORT __declspec( dllexport )
+#else
+#define APG_MOD_EXPORT
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,7 +54,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum apg_mod_fmt_t {
+APG_MOD_EXPORT typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
   APG_MOD_FMT_FASTTRACKER_2CH,
   APG_MOD_FMT_FASTTRACKER_6CH,
@@ -62,12 +69,12 @@ typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_MAX
 } apg_mod_fmt_t;
 
-typedef struct apg_mod_t {
+APG_MOD_EXPORT typedef struct apg_mod_t {
   int8_t* sample_data_ptrs[31]; // PCM 8-bit signed samples for *Paula* Amiga chip.
 } apg_mod_t;
 
-bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
-bool apg_mod_write_file( const char* filename );
+APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
+APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus
 }
