@@ -19,12 +19,12 @@ Licence: see header.
 // Note the module files are Motorola format (big-endian) so any variables >1 byte need a conversion (there are only a few).
 // 30 bytes.
 typedef struct sample_t {
-  char _name[22];          // Pad with nul byte(s).
-  uint16_t length_be;      // This is the number of 2-byte *words*. Multiply x2 to get bytes. Big-endian - swap the bytes for LE.
-  uint8_t finetune;        // Lower 4 bits stored as signed 4-bit number. Upper 4-bits are set to 0.
-  uint8_t volume;          // Range is 0x00-0x40 or 0-64 decimal.
-  uint16_t loop_start_be;  // n words offset from start of sample. x2 = offset in bytes. Big-endian.
-  uint16_t loop_length_be; // n of words. x2 = offset in bytes. Big-endian.
+  char _name[APG_MOD_SAMPLE_NAME_LEN]; // WARNING: Does not have a terminating \0.
+  uint16_t length_be;                  // This is the number of 2-byte *words* - multiply x2 to get bytes. WARNING: Big-endian - swap the bytes for LE.
+  uint8_t finetune;                    // Lower 4 bits stored as signed 4-bit number. Upper 4-bits are set to 0.
+  uint8_t volume;                      // Range is 0x00-0x40 or 0-64 decimal.
+  uint16_t loop_start_be;              // n words offset from start of sample. x2 = offset in bytes. WARNING: Big-endian - swap the bytes for LE.
+  uint16_t loop_length_be;             // n of words. x2 = offset in bytes.  WARNING: Big-endian - swap the bytes for LE.
 } sample_t;
 
 // The MOD format is headerless so not technically a 'header' but I refer to it as one.
@@ -32,12 +32,12 @@ typedef struct sample_t {
 // look like they have more data per field e.g. longer songname etc.
 // 1084 bytes.
 typedef struct protracker_1_1b_hdr_t {
-  char _songname[20];                  // Should include trailing nul byte(s).
-  sample_t samples[APG_MOD_N_SAMPLES]; // Sample numbers are 1-31. Early versions had only 15 samples.
-  uint8_t song_length;       // Range is 1-128. This is the number of pattern orders (from orders_table) to play in the song, including repeated patterns.
-  uint8_t unused;            // Set to 127 to make old trackers parse all patterns. PT used it to mean 'restart'.
-  uint8_t orders_table[128]; // Positions 0-127.  Values are a number 0-63 to indicate pattern to play at that position.
-  char magicletters[4]; // address 1080. "M.K." (or "FLT4" or "FLT8"). If not here assume song uses only 15 samples or text was removed to obfuscate the music.
+  char _songname[APG_MOD_SONG_NAME_LEN]; // Should include trailing nul byte(s).
+  sample_t samples[APG_MOD_N_SAMPLES];   // Sample numbers are 1-31. Early versions had only 15 samples.
+  uint8_t song_length; // Range is 1-128. This is the number of pattern orders (from orders_table) to play in the song, including repeated patterns.
+  uint8_t unused;      // Set to 127 to make old trackers parse all patterns. PT used it to mean 'restart'.
+  uint8_t orders_table[APG_MOD_ORDERS_MAX]; // Positions 0-127.  Values are a number 0-63 to indicate pattern to play at that position.
+  char magicletters[4]; // Address 1080. "M.K." (or "FLT4" or "FLT8"). If not here assume song uses only 15 samples or text was removed to obfuscate the music.
 } protracker_1_1b_hdr_t;
 
 typedef struct record_t {
@@ -132,8 +132,8 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     hdr_ptr->magicletters[3] );
   printf( "# Channels:  %i\n", mod_ptr->n_chans );
 
-  mod_ptr->song_name[20] = '\0'; // Song names are usually not nul-terminated.
-  memcpy( mod_ptr->song_name, hdr_ptr->_songname, 20 );
+  mod_ptr->song_name[APG_MOD_SONG_NAME_LEN] = '\0'; // Song names are usually not nul-terminated.
+  memcpy( mod_ptr->song_name, hdr_ptr->_songname, APG_MOD_SONG_NAME_LEN );
 
   printf( "Song name:   \"%s\"\n", mod_ptr->song_name );
   printf( "Song length: %u\n", (uint32_t)hdr_ptr->song_length );
@@ -145,7 +145,7 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   int max_pattern = 0;
   printf( "Orders Table:\n" );
   // NOTE(Anton) could probably stop at song_length here, not the full 128
-  for ( int i = 0; i < 128; i++ ) {
+  for ( int i = 0; i < APG_MOD_ORDERS_MAX; i++ ) {
     if ( hdr_ptr->orders_table[i] > max_pattern ) { max_pattern = hdr_ptr->orders_table[i]; }
     printf( "%02i", hdr_ptr->orders_table[i] );
     if ( ( 0 == ( i + 1 ) % 32 ) ) {
@@ -195,14 +195,14 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   // samples always start with 2 zeroes
 
   // TODO(Anton)! if older type then offset is only + 600 not + 1084!
-  uint32_t offset = 1084 + mod_ptr->n_patterns * 64 * mod_ptr->n_chans * 4; // 1024 * n_patterns + header's offset of 1084
+  uint32_t offset = 1084 + mod_ptr->n_patterns * APG_MOD_N_PATTERN_ROWS * mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES; // 1024 * n_patterns + header's offset of 1084
 
   printf( "Samples:\n" );
   // offset &or size is slightly off here somehow
   // some samples i output seemed to be correct as 8-bit signed 1200Hz or 8000Hz PCM waves.
   for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
-    mod_ptr->sample_names[i][22] = '\0';
-    memcpy( mod_ptr->sample_names[i], hdr_ptr->samples[i]._name, 22 );
+    mod_ptr->sample_names[i][APG_MOD_SAMPLE_NAME_LEN] = '\0';
+    memcpy( mod_ptr->sample_names[i], hdr_ptr->samples[i]._name, APG_MOD_SAMPLE_NAME_LEN );
 
     int8_t* byte_ptr             = record.data_ptr;
     mod_ptr->sample_data_ptrs[i] = &byte_ptr[offset];

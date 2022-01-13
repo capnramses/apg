@@ -56,7 +56,7 @@ ToDo
   * S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
   * XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
   * Other formats here https://en.wikipedia.org/wiki/Module_file
-	* 
+  *
 History
 ---------------------
 
@@ -82,8 +82,10 @@ extern "C" {
 
 #define APG_MOD_N_SAMPLES 31       // Default
 #define APG_MOD_SONG_NAME_LEN 20   // Default
+#define APG_MOD_ORDERS_MAX 128     // Max song length. Default 128.
 #define APG_MOD_N_PATTERN_ROWS 64  // Default
 #define APG_MOD_SAMPLE_NAME_LEN 22 // Default
+#define APG_MOD_N_NOTE_BYTES 4     // Default
 
 APG_MOD_EXPORT typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
@@ -123,7 +125,9 @@ APG_MOD_EXPORT typedef struct apg_mod_t {
 
 // Read in a module file from disk. Call apg_mod_free() to release allocated memory.
 APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
+
 APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
+
 APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus
