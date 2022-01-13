@@ -194,8 +194,17 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   // samples are stored after the patterns.
   // samples always start with 2 zeroes
 
+  int8_t* byte_ptr = record.data_ptr;
+  uint32_t offset  = 1084;
+  for ( int p = 0; p < mod_ptr->n_patterns; p++ ) {
+    for ( int r = 0; r < APG_MOD_N_PATTERN_ROWS; r++ ) {
+      mod_ptr->pattern_row_ptrs[p][r] = &byte_ptr[offset];
+      offset += mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES;
+    }
+  }
+
   // TODO(Anton)! if older type then offset is only + 600 not + 1084!
-  uint32_t offset = 1084 + mod_ptr->n_patterns * APG_MOD_N_PATTERN_ROWS * mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES; // 1024 * n_patterns + header's offset of 1084
+  // uint32_t offset = 1084 + mod_ptr->n_patterns * APG_MOD_N_PATTERN_ROWS * mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES; // 1024 * n_patterns + header's offset of 1084
 
   printf( "Samples:\n" );
   // offset &or size is slightly off here somehow
@@ -204,17 +213,16 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     mod_ptr->sample_names[i][APG_MOD_SAMPLE_NAME_LEN] = '\0';
     memcpy( mod_ptr->sample_names[i], hdr_ptr->samples[i]._name, APG_MOD_SAMPLE_NAME_LEN );
 
-    int8_t* byte_ptr             = record.data_ptr;
     mod_ptr->sample_data_ptrs[i] = &byte_ptr[offset];
-    mod_ptr->sample_bytes[i]     = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
-    if ( offset + mod_ptr->sample_bytes[i] > record.sz ) {
+    mod_ptr->sample_sz_bytes[i]  = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
+    if ( offset + mod_ptr->sample_sz_bytes[i] > record.sz ) {
       fprintf( stderr, "Sample is outside range of file memory - looks like a corrupted file or wrong format.\n" );
       return false;
     }
-    if ( mod_ptr->sample_bytes[i] > 0 ) { printf( "  Sample %i name: \"%s\"\n", i + 1, mod_ptr->sample_names[i] ); }
+    if ( mod_ptr->sample_sz_bytes[i] > 0 ) { printf( "  Sample %i name: \"%s\"\n", i + 1, mod_ptr->sample_names[i] ); }
 #ifdef DUMP_RAW_SAMPLES
-    if ( mod_ptr->sample_bytes[i] != 0 ) {
-      if ( offset + mod_ptr->sample_bytes[i] > record.sz ) {
+    if ( mod_ptr->sample_sz_bytes[i] != 0 ) {
+      if ( offset + mod_ptr->sample_sz_bytes[i] > record.sz ) {
         fprintf( stderr, "sample to write is outside range of file memory.\n" );
         return false;
       }
@@ -223,8 +231,8 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
       sprintf( tmp, "sample%i.raw", i );
       FILE* of_ptr = fopen( tmp, "wb" );
       if ( !of_ptr ) { return false; }
-      printf( "writing %s size %u\n", tmp, mod_ptr->sample_bytes[i] );
-      int n = fwrite( &byte_ptr[offset], mod_ptr->sample_bytes[i], 1, of_ptr );
+      printf( "writing %s size %u\n", tmp, mod_ptr->sample_sz_bytes[i] );
+      int n = fwrite( &byte_ptr[offset], mod_ptr->sample_sz_bytes[i], 1, of_ptr );
       if ( 1 != n ) { return false; }
       fclose( of_ptr );
     }
@@ -237,7 +245,7 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     printf( "    Loop length:    %u\n", (uint32_t)hdr_ptr->samples[i].loop_length_be );
 #endif
 
-    offset += mod_ptr->sample_bytes[i];
+    offset += mod_ptr->sample_sz_bytes[i];
   } // endfor N_SAMPLES
 
   return true;

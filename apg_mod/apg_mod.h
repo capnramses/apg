@@ -51,12 +51,12 @@ ToDo
 * Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
 * Interactive visual track editor demo.
 * File writing.
+* Maybe try web asm -> web player?
 * Support other module formats:
   * IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
   * S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
   * XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
   * Other formats here https://en.wikipedia.org/wiki/Module_file
-  *
 History
 ---------------------
 
@@ -114,12 +114,13 @@ APG_MOD_EXPORT typedef struct apg_mod_t {
   uint8_t* orders_ptr; // Points into mod_data_ptr.
   uint8_t n_orders;    // Song length in number of patterns/verses.
 
-  // Patterns
-  uint32_t n_patterns;
+  // Patterns (verses).
+  void* pattern_row_ptrs[APG_MOD_ORDERS_MAX][APG_MOD_N_PATTERN_ROWS]; // Each pattern row is mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES bytes.
+  int n_patterns;
 
-  // Samples
+  // Samples (instruments).
   int8_t* sample_data_ptrs[APG_MOD_N_SAMPLES];                       // PCM 8-bit signed samples for *Paula* Amiga chip. These point into mod_data_ptr.
-  uint32_t sample_bytes[APG_MOD_N_SAMPLES];                          // Size of each sample in bytes. Converted from 16-bit big-endian 'word' lengths.
+  uint32_t sample_sz_bytes[APG_MOD_N_SAMPLES];                       // Size of each sample in bytes. Converted from 16-bit big-endian 'word' lengths.
   char sample_names[APG_MOD_N_SAMPLES][APG_MOD_SAMPLE_NAME_LEN + 1]; // Sample names with nul-terminator appended so they can be used as C-strings.
 } apg_mod_t;
 
