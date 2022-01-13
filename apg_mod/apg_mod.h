@@ -4,18 +4,35 @@ Anton Gerdelan <antonofnote at gmail> 2022
 C99
 Licence: See bottom of this file or LICENSE file.
 
+Status: Not functional yet.
+
+What is this library?
+---------------------
+
+This is an Amiga music module (.mod) loader I am making out of curiosity. I
+never had an Amiga or played module files but I am finding audio programming
+(see apg_wav), and dealing with old file formats (see also apg_bmp, apg_tga)
+interesting.
+
+The design philosophy of the library is similar to my other apg library projects:
+
+* Simple C code with no dependencies and a stable ABI.
+* Minimal run-time memory allocation. Just one memory allocation call is made
+  when loading the file.
+* Some convenience variables or functions to convert to C-strings and
+  little-endian data-types.
+* Otherwise just index directly into the file's memory during playback, as you
+  could in the original trackers.
+
 What are Modules?
 ---------------------
 
 Modules are music files started by Karsten Obarski's "Ultimate SoundTracker"
-for Commodore Amiga in 1987. Similar to MIDI files, except they store the
-sample sounds in the music file itself, rather than relying on sound banks
-that come with the sound device. That means they always sound the same on
-different devices, and can have custom digital samples.
-
-Brett Paterson (CEO of Firelight) wrote a tutorial .txt in 1995 which is very
-useful and shows the origins of FMOD, which still looks like it supports various
-module formats.
+for Commodore Amiga in 1987. They are similar to MIDI files, except they
+store the sample sounds (called "instruments" in MIDI) in the music file
+itself, rather than relying on sound banks that come with the sound device.
+That means they always sound the same on different devices, and can have
+custom digital samples such as vocal recordings.
 
 Format details here:
 http://fileformats.archiveteam.org/wiki/Amiga_Module
@@ -23,14 +40,23 @@ http://fileformats.archiveteam.org/wiki/Amiga_Module
 ToDo
 ---------------------
 
-* IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
-* S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
-* XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
-* Other formats here https://en.wikipedia.org/wiki/Module_file
+* Move raw sample rip into a test/ or examples/ program.
+* Figure out correct frequency for each sample and create a .wav rip test/
+  program.
+* Write a function to decode notes from patterns.
+* Figure out the playback row advance speed and whether to pin it to PAL or NTSC.
+* Write a full tracker/player example program using PortAudio.
+* Add repeat/loop features to samples.
+* Add effects and finetune values to samples.
 * Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
 * Interactive visual track editor demo.
 * File writing.
-
+* Support other module formats:
+  * IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
+  * S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
+  * XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
+  * Other formats here https://en.wikipedia.org/wiki/Module_file
+	* 
 History
 ---------------------
 
