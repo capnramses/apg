@@ -15,11 +15,13 @@
 void apg_sleep_ms( int ms ) {
 #ifdef WIN32
   Sleep( ms ); /* NOTE(Anton) may not need this since using gcc on Windows and usleep() works */
+/* NOTE(Anton) 13 Jan 2022 -- this nanosleep function didn't work on my linux despite _POSIX_C_SOURCE entering the elif
 #elif _POSIX_C_SOURCE >= 199309L
   struct timespec ts;
   ts.tv_sec  = ms / 1000;
   ts.tv_nsec = ( ms % 1000 ) * 1000000;
   nanosleep( &ts, NULL );
+  */
 #else
   usleep( ms * 1000 );
 #endif

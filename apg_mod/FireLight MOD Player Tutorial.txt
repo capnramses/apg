@@ -1,0 +1,2777 @@
+/* (tabstops=8)
+°°°°°°°°°°°°°°±±±±±±±±±±±±±²²²²²²²²²²²²²²²²²²²²²²²²±±±±±±±±±±±±±°°°°°°°°°°°°°°
+
+ ş MOD Player Tutorial by FireLight ş Copyright (c) Brett Paterson 1994-95 ş
+			  ş Last updated 17/11/95 ş
+
+°°°°°°°°°°°°°°±±±±±±±±±±±±±²²²²²²²²²²²²²²²²²²²²²²²²±±±±±±±±±±±±±°°°°°°°°°°°°°°
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±² : SECTION 0: ²±°                             ³
+³                           °±²     Index    ²±°                             ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Section 1 : INTRODUCTION
+		1.1 New in this version
+		1.2 Notes
+		1.3 Terminology
+		1.4 Contacting FireLight and feedback
+Section 2 : THE LOADER
+		2.1 Notes
+		2.2 Verification
+		2.3 Load Module Name
+		2.4 Load Sample Information
+		2.5 Load Order Information
+		2.6 Load Pattern Data
+		      2.6.1 Four bytes?
+		2.7 Load Sample Data
+		2.8 Phew :)
+Section 3 : PLAYING THE MOD
+		3.1 Ok Where Do I Start?
+		      3.1.1   Speed and BPM
+		3.2 Setting The Timer's Speed
+		3.3 Player Logic
+		      3.3.1   Orders/Patterns
+		      3.3.2   The Pattern Buffer
+		3.4 Inside Update Row
+		3.5 Period Frequencies and Fine Tune
+		      3.5.1   What do I do with this table?
+		      3.5.2   Gravis UltraSound
+		3.6 Volume
+Section 4 : MISCELLANEOUS
+		4.1 Notes Without Instrument Numbers or Frequencies
+		4.2 Effect Bxy and Dxy on the same row - backwards mods
+		4.3 Logic with Breaking and Jumping - pointers, orders, rows
+Section 5 : EFFECTS
+		5.1 Effect 0xy (Arpeggio)
+		5.2 Effect 1xy (Porta Up)
+		5.3 Effect 2xy (Porta Down)
+		5.4 Effect 3xy (Porta To Note)
+		5.5 Effect 4xy (Vibrato)
+		5.6 Effect 5xy (Porta + Vol Slide)
+		5.7 Effect 6xy (Vibrato + Vol Slide)
+		5.8 Effect 7xy (Tremolo)
+		5.9 Effect 8xy (Pan)
+		5.10 Effect 9xy (Sample Offset)
+		5.11 Effect Axy (Volume Slide)
+		5.12 Effect Bxy (Jump To Pattern)
+		5.13 Effect Cxy (Set Volume)
+		5.14 Effect Dxy (Pattern Break)
+		5.15 Effect Fxy (Set Speed)
+		5.16 Effect E0x (Set Filter)
+		5.17 Effect E1x (Fine Porta Up)
+		5.18 Effect E2x (Fine Porta Down)
+		5.19 Effect E3x (Glissando Control)
+		5.20 Effect E4x (Set Vibrato Waveform)
+		5.21 Effect E5x (Set Finetune)
+		5.22 Effect E6x (Pattern Loop)
+		5.23 Effect E7x (Set Tremolo WaveForm)
+		5.24 Effect E8x (Unused)
+		5.25 Effect E9x (Retrig Note)
+		5.26 Effect EAx (Fine Volume Slide Up)
+		5.27 Effect EBx (Fine Volume Slide Down)
+		5.28 Effect ECx (Cut Note)
+		5.29 Effect EDx (Delay Note)
+		5.30 Effect EEx (Pattern Delay)
+		5.31 Effect EFx (Invert Loop)
+
+Section 6 : APPENDIX - MOD FORMAT DOCUMENT
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±² : SECTION 1: ²±°                             ³
+³                           °±² Introduction ²±°                             ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 1.1 New in this version ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+New:
+====
+- Section 3.1.1 - Speed and BPM.
+- Section 3.3.2 - The Pattern Buffer
+- Section   4.2 - Effect Bxy and Dxy on the same row - backwards mods
+
+Changed/Added too:
+==================
+- Section 2.6   - Load pattern data section REWRITTEN - better pattern storage
+		  methods are discussed, along with memory handling.
+- Section 2.6.1 - 4 bytes? section changed and ADDED too. - new asm section.
+- Section 3.2   - Setting the timer speed section expanded and is clearer.
+- Section 3.4   - Inside update row pseudocode FIXED and REWRITTEN.
+- Section 3.5.2 - GUS frequency info completely changed, new GUS volume table
+- Section 5.1   - arpeggio, fixed (you add 8*finetune's not just 1 finetune)
+		  it is also added too for more understanding.
+- Section 5.5/  - vibrato/tremolo section totally REWRITTEN - DOUBLED in size.
+	  5.8     it's now fully comprehensive and easy to understand.
+- Section 5.12/ - pattern jump/pattern break added too.
+	  5.14
+- Section 5.19  - Effect E3x, Glissando added too, includes searching info.
+- Section 5.20  - wavecontrol explained better, and ADDED to.
+- Section 5.22  - Effect E6x, pattern loop bugfixed
+- Section 5.29  - Effect EDx, delay note added too, warnings about quirks
+
+- Spellchecked, and many other minor alterations/changes.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 1.2 Notes ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+I know half of you out there want this document to write a player for you,
+but I have just got to say that this is a REFERENCE, and even though I have
+done my utter best I can to provide you with a head start in writing a mod
+player, nothing beats experimentation and writing stupid mods, and playing
+them on your player to see if you did it right.
+
+I could lay down more rules and say "this is how you do it" but this is
+exactly what I DON'T want to do.
+
+Assumptions:
+============
+Throughout the document, exaggerated length variable names are used, I don't
+actually use these sort of variable names but they help to make things
+clearer. e.g. "NUMBER_OF_PATTERNS".  Variable names will be all stated in
+capitals.
+
+It is assumed you will have some sort of knowledge about
+    - Sound Cards (and programming of sound cards, though I do include GUS
+		   code in the files GUS.ASM/GUS.CPP, and info on the Sound
+		   Blaster is contained in FSBDOC.TXT)
+    - Interrupt Handlers (I will cover this though)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 1.3 Terminology ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+    TYPE    LENGTH  BITS    RANGE                   WATCOM/BORLAND/TURBO C
+   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+    byte    1       8       0-255                   unsigned char
+    word    2       16      0-65,535                unsigned short
+    dword   4       32      0-4,294,967,295         unsigned long
+   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+Throughout this text I use the terms BYTE,WORD, and DWORD, to make the
+document more general to all languages.  In C you can use typedefs to achieve
+the use of byte,word,dword terminology, and in pascal and asm the syntax is
+already suited to this anyway.
+
+ORDERS   - orders are how the mod plays from 0 to length of song.
+PATTERNS - patterns are played in any ORDER, and are the physical information.
+
+TICK - I refer to a clock tick for the interrupt handler as a tick, some
+others use the term FRAME.  I will be using the term tick throughout the whole
+document.
+
+ALL of the time I present a type of pseudocode to try not to seem too biased
+towards a language, and rarely will I used straight C code to demonstrate how
+it is done.
+I ALWAYS explain it properly in english and pseudocode first, before I
+resort to any real code though.
+
+In the pseudocode the following terms are used:
+===============================================
+x SHR y         = shift x right by y bits
+x SHL y         = shift x left by y bits
+x AND y         = bitwise AND x by y
+x OR y          = bitwise OR x by y
+
+When I do use C to display how my code actually works, then here are some
+of the symbols and what they mean for the C illiterate:
+=======================================================
+>> = bitwise shift right
+<< = bitwise shift left
+&  = bitwise AND
+|  = bitwise OR
+&& = logical AND
+|| = logical OR
+%  = modulus operator (remainder)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 1.4 Contacting FireLight and feedback ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+email : firelght@suburbia.apana.org.au
+ post : Brett Paterson,
+	48/a Parr st,
+	Leongatha, 3953,
+	Victoria, Australia.
+IRC : FireLight on #coders, #trax or #aussies
+
+My internet access is limited at the moment so I might not be able to reply,
+but who knows I might have proper access by the time you read this.
+
+I have spent about a YEAR compiling and writing these documents, and it would
+be encouraged if you could show your support by sending me a postcard to the
+above postal address.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±² : SECTION 2 : ²±°                            ³
+³                           °±²  The Loader   ²±°                            ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.1 Notes ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Well first we've got to load the module in right?  Following is a step by
+step way to code your loader, and storage issues will be discussed to help
+you along.  I really don't feel like just writing another MOD format
+description, so you will find one in the appendix of section 6 written by
+Lars Hamre(?), the author of Protracker.
+
+You WILL need to refer to the format document and this document side by side.
+The loader section of this document doesn't actually give a map of mod format
+and could be confusing, though it does go through it byte by byte.
+
+The following section has their subsections which are in boxes, and in each
+of these sections are 4 important subsections
+
+- EXPLANATION   (describes what the section is on about, for understanding)
+- PSEUDOCODE    (actually shows HOW to load the information)
+- STORAGE ISSUE (helps on how to store the information loaded)
+- SUGGESTION    (a helpful hint or suggestion to do after this step)
+
+I placed the pseudocode section before storage issues because I know you are
+probably going to be eager and want to jump into some code straight away.
+Storage issue follows just to be a guiding hand; not a 'must'.
+each pseudocode section follows on from the last.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.2 Verification ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Explanation:
+============
+Before we attempt to load a mod, we should check that it is in fact a mod.
+Every mod has a unique signature, and in case of the .MOD format, this is
+in the form of a 4 letter string containing the letters "M.K.", or "8CHN" or
+a variety of other signatures for their mutated formats.
+  These describe the type of mod, and the identifier signature is stored at
+offset 1080 (438h) in the file, so should be checked first.
+
+
+PseudoCode:
+===========
+- Seek to offset 1080 (438h) in the file
+- read in 4 bytes
+-           compare them to "M.K."  - if true we have a 4 channel mod
+- otherwise compare them to "6CHN"  - if true we have a 6 channel mod
+- otherwise compare them to "8CHN"  - if true we have an 8 channel mod
+- otherwise exit and display error message.
+
+There are also rare tunes that use **CH where ** = 10-32 channels
+
+Suggestion:
+===========
+Use this point to store the number of channels in a variable of your choice
+(I just use a global variable called CHANNELS)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.3 Load Module Name ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Explanation:
+============
+This is a trivial part of the loader and just holds the Title or name of the
+mod.  It is the very first 20 bytes of the MOD.
+
+PsuedoCode:
+===========
+- Seek back to position 0, the start of the file
+- read in 20 bytes, store as MODULE_NAME.
+
+Storage Issue:
+==============
+The name of the module is a 20 byte string, padded by 0's.
+Here you can either store your module name as a global variable, in a
+character string, or do what I do and store all the general information about
+the mod in a structure like this
+
+struct MODHEADER {
+	char NAME[20]
+	...
+	other information (will get to this later)
+	...
+} MODHEAD
+
+OR just
+
+char NAME[20]
+
+It's a good idea to set up a structure like this for future use, there is a
+lot more information we will need to throw in here later, but of course you
+don't need a structure, you can keep it as a heap of loose variables.
+And of course if you are not interested in displaying the name of the module
+you could just discard it.
+
+Suggestion:
+===========
+Code a 1 line program to print out the name of your module to see if it's
+working properly. (exciting huh)
+
+NOTE: The Module name is supposed to be padded by 0's, and terminated with a
+      0, but sometimes this is not the case.  Sometimes a tracker will allow
+      all 20 bytes to store characters, which means no NULL terminator byte.
+	This causes functions like printf to give unpredictable output as it
+      cannot find the NULL terminator.  The way to fix this is just to use a
+      loop and print out each character one at a time, or overwrite the 20th
+      byte with a 0.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.4 Load Sample Information ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Explanation:
+============
+Sample information is stored at the start of a MOD file, and contains all the
+relevant information for each of the 31 samples.  This includes its name,
+length, loop points, finetune etc..
+So from here we loop 31 times and read in a block of information about the
+sample according to the loop counter.
+
+PseudoCode:
+===========
+- from this point, loop 31 times
+	- for the sample # <loopcounter>....
+	- read in 22 bytes,       store as SAMPLE_NAME
+	- read in 2 bytes (word), store as SAMPLE_LENGTH  *   \
+	- read in 1 byte,         store as FINE_TUNE      @   /\ IMPORTANT:
+	- read in 1 byte,         store as VOLUME               > see key
+	- read in 2 bytes (word), store as LOOP_START     *   \/   below
+	- read in 2 bytes (word), store as LOOP_LENGTH    *   /
+- end of loop
+
+KEY:
+====
+*  To get the real value in bytes, calculate it with (byte1*100h + byte2) * 2
+@  For FINE_TUNE, if the value is > 7, subtract 16 from it to get the signed
+   value (i.e. 0-7 = 0-7, and 8-15 = -8 to -1)
+
+Storage Issue:
+==============
+I think the best way to store information on the 31 instruments, is to store
+its information in a structure, then have an array of 31 of these instrument
+structures.  Like this:
+
+struct SAMPLE {
+	char SAMPLE_NAME[22]
+	word SAMPLE_LENGTH
+	byte FINE_TUNE
+	byte VOLUME
+	word LOOP_START
+	word LOOP_LENGTH
+
+	(also some physical position information - see sample loading section.
+	 some possibilities are under GUS...
+
+	dword GUS_OFFSET (offset in gus dram)
+
+	OR using main memory with sb say..
+
+	char *SAMP_BUFF (pointer to the actual physical data in memory)
+}
+
+now declare an array of 31 SAMPLEs.  I do this in the general mod header
+structure which is explained fully in the next section.
+The other way which can be used is just to keep a heap of global arrays like
+this;
+
+char SAMPLE_NAME[31][22]
+word SAMPLE_LENGTH[31]
+byte FINE_TUNE[31]
+byte VOLUME[31]
+word LOOP_START[31]
+word LOOP_LENGTH[31]
+
+Suggestion:
+===========
+Now code a little viewer once you have done this to make sure everything is
+stored properly.  This is VERY a important step.  Compare your output to
+the tracker it came from or a player that shows all sample information.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.5 Load Order Information ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Explanation:
+============
+Ok now sample information is loaded, the next section of the module contains
+order information.  Order information in a mod defines in what order patterns
+are going to be played.  This means the composer could set orders 0 and 1
+to pattern 0, for example, and the intent would be for pattern 0 to play
+twice.  Its entry in the order table would look like this.
+
+ORDER  : 0 1 2 3 4 5 6 7 8 9
+PATTERN: 0 0
+
+Note orders have to be from 0 to length of song, but patterns can be chopped
+and changed around in any order.
+The first byte from here will tell us the length of the song in -orders-,
+even though they are stored in 128 bytes of information.
+
+PsuedoCode:
+===========
+- read a byte, store as SONG_LENGTH (this is the number of orders in a song)
+- read a byte, discard it (this is the UNUSED byte - used to be used in PT as
+   the restart position, but it is usually 127 so it isn't viable at all..)
+
+Now we are at the orders table, this is 128 bytes long and contains the order
+of patterns that are to be played in the song.  here we have to find out how
+many physical patterns there are in the module.  How do we do this? Simple
+just check every order byte and the highest value found is stored as the
+number of patterns in the song.
+
+- set NUMBER_OF_PATTERNS to equal 0
+- from this point, loop 128 times
+     - read 1 byte, store it as ORDER <loopcounter>
+     - if this value was bigger than NUMBER_OF_PATTERNS then set it to that
+       value.
+- end of loop
+- read 4 bytes, discard them (we are at position 1080 again, this is M.K. etc!)
+
+Storage Issue:
+==============
+One way is to go back to the other original MODhead structure, which contained
+general information about the mod. here is the entire structure.
+
+struct MODHEADER {
+	char NAME[20]              ; song name
+	SAMPLE INST[31]            ; instrument headers
+	byte SONG_LENGTH           ; song length
+	byte NUMBER_OF_PATTERNS    ; number of physical patterns
+	byte ORDER[128]            ; pattern playing orders
+} MODHEAD;
+
+or the second way would just to be store them all as global variables
+
+char NAME[20]                      ; song name
+byte SONG_LENGTH                   ; song length
+byte NUMBER_OF_PATTERNS            ; number of physical patterns
+byte ORDER[128]                    ; pattern playing orders
+
+no array of samples here because if you saw the sample header loading section
+we just stored them all as their own arrays.
+
+Suggestion:
+===========
+As always print out the 128 orders, and see if the pattern numbers displayed
+are correct.  Now you should have a viewer that can just about display every
+bit of information about the module!  OK that stuff was easy.  Now it's time
+for something tougher.. the pattern data!
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.6 Load Pattern Data ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Explanation:
+============
+
+This is about the hardest part to code of the LOADER, and storage issues here
+are VERY important, so it will be discussed first.  I'm going to try and be
+as general as I can as I don't want to appear to be trying to steer you in
+any direction, but I will be specific enough to guide you.
+
+Storage Issues:
+===============
+There are only a few ways to store pattern data, I've spent some time
+pondering this issue.
+Patterns really need to be stored DYNAMICALLY, or in other words only use as
+much memory as you need.
+So using a fixed array is not a good idea.  The best way is using pointers,
+one to point to the actual pattern data, and another to rove through the
+pattern data while playing/loading and pluck out the right notes.
+
+I found the most viable methods of storing pattern data are -
+
+1. Creating a pointer to ALL pattern data.  i.e. one big chunk.
+   Most players use this method, including the GUSplay routines
+   by Cascada and even Protracker by Lars Hamre.  Older versions of FMOD used
+   this method also.
+
+Diagramatically it looks like this:
+
+Offset       0      x      2x     3x     4x    5x     6x     7x     8x     9x
+	     ÚÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄ¿
+PatternBuff Ä´ PAT0   PAT1   PAT2   PAT3   PAT4   PAT5   PAT6   PAT7   PAT8 ³
+	     ÀÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÙ
+
+   The Problem with this is in REAL MODE DOS we have 64kb segments, which can
+   cause some problems as you have to change segments to access the next 64kb
+   of memory.  Segment/offset arithmetic needs to be used to avoid wraparound,
+   or you can let it be done for you, as is shown next.
+
+   Ways to avoid this segment wraparound are:
+   1.  Use protected mode for flat access to all available memory - no wrap.
+       The normal ways to do this are to use DOS4G/W (tm) Rational Systems,
+       or PMODE/W by Charles Scheffold and Thomas Pytel.  If you are a C/C++
+       programmer you can only use Watcom C++ to use these systems.
+       Other protected mode handlers are Borland Powerpack (which is shit btw)
+       or you can write your own DPMI routines.
+   2.  In (borland) C, use HUGE pointers.  i.e. char huge *buffer;  This lets
+       you access all of the 640kb of base memory as usual, but it does the
+       segment/offset calculation for you! and AUTOMATICALLY.  It is a great
+       feature of C, but is also slower than using protected mode because it
+       has to do the calculations every time you reference it.
+       You use farmallocs etc to allocate the memory.  Look up more in the
+       manuals for more information.
+
+2. Create an array of pointers, i.e. a seperate pointer for each pattern.
+   This method has to be used with new formats supporting variable lengthed
+   patterns.  It has an advantage for real mode, but otherwise for a .MOD/S3M
+   player which are 64 rows long, method 1 is just as good.
+
+Diagramatically it looks like this:
+				 ÚÄÄÄÄÄÄ¿
+		 ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´ PAT0 ³
+		 ³     ÚÄÄÄÄÄÄ¿  ÀÄÄÄÄÄÄÙ ÚÄÄÄÄÄÄ¿
+		 ³ ÚÄÄÄ´ PAT1 ³ ÚÄÄÄÄÄÄ¿  ³ PAT3 ³
+PatternBuff[0] ÄÄÙ ³   ÀÄÄÄÄÄÄÙ ³ PAT2 ³  ÀÄÄÂÄÄÄÙ
+PatternBuff[1] ÄÄÄÄÙ    ÚÄÄÄÄÄÄÄÁÄÄÄÄÄÄÙ     ³   ÚÄÄÄÄÄÄ¿
+PatternBuff[2] ÄÄÄÄÄÄÄÄÄÙ        ÚÄÄÄÄÄÄÄÄÄÄÄÙ ÚÄ´ PAT4 ³
+PatternBuff[3] ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ     ÚÄÄÄÄÄÄÄÙ ÀÄÄÄÄÄÄÙ
+PatternBuff[4] ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ   ÚÄÄÄÄÄÄ¿
+PatternBuff[5] ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´ PAT5 ³  ÚÄÄÄÄÄÄ¿
+PatternBuff[6] ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿    ÀÄÄÄÄÄÄÙ  ³ PAT6 ³
+PatternBuff[7] ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿    ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÙ
+PatternBuff[8] ÄÄÄÄÄÄÄÄ¿      ÚÄÄÁÄÄÄ¿
+PatternBuff[9] Ä    ÚÄÄÁÄÄÄ¿  ³ PAT7 ³
+PatternBuff[10] Ä   ³ PAT8 ³  ÀÄÄÄÄÄÄÙ
+PatternBuff[11] Ä   ÀÄÄÄÄÄÄÙ
+PatternBuff[12] Ä
+...
+PatternBuff[255] Ä
+
+   Say you were doing this in C you would declare it like this:
+   char far *patbuff[256]
+   This creates 256 pointers.  One for each pattern as you like.
+
+   In the above diagram with 0-8 patterns, the other pointers 9-255 are
+   not allocated any memory so just dangle around in cyberspace.  They are
+   not of concern.  They don't cost any memory and if we don't touch them
+   then we wont get any problems.
+
+3.  You CAN avoid having this array of 256 pointers, and make it more dynamic
+    by using a DOUBLE POINTER.
+    A double pointer is basically a pointer to a list of pointers..
+    got that? :)
+    say in C, the declaration would look like this.
+
+    char **patbuff;
+
+    first you allocate memory for the number of patterns you think you will
+    use.. ie.
+
+    patbuff = (char *)malloc(NUMBER_OF_PATTERNS * sizeof(char *));
+
+    Then to allocate memory for each pattern individually, do it like you
+    would for the array method discussed in method 2.
+
+   Advantages of Method 2 and 3 over method 1:
+   ===========================================
+   - You don't have to worry about wraparound any more, or going over segment
+     boundaries. (because at most a pattern could be is 8192 bytes! - and
+     that's a 32 channel pattern with 64 rows and 4 bytes per note)
+   - Only far pointers are needed now, not huge pointers.  Saves calculation.
+   - Instead of calculating the pattern offset value whilst playing, you just
+     reference the correct pattern pointer using the pattern number as the
+     index.
+   - ESSENTIAL for variable lengthed patterns in formats like XM.
+   - Easier to use these small pages for EMS memory handling.
+   Disadvantages:
+   ==============
+   - Fragmentation (not really a problem)
+
+
+
+When allocating memory, you need to know how much memory you need to use.
+Using the one huge pattern buffer method, It works this way:
+
+- declare a pointer and allocate it the amount of memory calculated below;
+
+	  CHANNELS * 4 * 64 * (NUMBER_OF_PATTERNS+1)
+		     ³   ³
+		     ³   ÀÄÄÄ (rows per channel)
+		     ÀÄÄÄÄÄÄÄ (bytes per note)
+
+Why add 1 to NUMBER_OF_PATTERNS? well because patterns start at 0, and finish
+at NUMBER_OF_PATTERNS, hence the additional 1.  If you didn't add 1 and there
+was only 1 pattern you would end up allocating 0 bytes for the pattern data.
+
+This value is normally going to be a very big number, so a dword will be
+needed to store it.
+
+So to find the physical pattern in your pattern buffer, calculate the offset
+with the formula (CHANNELS * 4 * 64) * PATTERN_NUMBER.
+
+Say we want to point to the start of pattern 4 in an 8CHN mod.
+  (8 * 4 * 64) * 4
+  = 8192.
+So as you travel through this pattern just increment your pointer by 4 bytes
+at a time.
+
+A note is stored in the actual file as 4 bytes, it is done in this fashion.
+The pseudocode below shows how to unravel this amigafied mess.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ Byte 0    Byte 1   Byte 2   Byte 3  ³
+³ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³
+³aaaaBBBB CCCCCCCCC DDDDeeee FFFFFFFFF³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+aaaaDDDD     = sample number
+BBBBCCCCCCCC = sample period value
+eeee         = effect number
+FFFFFFFF     = effect parameters
+
+PseudoCode:
+===========
+- calculate amount of memory needed for NUMBER_OF_PATTERNS patterns like so:
+    CHANNELS * 4 * 64 * (NUMBER_OF_PATTERNS+1)
+- create a base pointer and allocate the memory needed
+- From this point, loop for as many times as NUMBER_OF_PATTERNS
+     - From this point, loop 64 * CHANNELS times (this equals 1 pattern)
+	  - read 4 bytes
+	  - store SAMPLE_NUMBER as    (byte0 AND 0F0h) + (byte2 SHR 4)
+	  - store PERIOD_FREQUENCY as ((byte0 AND 0Fh) SHL 8) + byte1;
+	  - store EFFECT_NUMBER as    byte2 AND 0Fh
+	  - store EFFECT_PARAMETER as byte 3
+	  - increment pattern pointer by 4 bytes
+     - end loop
+- end loop
+
+OK:
+===
+Alright so lets look at this again in simpler terms:
+ - We have a big buffer that is meant to store all the pattern data
+ - Then we start loading in the notes *4* bytes at a time, and unravel them
+     into something meaningful as shown above.
+ - store the new note variables one after the other, and it should fill the
+     buffer to the exact size as was allocated in the beginning.
+
+Suggestion:
+===========
+With EFFECT_PARAMTER, you might be tempted to store the 2 values stored in
+here as 2 seperate variables, e.g. EFFECT_PARAMETER_X, and EFFECT_PARAMETER_Y.
+I used to store them this way but I assure you when you get into coding your
+effects this method is quite inefficient, I saved memory and increased
+speed (but not noticeably) just by storing them in the 1 byte, and splitting
+them only in the few times that you do need it. (i.e, printing them out
+separately, or vibrato, or for finding out which E (extra) effect to use etc.)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.6.1 Four bytes? ²±° ³ *IMPORTANT*
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+At this stage you're probably thinking.. how do I fit all this into only 4
+bytes?
+For a start, DON'T store the amiga periods as your note value.  Convert each
+period to a note number.  **SEE SECTION 3.5.1** for more discussion on this,
+and notes and frequencies.  In summary you just scan through the amiga table
+until it matches the value you loaded in, and give it a note value according
+to a counter variable.
+
+Anyway even if you did store the amiga period value as your note (which you
+wont), then you can still fit it all into 4 bytes.  The file did it so why
+can't you?
+I used bit allocation.  This means I only use the bits I need in a byte, and
+not a whole byte.
+
+An example of this is the note volume is only capable of getting up to 64, so
+we only need 6 bits.  The sample number goes up to 31.  This only needs 5
+bits.  Follow here and see how things are allocated.  This is similar to the
+way I do it in my player.  In C you can allocate a variable and tell how many
+bits you want to use per variable (make sure they add up to a multiple of 8!)
+
+ASM:
+====
+In asm you would have to use a 4 byte note buffer, and do the bit
+calculations yourself runtime, before you access them, which isn't too hard.
+
+You could use a dword to store the whole note information, read it into
+EAX say, then to pick out the effect parameter, which you stored in the lower
+8 bits for example, all you have to do is reference AL!
+
+Say you have your pattern data pointed to by DS:(E)SI.  This is a rough
+example of how to select a note and pick out the relevant information.
+
+mov eax, dword ptr ds:[si]              ; eax now holds the whole note's info
+					; (or even just use a simple LODSD)
+mov ebx, eax
+shr ebx, 21
+mov note, ebx                           ; note number       (11 bits)
+
+mov ebx, eax
+shr ebx, 16
+and  bx, 31
+mov sample, bx                          ; sample number     (5 bits)
+
+mov effectno, ah                        ; effect number     (8 bits)
+mov effectparm, al                      ; effect parameter  (8 bits)
+
+to move to the next note:
+add si, 4
+(this isn't necessary if you used LODSD as it increments SI for you - although
+remember that a single lodsd is a cycle or 2 slower than using a mov as well
+as an add)
+
+In this case it would probably be better to store the note and sample number
+in the lower 16 bits instead of the effect information, because note and
+number are accessed a lot more.
+
+C++ example:
+============
+int note:11;    // 0-??  = 11 bits = 0-2048 should be plenty for your needs.
+byte number:5;  // 0-31  = 5 bits
+byte effect;    // 0-15  = 4 bits, but use 8 to keep things even
+byte eparm;     // 0-255 = 8 bits
+
+Even smaller!:
+==============
+For one version of FMOD (not released), I actually used 3 bytes!!
+  For this I used 7 bits to store the note, which has a range of 0-127.
+I did this by not counting fine tunes in my note value (i.e. notes were
+stored as 1 note apart, not 8 finetunes apart like normal, so it requires 8
+times less space).
+So for finetuning I converted finetunes to a middle C value in hz like S3M
+(see FS3MDOC.TXT on how this works), therefore I only needed the amiga table
+for the actual notes and not the finetunes between.  (the tuning is worked
+out mathematically runtime.)
+
+So I got something like:
+  note =  7bits
+number =  5bits
+effect =  4bits
+eparam =  8bits
+----------------------------
+       = 24bits  =  3bytes!
+
+I ditched it when I supported S3M because it needs room for 99 instruments,
+more possible notes (because of 9 octaves), has a volume byte,
+and more effects.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.7 Load Sample Data ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+PsuedoCode:
+===========
+- From this point, loop 31 times
+     - get the length of the sample # <loopcounter> (stored in your variable)
+
+At this point I use only GUS, and dump the sample to the GUS dram, but if you
+were using Sound Blaster etc, you would just declare 31 pointers in memory
+and allocate them a SAMPLE_LENGTH sized buffer, then load the information
+into those buffers.  When you need to play them you would mix
+the channels into a small buffer then DMA that buffer out to the sound card.
+See FS3MDOC.TXT for more about mixing and Sound Blaster.
+
+     - [SOUNDBLASTER] allocate a SAMPLE_LENGTH sized pointer to buffer in
+       memory and load the sample into it
+     - [DRAM-BASED-CARD (GUS)] poke/DMA bytes into DRAM, increment dword
+       offset value GUS_OFFSET, and store that value next to the sample's
+       information (along side length, volume, finetune, loop start etc)
+     - check that your samples fit into (D)RAM, and exit with an error if
+       they don't.
+- end loop
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 2.8 Phew :) ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Wasn't that bad was it? Now you have the FULL mod file stored away at your
+disposal, with samples ready to blast.
+
+Suggestions:
+============
+Now is a GOOD time to do some thorough testing.  Do these things
+
+- Make sure your sample headers and information are stored correctly
+- Make sure your pattern data is stored perfectly.. it's quite important you
+  know..
+- Make sure your samples are stable in memory, and try to play them through
+  your sound card.. you can have a few problems with misloaded samples I have
+  found..  Also make sure the loop points are played correctly!
+- Make sure you deallocate your memory before quitting the program!!
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±²  : SECTION 3 :  ²±°                          ³
+³                           °±² Playing the MOD ²±°                          ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.1 OK where do I start ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+I think the main thing you need to do now once you are satisfied your MOD is
+loaded properly, is to set up an interrupt function, and understand a bit
+about the way a MOD is played.
+
+I'm going to use the system timer to hook onto here as an example, and if you
+want to use other interrupt servicers you can do that if you know how..
+(i.e. GUS IRQ).
+You should know how to set up an interrupt handler yourself, but ill describe
+how to do it here with a bit of code to demonstrate.
+
+The system timer lies on INT 8
+- Get the old handlers vector for int 8h, and store it away for later
+- Set your new handler function to the vector for int 8h
+
+ ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+ ³ REMEMBER TO REHOOK YOUR OLD TIMER TO ITS ORIGINAL PLACE WHEN THE SONG IS ³
+ ³                               FINISHED!                                  ³
+ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+In C you would do that like this:
+=================================
+    oldhandler = getvect(8);
+    setvect(8, handler);
+
+ - where oldhandler has to have the prototype globally declared as
+   void interrupt ( *oldhandler)(...);        // (...) for C++, () for C.
+ - for dummies the actual handler function looks like this
+
+   void interrupt modhandler(...) {
+	...                         // do main loop here
+	oldmodhandler();            // this is here to return int8 to what it
+				    // normally did.  It'll crash without it.
+   }
+
+In PASCAL it would look something like this:
+============================================
+    GetIntVec($8, Addr(OldTimer));
+    SetIntVec($8, Addr(ModInterrupt));
+
+  - with the function looking something like this
+    (I have no idea if this is right as I don't do pascal)
+
+   { $ F+,S-,W-}
+   Procedure modhandler; Interrupt;
+   Begin
+   ...
+   OldTimer;
+   End;
+   { $ F-,S+}
+
+If you're still not sure in C or pascal, check out the online manual on
+getvect/setvect etc.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.1.1 Speed vs BPM ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Some people have asked me to explain more about this because they just don't
+seem to get it at first.  They are DIFFERENT and you need a global SPEED
+variable and a BPM variable to store them.
+
+SPEED is the number of ticks (or times your interrupt handler is called)
+between each time you process a new row.
+In a module, say you have a speed of 6.  This means the interrupt handler
+should tick 6 times for every row of the pattern processed.  Now imagine
+if the speed was 3, it would take 1/2 the time to process the rows,
+therefore making the song play twice as fast.
+NOTE: The default speed to set a song to before it is played is 6.  The
+composer might not set a speed and just use that default speed.
+
+BPM, also called tempo, is the rate at which your interrupt handler should
+be running.  It is the hardware rate in HZ that your timer should be running
+at, and the next section, SECTION 3.2 shows you how to set the PC's system
+timer.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.2 Setting the timer's speed ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Ok now your interrupt handler is already firing.. so one thing you must
+do is set it to the right rate, we don't want mods that play way to fast or
+slow, we want it at 125 BPM right now (or 50hz, or 50 ticks a second - the
+reason it is 50 is thanks to the formula HZ = 2*bpm/5, check out more on this
+below).
+
+How do you set the system timer's speed? if we want 50hz, we have to use
+a divisor to calculate the right rate like so.
+
+Hz = 50
+PCTimerRate = 1193180/Hz    ;<- 1193180 is the divisor using Hz as the rate
+
+Then use the below code to set the PC timer's rate to the desired speed.
+Below tells us how to convert BPM to HZ.
+
+ASSEMBLER:
+==========
+    mov dx, 043h
+    mov al, 036h
+    out dx, al
+    mov dx, 040h
+    mov ax, PCTimerRate     ; here's the PCTimerRate variable
+    out dx, al              ; write the lower 8 bits of the value
+    shr ax, 8
+    out dx, al              ; now write the upper 8 bits of the value
+
+C/C++:
+======
+outportb(0x43, 0x36);
+outportb(0x40, PCTimerRate & 0xFF);     // lower 8 bits
+outportb(0x40, PCTimerRate >> 8);       // upper 8 bits
+
+PASCAL:
+=======
+Port [$43] := $36;
+Port [$40] := (PCTimerRate AND $FF);
+Port [$40] := (PCTimerRate SHR 8);
+
+Now the interrupt function should be ticking away at 50 times a second.
+For other BPM's, which will be used because of the change tempo effect Fxy
+where xy is 20h and up, we need to convert BPM to HZ.  If the Fxy effect
+is set to below 20h, then you change the SPEED and not the BPM.  This is
+looked at later on. (See section 5.15)
+
+To convert BPM to HZ, you use :
+     HZ = 2 * BPM / 5               (i.e 125bpm = 50hz)
+then PC_TIMER_RATE = 1193180 / HZ, for the set timer routine.
+
+Simple huh.  You'll need this for effect Fxy, but don't worry about this
+until later.  For now just get it working at 125bpm. (50hz)
+Effect Fxy is explained in SECTION 5.15
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.3 Player Logic ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Now lets take a look at the interrupt function, this is where the playing
+is done.
+
+The SPEED of a song is the base on how your mod is played.  Each row of a
+pattern is updated every SPEED number of clock ticks, so if a speed is 6,
+then you only update each row every 6 clock ticks.  So on a speed like 3,
+the row is going to be updated every 3 ticks and will play twice as fast as
+speed 6.
+  Inbetween you update certain tick sensitive effects, like portamentos,
+volume slides and vibrato.
+  Diagramatically the playing of a mod looks like this.
+
+SPEED IS 6
+
+tick#
+ÚÄÙ
+0: UPDATE ROW #0    <- update the 4,6 or 8 notes here in a mod's row.
+1: ---  \
+2: ---   \
+3: ---    >- certain effects are updated here
+4: ---   /
+5: ---  /
+0: UPDATE ROW #1
+1: ---
+2: ---
+3: ---
+4: ---
+5: ---
+0: UPDATE ROW #2
+etc..
+
+Logically a very basic representation of playing a mod looks like this:
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ STATIC TICK = SPEED ³  - declaration, start it off at SPEED, not 0, as we
+³                     ³    want straight into the 'if tick >= speed condition'
+³ TICK = TICK + 1     ³  - now increment the tick counter
+³ if TICK >= SPEED    ³  - if the tick # is bigger or equal than SPEED then
+³       update_row    ³  - update the CHANNEL number of notes for the new row
+³       tick =0       ³  - reset tick to 0
+³       ROW = ROW + 1 ³  - increment our row
+³ else update_effect  ³  - else we update the tick based effects.
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+But you will have to take into account there are only 64 rows in a pattern,
+and if you hit 64 then jump to the next pattern and start at row 0 again.
+I say 64 because row 63's effects have to be played out before you jump to
+the next pattern.
+
+don't bother with update_effect for some time until you have got update_row
+going OK.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.3.1  Orders/Patterns ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Just a short note on this.
+When you reach the end of the pattern or whatever, you need to go to the next
+order.  Now say you had your pattern numbers stored in an order array as they
+should be, then it is simply a task of referencing that pattern number
+according to the index ORDER, and then repositioning your pattern pointer
+accordingly.
+
+i.e. If your order list is something like this.
+	ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+  Order ³ 0 1 2 3 4 5 6 7 8 9 .... ³
+	³ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ³
+Pattern ³ 0 0 1 4 5 2 3 4 4 6 .... ³
+	ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+and you have an array of patterns set up as ORDER_TABLE[128].
+Selecting the appropriate pattern is as simple as finding ORDER_TABLE[ORDER].
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.3.2 The Pattern Buffer ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+After you have allocated enough memory for your pattern buffer and loaded the
+actual pattern data into it, you will need to find the correct offset every
+time you process a new row to find the right information.
+
+You should know how to do by now by using some sort of formula like:
+
+  offset = (CHANNELS * 4 * 64 * ORDER_TABLE[ORDER])
+		     note, rows
+
+and to find the current row just add (CHANNELS * 4 * row).
+
+so the pattern+row formula ends up as :
+  offset = (CHANNELS * 4 * 64 * ORDER_TABLE[ORDER]) + (CHANNELS * 4 * row).
+
+I calculate this figure before processing every row and set the pattern
+pointer, so that all I have to do is increment the row number or the order
+number and this formula will pick it up for me and set the pointer
+accordingly.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.4 Inside update row ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Ok on every tick 0, we want to update CHANNELS number of channels
+
+PSEUDOCODE FOR UPDATE_NOTE FUNCTION:
+====================================
+
+Point your note pointer to the correct offset in the pattern buffer,
+   according to order and row.
+
+loop CHANNEL number of times {
+     get NOTE from buffer
+     get SAMPLE_NUMBER from buffer
+     get EFFECT from buffer
+     get EFFECT_PARAMETER from buffer
+
+     if (SAMPLE > 0) then {
+	  LAST_INSTRUMENT[CHANNEL] = SAMPLE_NUMBER  (we store this for later)
+	  volume[CHANNEL] = default volume of sample SAMPLE_NUMBER
+     }
+
+     if (NOTE exists) then {
+	  if (VIBRATO_WAVE_CONTROL = retrig waveform) then {
+		vibrato_position[CHANNEL] = 0 (see SECTION 5.5 about this)
+	  if (TREMOLO_WAVE_CONTROL = retrig waveform) then {
+		tremolo_position[CHANNEL] = 0 (see SECTION 5.8 about this)
+
+	  if (EFFECT does NOT = 3 and EFFECT does NOT = 5) then
+	      frequency[CHANNEL] =
+			FREQ_TAB[NOTE + LAST_INSTRUMENT[CHANNEL]'s finetune]
+     }
+
+     if (EFFECT = 0 and EFFECT_PARAMETER = 0) then goto to SKIP_EFFECTS label
+									    |
+     ....                                                                   ³
+     PROCESS THE NON TICK BASED EFFECTS (see section 5 how to do this)      ³
+     ALSO GRAB PARAMETERS FOR TICK BASED EFFECTS (like porta, vibrato etc)  ³
+     ....                                                                   ³
+									    ³
+label SKIP_EFFECTS:     <-ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+     if (frequency[CHANNEL] > 0) then SetFrequency(frequency[CHANNEL])
+	 if (NOTE exists) then {
+	  PLAYVOICE (adding sample_offset[CHANNEL] to start address)
+     }
+     move note pointer to next note (ie go forward 4 bytes in pattern buffer)
+}
+
+end of pseudocode.
+
+Comments on above psuedocode:
+=============================
+- FREQ_TAB[] should be your amiga frequency lookup table - see SECTION 3.5.
+- When checking and processing effect, in C/C++ I recommend using a switch
+  statement.  They are more efficient than 30 if statements.
+- PLAYVOICE
+  - here is gus biased, for more on SB mixing see SBMIXDOC.TXT
+  - also remember to add the sample_offset value to the start of the sample
+    begin address.  If there was no sample offset then this value would be 0
+    and it would not affect the outcome, so do it every time.
+
+This is the processing inner loop and the needs to be fast as possible.
+
+NOTE - SetFrequency() in this example is being passed amiga values, and
+       should first convert it to a relevant hardware value.
+       See SECTION 3.5.2 on how to convert an amiga period value to a GUS
+       frequency for example.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.5 Period Frequencies and Fine Tune ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+The formula for converting amiga period value to hz, is accomplished using
+ONE of the following formulas.  Why there are 2 will be explained shortly.
+You are going to have to convert amiga frequencies to some sort of speed or
+frequency factor for YOUR sound card, so this part will show you how.
+
+PAL:   7093789.2 / (amigaval * 2)
+NSTC:  7159090.5 / (amigaval * 2)
+
+Say if we wanted to find the value in hz for middle note C-2.  Looking up
+the amiga table we see the value for C-2 is 428 (see table below).
+
+therefore:
+
+PAL:   7093789.2 / (428 * 2) = 8287.14hz
+NSTC:  7159090.5 / (428 * 2) = 8363.42hz
+
+A quick explanation on PAL and NSTC.  The amiga used to time its mods by
+sitting their interrupt handlers on the vertical retrace of the video screen
+so the period values they used in the tables are the amount of data to send
+to the amiga sound chip between interrupts, therefore changing the speed of
+data sent and the pitch of the note.  Pretty stupid system huh.  But I suppose
+back then they just wanted it to work and weren't too worried about the future.
+  Trackers like FastTracker 2 are taking a step in the right direction by
+using linear frequency tables.. ST3 took a step backwards by trying to base
+S3M on the MOD format.  This is MUSIC we are talking about not computer
+hardware.
+
+Which should I use? you are asking.  Well I think the NSTC is the most widely
+accepted and used value, but it does not really matter.  The only difference
+you might hear is a SLIGHT change in pitch, like about one fine tune out
+say.  Inertia Play has a switch that lets you choose one or the other.  Try
+flicking between the 2 while a song is playing to see what it is like.
+
+Here is a period table.  This is straight out of amiga protracker code, so it
+is bugfree, other tables you might see in like gusplay by cascada have bugs
+in it.  Don't use it unless you can fix it.  (i.e. the bug is a wrong value
+for about F-2 with finetune -3 or so.. FastTracker 1 has the bug try it out.)
+
+mt_PeriodTable
+; Tuning 0, Normal
+	dc.w 856,808,762,720,678,640,604,570,538,508,480,453 ; C-1 to B-1
+	dc.w 428,404,381,360,339,320,302,285,269,254,240,226 ; C-2 to B-2
+	dc.w 214,202,190,180,170,160,151,143,135,127,120,113 ; C-3 to B-3
+; Tuning 1
+	dc.w 850,802,757,715,674,637,601,567,535,505,477,450 ; same as above
+	dc.w 425,401,379,357,337,318,300,284,268,253,239,225 ; but with
+	dc.w 213,201,189,179,169,159,150,142,134,126,119,113 ; finetune +1
+; Tuning 2
+	dc.w 844,796,752,709,670,632,597,563,532,502,474,447 ; etc,
+	dc.w 422,398,376,355,335,316,298,282,266,251,237,224 ; finetune +2
+	dc.w 211,199,188,177,167,158,149,141,133,125,118,112
+; Tuning 3
+	dc.w 838,791,746,704,665,628,592,559,528,498,470,444
+	dc.w 419,395,373,352,332,314,296,280,264,249,235,222
+	dc.w 209,198,187,176,166,157,148,140,132,125,118,111
+; Tuning 4
+	dc.w 832,785,741,699,660,623,588,555,524,495,467,441
+	dc.w 416,392,370,350,330,312,294,278,262,247,233,220
+	dc.w 208,196,185,175,165,156,147,139,131,124,117,110
+; Tuning 5
+	dc.w 826,779,736,694,655,619,584,551,520,491,463,437
+	dc.w 413,390,368,347,328,309,292,276,260,245,232,219
+	dc.w 206,195,184,174,164,155,146,138,130,123,116,109
+; Tuning 6
+	dc.w 820,774,730,689,651,614,580,547,516,487,460,434
+	dc.w 410,387,365,345,325,307,290,274,258,244,230,217
+	dc.w 205,193,183,172,163,154,145,137,129,122,115,109
+; Tuning 7
+	dc.w 814,768,725,684,646,610,575,543,513,484,457,431
+	dc.w 407,384,363,342,323,305,288,272,256,242,228,216
+	dc.w 204,192,181,171,161,152,144,136,128,121,114,108
+; Tuning -8
+	dc.w 907,856,808,762,720,678,640,604,570,538,508,480
+	dc.w 453,428,404,381,360,339,320,302,285,269,254,240
+	dc.w 226,214,202,190,180,170,160,151,143,135,127,120
+; Tuning -7
+	dc.w 900,850,802,757,715,675,636,601,567,535,505,477
+	dc.w 450,425,401,379,357,337,318,300,284,268,253,238
+	dc.w 225,212,200,189,179,169,159,150,142,134,126,119
+; Tuning -6
+	dc.w 894,844,796,752,709,670,632,597,563,532,502,474
+	dc.w 447,422,398,376,355,335,316,298,282,266,251,237
+	dc.w 223,211,199,188,177,167,158,149,141,133,125,118
+; Tuning -5
+	dc.w 887,838,791,746,704,665,628,592,559,528,498,470
+	dc.w 444,419,395,373,352,332,314,296,280,264,249,235
+	dc.w 222,209,198,187,176,166,157,148,140,132,125,118
+; Tuning -4
+	dc.w 881,832,785,741,699,660,623,588,555,524,494,467
+	dc.w 441,416,392,370,350,330,312,294,278,262,247,233
+	dc.w 220,208,196,185,175,165,156,147,139,131,123,117
+; Tuning -3
+	dc.w 875,826,779,736,694,655,619,584,551,520,491,463
+	dc.w 437,413,390,368,347,328,309,292,276,260,245,232
+	dc.w 219,206,195,184,174,164,155,146,138,130,123,116
+; Tuning -2
+	dc.w 868,820,774,730,689,651,614,580,547,516,487,460
+	dc.w 434,410,387,365,345,325,307,290,274,258,244,230
+	dc.w 217,205,193,183,172,163,154,145,137,129,122,115
+; Tuning -1
+	dc.w 862,814,768,725,684,646,610,575,543,513,484,457
+	dc.w 431,407,384,363,342,323,305,288,272,256,242,228
+	dc.w 216,203,192,181,171,161,152,144,136,128,121,114
+
+* I personally used a sorted form of this table, that orders all the notes
+  from C-1 with -8 finetune, then goes up through all the finetunes to B-3
+  with finetune +7.  Makes things a lot easier.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.5.1 What do I do with this table? ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+I pondered this one myself for a bit when I first started.  It would be nice
+if you could just store in the amiga values as your notes, then give them to
+your formula to use, and not even use a table to lookup amiga values.
+
+But there lies a problem.  Namely finetune and arpeggio.  If you have the
+amiga values stored as notes, then you will have no idea how much to fine
+tune according to the note you are on.  If it was a linear table it would be
+fine (you would just say 'finetune = 2, so add 2 to the pitch'), but as it
+is actually a logarithmic table adding 2 on a C1 note gives a totally
+different tone to adding 2 on a C3 note.  Its the problem with having
+logarithmic periods.
+
+Forget storing the actual amiga periods as your notes, in your loader convert
+the periods to note numbers (see section 2.6.1), so you can use it to look
+up/index the period table later when the tune is playing.
+
+If you are still a bit confused this is how it is done.
+
+- Loading the pattern data, I looked up the amiga value loaded and gave it
+  a number from 8 to 288.  (36 notes, multiply it by 8 for finetunes between,
+  remember each note is 8 finetunes apart, so it equals 288.)
+- start at 8 (C-1) because there are going to be 8 finetunes below C-1.
+- finish at 288 (B-3), and remember there is going to be 7 finetunes above
+  it.
+
+- You get this value by reading in the amiga value from the file, and scan
+  through the period table (given above) until you find a match.
+  (some trackers don't save the right numbers so I used a check if the number
+   was between -2 to +2 from the actual value).
+  Once you find the corresponding value, store the note as your (counter*8)
+  where counter was the value you were incrementing as you went through the
+  table.
+- Now the pattern data is loaded up with a nice linear set of notes.
+
+  ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+  ³ when you are actually playing just use your note value as an index to  ³
+  ³  look up the amiga table again to get the correct amiga period value.  ³
+  ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+ok here's how I did it:
+=======================
+period = ((byte0 & 0xF) << 8) + byte1;   // extract info from 4 bytes in file
+
+current -> period = -1;                  // default value to -1, or 'nothing'
+for (count2=1;count2<37; count2++) {     // start the search
+     if (period > freqtab[count2*8]-2 && period < freqtab[count2*8]+2 )
+	  current -> period = count2*8;  // if found store the counter as
+}                                        // the index for the note.
+
+If we went through the whole table and didn't find the value, then it is
+assumed there is no note, and it stays at -1.
+(use another value besides -1 if you like.  Actually using signed values is
+ rather dumb, try to avoid them.)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.5.2 Gravis UltraSound ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+How to change an amiga period to a GUS frequency???  Well you should find
+this sort of stuff yourself but because I'm GUS biased ill talk a bit about
+it.. :)
+
+first :      hz = 7159090.5 / ( amigaval * 2 );
+ next : gusfreq = (( (hz SHL 9) + (divisor SHR 1) ) / divisor) SHL 1;
+
+Where divisor is one of these values below, depending on the number of
+hardware voices you are using.
+
+   Frequency   Active Voices
+	44100          14 or lower
+	41160          15
+	38587          16
+	36317          17
+	34300          18
+	32494          19
+	30870          20
+	29400          21
+	28063          22
+	26843          23
+	25725          24
+	24696          25
+	23746          26
+	22866          27
+	22050          28
+	21289          29
+	20580          30
+	19916          31
+	19293          32
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 3.6 Volume ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Handling volumes is one of the simplest parts of coding your player.  It
+is just a matter of looking up a table or adjusting the percentage of
+the sample to be mixed into the final output.
+
+Remember there are actually 65 volume settings, just when you thought there
+were only 64 (040h).  0 is included which is absolutely no volume, and 64
+is full volume.
+
+For gus users this is a pretty good volume table which I made myself.
+I had about 5 volume tables and this one is the one I use, it is quite loud
+but not too loud to cause clipping.  Others I found are too soft.
+
+GUSvol   dw 01500h
+	 dw 0A0DEh,0AB52h,0B2BDh,0B87Eh,0BD31h,0C12Bh,0C49Ch,0C7A5h
+	 dw 0CA5Dh,0CCD2h,0CF10h,0D120h,0D309h,0D4D1h,0D67Bh,0D80Bh
+	 dw 0D984h,0DAE9h,0DC3Bh,0DD7Dh,0DEB0h,0DFD6h,0E0EFh,0E1FCh
+	 dw 0E2FFh,0E3F8h,0E4E8h,0E5D0h,0E6AFh,0E788h,0E859h,0E924h
+	 dw 0E9E9h,0EAA9h,0EB63h,0EC18h,0ECC8h,0ED73h,0EE1Ah,0EEBDh
+	 dw 0EF5Ch,0EFF7h,0F08Fh,0F123h,0F1B5h,0F242h,0F2CDh,0F356h
+	 dw 0F3DBh,0F45Eh,0F4DEh,0F55Bh,0F5D7h,0F650h,0F6C7h,0F73Ch
+	 dw 0F7AEh,0F81Fh,0F88Eh,0F8FBh,0F967h,0F9D0h,0FA38h,0FA9Eh
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±²  : SECTION 4 :  ²±°                          ³
+³                           °±²  Miscellaneous  ²±°                          ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+This section describes some of the little things that should be taken note of
+when writing a mod player, but are VERY important.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 4.1 Notes Without Instrument Numbers or Frequencies ²±° ³ *IMPORTANT*
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This subsection is just about the most important of this whole section.
+Sometimes a composer will some seemingly strange methods to write a tune,
+i.e. leaving an instrument number off, or putting an instrument number but
+with no note!  This part describes how to combat this.
+
+NO INSTRUMENT NUMBER:
+---------------------
+C-2 01 C10
+D-2 00 301 <- note no instrument number
+--- 00 300
+
+You will notice, on the porta to note that the composer has left off the
+instrument number.  Also notice that the previous note had the volume set
+to 10.  Leaving off an instrument number causes the volume to stay as it is,
+and so the note slides, but still stays at volume 10.
+
+NO PERIOD VALUE OR NOTE:
+------------------------
+C-1 01 A07
+--- 01 A07 <- no period value (note), but there are instrument numbers
+--- 01 A07
+--- 01 A07
+
+What this does is reset the volume on every note, and slides the volume down
+on every note too.. This gives a stuttering effect that is commonly used.
+It reinforces the last part (no instrument number), that if there is an
+instrument number, then the volume is reset to the sample's default volume.
+The sample is not retriggered though.
+
+NOTE BUT NOTHING ELSE:
+----------------------
+C-1 01 000
+D-1 00 000
+E-1 00 000
+
+This means the sample is reset to its starting position, on all 3 notes, and
+the frequency is also set.
+
+CONCLUSION:
+-----------
+
+- ONLY RESET VOLUME IF THERE IS AN INSTRUMENT NUMBER
+- ONLY RESET PITCH IF THERE IS A PERIOD VALUE/NOTE
+- ONLY RESET SAMPLE IF THERE IS A PERIOD VALUE/NOTE (and no effect 3xy, 5xy
+						       or EDx)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 4.2 Effect Bxy and Dxy on the same row - backwards mods ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Pattern break and Pattern jump can be tricky if not handled properly.
+Some tunes use a special feature of .MOD that allows you to put a Bxy effect
+and a Dxy effect on the same row like this:
+
+ÚÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄ¿
+³--- 00 B05³--- 00 000³--- 00 D32³--- 00 000³
+³etc..     ³          ³          ³          ³
+
+See the included mod ODE2PTK.MOD which uses this exact technique.
+Now logically you would think this would work like this:
+
+- Jump to order 5
+  set row to 0
+then:
+- Increment order to 6
+  set row to 32.
+
+But this is wrong!  It actually means set order to 5, and row to 32.
+It is handled like this:
+
+- Jump to order 5
+  set row to 0
+  set pattern_jump flag                              <-- this is the new part
+
+- if (pattern_jump flag is NOT set) increment order  <-- and this is new
+  set row to 32
+
+Now we end up at order 5, and row 32 like we should.  If the Bxy and Dxy are
+the other way around, then it would not produce the same outcome, it would
+produce a different outcome.
+i.e.
+ÚÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄ¿
+³--- 00 D32³--- 00 000³--- 00 B05³--- 00 000³
+³etc..     ³          ³          ³          ³
+
+This would ignore the D32 and just jump to order 5, row 0.  Go through the
+above pseudocode and see that this is indeed the case.
+
+Remember also that you will need a flag for pattern break, as you don't want
+to keep incrementing the order if there are more than 1 pattern break command
+on a row.
+
+- when a pattern break occurs you set a PATTERN_BREAK_FLAG
+- when a pattern jump occurs you set a PATTERN_JUMP_FLAG
+
+And also in pattern break, you only increment the order if
+PATTERN_BREAK_FLAG, AND, PATTERN_JUMP_FLAG are both NOT set, but you still
+set the row no matter what.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 4.3 Logic with Breaking and Jumping - pointers, orders and rows ²±° ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+There is one tricky part about using pattern break and pattern jump in your
+mod player routine.  When one of these effects are implemented, you don't
+want to jump to the next pattern/row straight away, but you want to finish
+off playing the row first.  Though you still want to jump off to another
+pattern/row when this row is finished.
+
+You don't want to pull the rug out from under the pointer's feet, so to
+speak.
+
+The answer is only to position the pointer to the pattern data ONCE, BEFORE
+you process a row, and only update the >VARIABLE< values for ORDER and ROW if
+a pattern jump or pattern break is effected.  This way you can finish
+processing the row, and when the next row comes it will reposition itself
+automatically.
+
+Here are the simplified steps to illustrate:
+============================================
+
+1. Set your pointer JUST before you implement your play note routine
+   according to the order/row.
+2. Now DON'T reposition this pointer at ALL (according to order/row), except
+   to step through channels in that row.  i.e.  Adding 4 bytes per turn to
+   step to the next note in the row.
+   When it comes to processing effect Bxy and Dxy, set the ROW/ORDER
+   variables as necessary but DON'T touch the pointer you have running
+   through the pattern data.  Step 1 WILL pick that up on the next turn
+   around.
+3. When it comes to process non tick 0 effects, REWIND the pointer by the
+   correct amount to process the same row again, even thought the row/order
+   value may be different.  We want to finish processing the current row's
+   effects first, and again, the pointer will be positioned to it's rightful
+   place when we get to tick 0, and STEP 1 again.
+
+PseudoCode:
+===========
+
+Update_Note() {
+   Set pointer in pattern buffer, according to ORDER and ROW
+
+   for (count=0 to CHANNELS-1) {
+	process note
+
+	process effects:
+		only set the ORDER & ROW variables if Bxy/Dxy are used
+
+	increment pointer to next note (4 bytes if that is how big it is)
+   }
+}
+
+
+Update_Effects() {
+   rewind pointer (CHANNELS * 4) bytes.    (4 because of 4 bytes per note)
+
+   for (count=0 to CHANNELS-1) {
+	process effects:
+		increment pointer to next note
+   }
+}
+
+This is EXACTLY how it should work, and you will have flawless pattern jumps
+and breaks.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                           °±²  : SECTION 5 :  ²±°                          ³
+³                           °±²     Effects     ²±°                          ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+This part of the document is one of the most sorely needed, it actually tells
+you HOW to code the effect, not just some vague reference on it and a basic
+explanation like I have seen in so many other docs.
+
+TERMINOLOGY:
+============
+Beside each effect, there are the 2 Y/N boxes.. these are;
+
+       T0 : (TICK 0) This means the effect is updated or taken care of at the
+	    start of the row, or when the row is first encountered.
+INBETWEEN : This means the effect is updated on the other (speed-1) ticks
+	    that lie inbetween rows.
+
+When coding your player, go for effect Cxy first.  It is the easiest and most
+substantial effect to enable.  It will even make your tune resemble its
+normal self.  Then go for effect Fxy (set speed).
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.1 Effect 0xy (Arpeggio) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect alternates the pitch rapidly to simulate a chord.  It usually
+sounds very grating or harsh so it isn't used much except for chip tunes.
+
+E.G:
+C-2 01 047 (Add to the pitch by 4 half tones then 7 half tones)
+
+Range: x = 1st semitone to add to note (0h-Fh)
+       y = 2nd semitone to add to note (0h-Fh)
+
+so the effect 047 would generate a major, while effect 037 causes a minor.
+
+This is a tick based effect:
+Tick 0 set frequency to normal value,
+Tick 1 add the x parameter to the frequency and set it,
+Tick 2 add the y parameter to the frequency and set it,
+.... go back and repeat steps from tick 0 until we reach the next row
+
+You notice if SPEED is 1, then there will be no arpeggiation because there
+are no ticks inbetween.  If SPEED is 2, then only the x arg is taken into
+account.
+Each note is 8 fine tunes apart, so use your period table to calculate the
+new period by multiplying x or y by 8, then adding it to the current note
+value.
+
+Using the modulus operator is a good way to process this effect.
+if the modulus of tick mod 3 is 0, then the frequency is set to the normal
+value.  If the result is 1, then the frequency is set to the period value of
+the current frequency + the (x parameter * 8).  Then logically if the result
+is 2, the frequency is set to the period value of the current frequency +
+the (y parameter * 8).
+
+Pseudocode:
+===========
+- get remainder/modulus of: tick divided by 3 (i.e. tick % 3)
+- if result = 0 set the frequency to the normal value
+- if result = 1 set the frequency to the normal value + (x# of finetunes * 8)
+- if result = 2 set the frequency to the normal value + (y# of finetunes * 8)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.2 Effect 1xy (Porta Up) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes a pitch slide that goes up.
+
+E.G:
+C-2 01 104 (slide the frequency up 4 amiga values every tick)
+--- 00 104 (slide against 4 values every tick)
+
+Range: xy = 00h-FFh
+
+You do this by resetting the frequency every tick, EXCEPT for the first one.
+The amount to slide by is the value given in EFFECT_PARAMETER
+You subtract the xy value from the AMIGA value of the frequency.
+
+Tick 0 Do nothing.
+Tick 1 subtract EFFECT_PARAMETER to the amiga frequency, and set it.
+Tick 2 subtract EFFECT_PARAMETER to the amiga frequency, and set it.
+Tick 3 subtract EFFECT_PARAMETER to the amiga frequency, and set it.
+.... keep going until end of note
+
+Remember B-3 is the highest note you can use, there is no law against sliding
+above it but it is not standard (some mods might be written thinking that
+the porta WILL stop at B-3, so be careful).  Personally I stop at 56, or
+approximately B-5.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.3 Effect 2xy (Porta Down) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes a pitch slide that goes down.
+
+E.G:
+C-2 01 204 (slide the frequency down 4 amiga values every tick)
+--- 00 204 (slide again 4 amiga values every tick)
+
+Range: xy = 00h-FFh
+
+You do this by resetting the frequency every tick, EXCEPT for the first one.
+The amount to slide by is the amount given in EFFECT_PARAMETER.
+You add the xy value to the AMIGA value of the frequency.
+
+Tick 0 Do nothing.
+Tick 1 add EFFECT_PARAMETER to the frequency, and set it.
+Tick 2 add EFFECT_PARAMETER to the frequency, and set it.
+Tick 3 add EFFECT_PARAMETER to the frequency, and set it.
+.... keep going until end of note
+
+Sliding too low isn't really a bother because the number will just get bigger.
+Usually try and stop at about C-1 though, or C-0.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.4 Effect 3xy (Porta To Note) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes the pitch to slide towards the note specified.
+If there is no note specified it slides towards the last note specified in
+the Porta to Note effect.
+If there is no parameter then the last porta speed used for that channel is
+used again.
+
+E.G:
+C-2 01 000
+D-2 01 303 (Set D-2 as the note to slide towards, and with a speed of 3,
+--- 00 300  then keep it sliding to D-2, still with speed 3)
+--- 00 300
+--- 00 300
+
+Range: xy = 00h-FFh
+
+This effect can be buggy at first, but not too hard.
+on TICK 0:
+- If there is an argument given to the effect, then you must record that as
+  PORTA_SPEED[channel]. (You need to remember all 4-8 channels worth of porta
+  information - I have them as an array globally)
+- If there is a note given, then you must store that as
+  NOTE_TO_PORTA_TO[channel].
+- But don't slide here, just like the other porta effects.
+- also, don't reset the note like you would normally if there was a frequency
+  given (i.e. the D-2 in our example)
+
+On OTHER ticks:
+- Subtract or add PORTA_SPEED to the frequency (in AMIGA units), and set it.
+  Subtract or add depending on if the current frequency is smaller or larger
+  than NOTE_TO_PORTA_TO.
+
+| Remember in this effect, if there is a note we don't retrigger the note on |
+| tick 0 like we usually do, so you have to make a special exception not to  |
+| play/trigger a sample if there is a porta to note in progress.             |
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.5 Effect 4xy (Vibrato) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes the pitch to waver up and down around the base note.
+If no parameter use the last vibrato parameters used for that channel.
+
+E.G:
+D-2 01 4A2 (Vibrato the note D-2 with speed of A, and depth of 2)
+--- 00 400 (Keep vibrating at A2)
+--- 00 4B3 (Now change to B3)
+--- 00 400 (Continue vibrating at B3)
+
+Range: x = speed to vibrate at (0h-Fh)
+       y = depth of vibrato (0h-Fh)
+
+This is simply a case of adjusting the frequency every tick (besides tick 0),
+according to a pre-defined table, like a sine table for example. (There are
+others besides sine wave, see SECTION 5.20 for more on wavecontrols)
+If the values in the sine table are added and subtracted to the current
+frequency, then it will appear to be oscillating up and down smoothly in a
+wave like fashion, giving us vibrato.
+
+First lets look at this sine table.
+
+Sine Table:
+===========
+This is the sine table used by Protracker.  If a player calls itself
+fully protracker compatible, it really should be using this table.
+
+	   0, 24, 49, 74, 97,120,141,161,
+	 180,197,212,224,235,244,250,253,
+	 255,253,250,244,235,224,212,197,
+	 180,161,141,120, 97, 74, 49, 24
+
+This is actually only half a sine wave, to see how we cope with this read
+further.
+
+Next we need a variable for each channel to tell us where we are in this
+table currently.  It will be referred to from here as VIBRATO_POS.
+It should be a signed byte, that ranges from -32 to +31.
+
+Positioning vibrato pointer:
+============================
+There are 32 positions in this sine table.   But as it is only HALF a sine
+wave, we need to use it twice, subtracting the values from the frequency
+first, then adding the values to the frequency.  It gives 1 complete sine
+oscillation.
+
+The way to do this is to use the variable called VIBRATO_POS, which is a
+SIGNED value from -32 to +31. (64 values, including 0)
+
+VIBRATO_POS always starts in the middle at 0.  NOT -32.  It is also reset
+every tick 0 to the start, unless the wavecontrol tells us not to retrigger
+the vibrato position to the start.
+
+If the position variable is < 0, then SUBTRACT the sinetable value, using
+the absolute of the VIBRATO_POS as the index to the sine table.
+You can get the absolute of the value by just AND'ing it with 31.
+(as the extra bit we AND out, is the sign bit.)
+
+Otherwise if VIBRATO_POS is >= 0, add to the frequency.
+
+By doing this we should get one nice and smooth oscillation like so:
+
+			       At this point we add to the frequency
+	 (+)³                 ³      ****
+	    ³                 ³   ***    ***
+Current    0³****..........***³***..........****..... -> time
+Frequency   ³    ***    ***   ³
+	 (-)³       ****      ³
+	    À32ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ0ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ>31  VIBRATO_POS
+
+Once we have adjusted the frequency accordingly, add the VIBRATO_SPEED value
+to the VIBRATO_POS, therefore incrementing the position by the speed given by
+the 4xy command.  If the value is greater than 31, then subtract 64 from it
+so it starts in the negative again, and we get a continuous sine wave.
+
+i.e.  If the position is 30, and the vibrato speed is 4, it will become 34,
+      and then should be repositioned to -30.
+
+Calculating depth:
+==================
+Because there is a depth parameter to vibrato, we also need to find out how
+large a value to add or subtract from the current frequency.
+
+To calculate the amount or depth of the vibrato, you multiply the sine value
+by the effect parameter Y, then you DIVIDE it by 128.  Remember the divide
+by 128 (or shift right 7 bits) must be implemented or you'll have a HUGE
+vibrato.
+
+If this is starting to confuse you now, then just look down a page to the
+pseudocode section and it is simplified into 6 easy steps.
+
+Setting the frequency:
+======================
+- Firstly, you don't actually change the value of the channel's frequency,
+  but you just temporarily set the frequency to this new delta affected value.
+
+1. Work out the size of the delta (delta is how much to add or subtract)
+
+  delta = sine_table[vibrato_pos[CHANNEL]]
+  delta = delta * vibrato_depth[CHANNEL]
+  delta = delta / 128
+
+2. Now actually add or subtract this delta to the frequency.
+
+  if (VIBRATO_POS[CHANNEL] < 0), then
+       SetFrequency(freq[CHANNEL] + delta)
+  else SetFrequency(freq[CHANNEL] - delta)
+
+Pseudocode:
+===========
+Lets just simplify the above into 6 easy steps now.
+
+1.  Start VIBRATO_POS at 0. (on tick 0, and if wavecontrol tells us too,
+			     which it usually does.)
+
+now on the other ticks..
+
+2.  Use the absolute value of VIBRATO_POS to look up the sine table.  This
+    can be achieved by AND'ing it with 31.  (and probably faster than abs())
+3.  Multiply the sine table value with VIBRATO_DEPTH, then divide it by 128.
+    this is the delta value.
+3.  If the VIBRATO_POS is a negative value, SUBTRACT the delta value from the
+    frequency and set it.
+4.  If the VIBRATO_POS is a positive value (or 0), ADD the delta value to the
+    frequency and set it.
+
+5.  Add the VIBRATO_SPEED to the VIBRATO_POS.
+6.  If the VIBRATO_POS > 31, then subtract 64 from VIBRATO_POS.
+
+Wavecontrol:
+============
+There are several options to vibrato, and they can be set by what is called
+wavecontrol.
+Firstly there are 4 methods of affecting the frequency.
+1. sine wave
+2. ramp down
+3. square wave
+4. random
+
+Next, there is the option of retriggering the VIBRATO_POS to the start every
+tick 0, or leaving it be.
+It defaults to 0, which means "sine wave, retrig waveform".
+
+     TICK 0 : if (wavecontrol says retrig waveform), then VIBRATO_POS = 0
+OTHER TICKS : use the sine wave, ramp down, square wave, or random method.
+
+See more in SECTION 5.20 for detailed information about wavecontrol.
+
+Example code:
+=============
+For those interested this is how mine works.  It is 100% accurate.
+(freq[track] is the current frequency of that channel)
+
+void dovibrato(UBYTE track) {
+    register UWORD delta;
+    register UBYTE temp;
+
+    temp = (vibpos[track] & 31);                // temp will be the index
+
+    switch(wavecon[track]&3){
+	case 0: delta = sintab[temp];           // look up sine table
+		break;
+	case 1: temp <<= 3;                     // ramp down
+		if(vibpos[track]<0) temp=255-temp;
+		delta=temp;
+		break;
+	case 2: delta = 255;                    // square
+		break;
+	case 3: delta = sintab[temp];           // random
+		break;
+    };
+
+    delta *=vibdep[track];
+    delta >>=7;
+    delta <<=2;           // we use 4*periods so make vibrato 4 times bigger
+
+    if (vibpos[track] >= 0) GUSSetFreq(track, GUSfreq(freq[track]+delta));
+    else                    GUSSetFreq(track, GUSfreq(freq[track]-delta));
+
+    vibpos[track]+= vibspe[track] ;
+    if (vibpos[track] > 31) vibpos[track] -=64;
+}
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.6 Effect 5xy (Porta + Volume Slide) ²±° ³ T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This is a combination of Porta to Note (3xy), and volume slide (Axy).
+The parameter does not affect the porta, only the volume.
+If no parameter use the last porta to note parameter used for that channel.
+
+E.G:
+C-1 01 000
+D-1 01 303  (Start porta to note using speed of 3)
+--- 00 501  (From here on keep doing porta, but slide volume down 1 as well)
+--- 00 501
+--- 00 501
+
+Range: x = amount to slide volume up by or (0h-Fh)
+       y = amount to slide volume down by. (0h-Fh)
+
+This is exactly what it means, just do a 3xy first, then do a volume slide.
+The parameters given only refer to the volume slide though and do not affect
+the porta.  The porta is carried on from the last porta to note.
+So when you code your effect routine, it's like
+
+if (effect = 03h OR effect = 05h) DO_PORTA_TO_NOTE
+if (effect = 0Ah OR effect = 05h) DO_VOLUME_SLIDE
+
+kill 2 birds with 1 stone!
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.7 Effect 6xy (Vibrato + Volume Slide) ²±° ³ T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This is a combination of Vibrato (4xy), and volume slide (Axy).
+The parameter does not affect the vibrato, only the volume.
+If no parameter use the vibrato parameters used for that channel.
+
+E.G:
+C-1 01 4A2  (Start Vibrato with speed 0Ah, and depth 2.
+--- 00 601  (From here on keep doing vibrato, but slide volume down 1 also)
+--- 00 601
+--- 00 601
+
+Range: x = amount to slide volume up by or, (0h-Fh)
+       y = amount to slide volume down by. (0h-Fh)
+
+This is exactly like effect 5xy, but just do a 4xy first, then do a volume
+slide.
+The parameters given only refer to the volume slide though and do not affect
+the vibrato.  The Vibrato is carried on from the past vibrato parameters.
+So when you code your effect routine, it's like
+
+if (effect = 04h OR effect = 06h) DO_PORTA_TO_NOTE
+if (effect = 0Ah OR effect = 06h) DO_VOLUME_SLIDE
+
+kill 2 birds with 1 stone again! (hrmm that's 4 birds now)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.8 Effect 7xy (Tremolo) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes the volume to oscillate up and down in a fluctuating style
+around the current volume, like vibrato but affecting volume not pitch.
+If no parameter use the last tremolo parameter used for that channel.
+
+E.G:
+C-2 01 772 (Vibrate the volume up and down using speed 7 and a depth of 2)
+--- 00 700 (continue with the tremolo at 7,2)
+
+Range: x = speed to vibrate volume at (0h-Fh)
+       y = depth of tremolo (0h-Fh)
+
+- For a really DETAILED explanation, see SECTION 5.5 on vibrato.
+  The only difference is that you divide by 64 not 128, and the volume is
+  affected not the frequency.
+  You should have coded vibrato first anyway as it is more common in mods.
+
+- Seeing as this is a similar effect to vibrato, then we will use the same
+  tables as it does.  Again, the only difference with tremolo is that you
+  divide the delta (or deviation) by 64 and not 128.  You also have to check
+  for if the volume goes over or under 0 and 64.
+  This means if the biggest value in the sine table 255 is divided by 64,
+  then the biggest deviation with depth parameter of 1 would only be 4, on its
+  peak.
+
+- You're probably asking, what if the volume of the channel is already 64?
+  You cant make the volume go any higher!
+  Well in this case you would only hear the negative side of the tremolo,
+  when the volume dips down and then back to full.  Same for the vice versa
+  case if the volume is set to 0.  So you have to clip the volumes that go
+  above 64 and below 0.
+
+- On TICK 0 the TREMOLO_POS should be reset to the start, unless it's
+  wavecontrol is set that the waveform is NOT reset/retriggered.
+  (identically to vibrato)
+
+- I (and most other players) only use 1 byte for vibrato and tremolo
+  wavecontrol, as you only need 4 bits each.  That's why it is shifted right
+  to get the upper 4 bits of information in the code below.
+
+- Check out the vibrato section for more information on position pointers and
+  sine tables. (Section 5.5)
+
+This is how mine works, and is 100% accurate.  You are right if you think
+it is nearly identical to vibrato.
+
+void dotremolo(UBYTE track) {
+    UWORD delta, temp;
+
+    temp = (trempos[track] & 31);
+
+    switch((wavecon[track] >> 4) &3){
+	case 0: delta = sintab[temp];                  // sine
+		break;
+	case 1: temp <<= 3;                            // ramp down
+		if(vibpos[track]<0) temp=255-temp;
+		delta=temp;
+		break;
+	case 2: delta = 255;                           // square
+		break;
+	case 3: delta = sintab[temp];                  // random
+		break;
+    };
+
+    delta *= tremdep[track];
+    delta >>= 6;                          // divide by only 64 this time
+
+    if (trempos[track] >= 0) {
+	if (volume[track]+delta > 64) delta = 64-volume[track];
+	GUSSetVolume(track, (volume[track]+delta)*globalvol/64);
+    }
+    else {
+	if ((WORD)(volume[track]-delta) < 0) delta = volume[track];
+	GUSSetVolume(track, (volume[track]-delta)*globalvol/64);
+    }
+
+    trempos[track]+= tremspe[track];
+    if (trempos[track] > 31) trempos[track] -=64;
+}
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.9 Effect 8xy (Pan) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect is non-Protracker, but is worth mentioning.  It was introduced
+by Otto Chrons in DMP (dual mod player), and causes the left/right position
+of the current channel to be set to the position specified.  Hence Panning.
+
+E.G:
+--- 00 800              (Set the position of the channel to the far left)
+
+00 = far left
+40 = middle
+80 = far right
+A4 = surround *
+
+I don't like this method at all, and prefer the straight 0-FFh method of
+panning.  Where 0 = full left, and 255 (FFh) is far right.  Fast Tracker 2
+uses this method.
+
+* Surround is usually achieved by having 2 copies of the sample, 1 inverted,
+  and you play them at -exactly- the same time, with one of the pair panned
+  fully left, and the other (the inverted one say) panned fully right.  This
+  will give a surround effect.  If you play both the samples in the same pan
+  position they will cancel each other out.  Experiment with this in a
+  tracker.  Using GoldWave(tm) for example you can invert a sample.
+  As effect 8xy is a channel command, you will have to in effect have 2
+  channels (voices) ready for this channel, and make sure you set one
+  voice to the full left, and the other inverted, and to the full left.
+  You CAN have surround sound on a GUS.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.10 Effect 9xy (Sample Offset) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes the note to start playing at an offset into the sample,
+instead of just from the start.  It is used so that the beginning of a sample
+is can be skipped.  If a parameter is not given, then the last parameter
+given is used.
+
+E.G:
+C-2 01 942 (Start the note playing at 4200h bytes into the sample)
+C-2 01 900 (do the same again, using last parameters 42)
+
+Range: xy = 00h-FFh
+
+As seen in the example, the argument is the first 2 digits of a 4 digit
+number (in hex) that the offset should take place from.
+
+so SAMPLE_OFFSET = EFFECT_PARAMETER * 0100h (or shift left 8 bits)
+
+What you do to enable this effect is; when you tell your soundcard or mixing
+buffer the start of the sample, also add the value SAMPLE_OFFSET to it.
+When the sample is actually triggered it will come out at the given offset
+into the sample.
+
+Remember to check if the user set an offset that is larger than the sample!
+If it is, then the sample offset should equal the end of the sample.
+
+(If you clip your samples at their loopends, and you think people might
+  want to sample offset past the loopend point, then dont worry becuase doing
+  this would result in silence anyway, or, making the sampleoffset equal the
+  end of the sample - or the loopend in this case)
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.11 Effect Axy (Volume Slide) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes the volume of the track to slide up or down.
+
+E.G:
+A-2 01 A01  (slide the volume down 1 * (speed-1) units)
+--- 00 A01  (slide the volume down 1 * (speed-1) units)
+--- 00 A01  (slide the volume down 1 * (speed-1) units)
+--- 00 A20  (now slide the volume up 2 * (speed-1) units)
+--- 00 A20  (slide the volume up 2 * (speed-1) units)
+
+Range: x = amount to slide volume up by or, (0h-Fh)
+       y = amount to slide volume down by. (0h-Fh)
+
+On this affect you either slide the volume up x, or down y, but not both.
+This is a tick based effect so should be processed once a tick but not tick 0.
+if x > 0 then slide volume up x
+if y > 0 then slide volume down y
+if x > 0 and y > 0 then do nothing.
+
+On tick 0:
+Take note of the volume slide, but do nothing
+
+On other ticks:
+if x > 0 then add x to volume[CHANNEL] and set the volume
+if y > 0 then subtract y to volume[CHANNEL] and set the volume
+
+* before setting the volume, make sure you haven't slid past 0 or 64.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.12 Effect Bxy (Jump To Pattern) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect jumps to a specified channel (in hex)
+
+E.G:
+--- 00 B10 (Jump to order 10h, or 16)
+
+Range: xy = 00h-FFh
+
+This effect is fairly simple, after the row has been processed including it's
+effect, then the order is reset and the song continues playing from row 0.
+Make sure you don't jump over the end of the song length, and if you do then
+set it to the first order.
+
+* if you increment your row after your PlayNote() function, then row should
+  be set to -1, so it is 1 less than 0, then as the tick handler adds 1 to
+  the row it is set to 0 again, and nothing is wrong.
+
+* See Section 4.6 on using pattern jump and pattern break on the same row.
+  You should set a flag to say there has been a pattern jump, so if there
+  is a pattern break on the same row, the pattern break effect will not
+  increment the order.  I know its strange but it is a protracker feature.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.13 Effect Cxy (Set Volume) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect sets the volume of a channel.
+
+E.G:
+C-2 01 C20 (Set the volume of the channel to 20h)
+
+Range: xy = 00h-40h
+
+This is about the easiest and first effect you should code.  It is just a
+simple case of setting the tracks volume to the argument specified (in hex)
+The volume cannot be set past 40h, and if it is then set it to 40h.
+Only process this effect on tick 0, and likewise only set the volume on tick
+0.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.14 Effect Dxy (Pattern Break) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect breaks to the next pattern starting at the specified row.
+
+E.G:
+--- 00 D32 (Break from this pattern and start at row 32 on the next pattern)
+
+Range: xy = 00h-63Fh (it is stored as hexadecimal but is read as decimal)
+
+This effect is similar to effect Bxy or pattern jump.  You only jump to
+the next pattern though, and you start tracking again at the specified row.
+The row should not be bigger than 63, and if it is take it as 0.
+It works something like this:
+
+  - increment order (only once, some mods have more than 1 pbreak on a row
+		      which could cause an increment order twice or more!)
+  - set row to be x*10 + y. (we have to get the decimal value not the hex)
+
+* Remember that it is possible to put more than 1 pattern break on a row,
+  but we don't want to increment the order every time, we only want it to
+  increment the row only once.  So *set a flag when a pattern break occurs*,
+  and only increment the order if that flag has not been set.
+
+* Also set a flag when pattern jump occurs (Bxy), as if a pattern jump effect
+  has been called then the order should not be incremented either.
+  See Section 4.2 on using effect Bxy and Dxy on the same row.
+
+The pseudocode would look something like this:
+
+if (effect = D) then
+	ROW = (parameter_x * 10) + parmeter_y - 1
+	if (ROW > 62) row = -1
+	if (BREAKFLAG = 0 and JUMPFLAG = 0) then ORDER = ORDER + 1
+	if (ORDER >= SONGLENGTH) ORDER = 0
+	BREAKFLAG = 1
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.15 Effect Fxy (Set Speed) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect sets the speed of the song or the BPM.
+
+E.G:
+--- 00 F07 (Set the speed of the song to 7 ticks a row)
+--- 00 F7D (Set the bpm of the song to 125 or 7Dh)
+
+Range: xy = 00h-1Fh for speed
+       xy = 20h-FFh for BPM
+
+This has 2 parts to it.  If the user specifies a parameter from 0 - 1Fh, then
+it is just simply a case of setting your speed variable, otherwise you need
+to set your BPM variable and reset the timer speed.  This is demonstrated in
+section 3.2 on how to change the speed of the system timer according to
+beats per minute.
+
+Remember for setting the timer, the rate in Hz is equal to Hz = bpm * 2 / 5
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.16 Effect E0x (Set Filter) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect turns on or off the hardware filter (not applicable to most pc
+sound cards)
+
+E.G:
+--- 00 E01 (Turn the filter on)
+--- 00 E00 (Turn the filter off)
+
+Range: x = 0 to turn hardware filter off, 1 to turn it on (0-1)
+
+There isn't much to say about this effect, except for that it is a hardware
+function which was designed to turn on the amiga's filter.
+If you wanted to you could try implementing this effect in the SBPro's h/w
+filter.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.17 Effect E1x (Fine Portamento Up) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect slides the pitch up by x amiga value's per row.
+
+E.G:
+C-2 01 E11 (Start at note C-2, and move pitch up one amiga value)
+--- 00 E11 (keep sliding up...)
+--- 00 E11
+
+Range: x= amount to slide up by. (0h-Fh)
+
+This effect is only processed once per row, on tick 0, and it is as simple
+as just subtracting x from the current channel's frequency. (remember you
+subtract to raise the pitch.)  You don't subtract any finetunes or anything,
+just do a straight subtraction of x from the amigaval.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.18 Effect E2x (Fine Portamento Down) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect slides the pitch down by x amiga value's per row.
+
+E.G:
+C-2 01 E21 (Start at note C-2, and move pitch down one amiga value)
+--- 00 E21 (keep sliding down...)
+--- 00 E21
+
+Range: x = amount to slide pitch down by. (0h-Fh)
+
+This is identical to effect E2x, except but you add to the amigaval of the
+channel by x, and don't subtract.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.19 Effect E3x (Glissando Control) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect causes a change in the effect 3xy (porta to note).  It toggles
+whether to do a smooth slide or whether to slide in jumps of semitones.
+
+E.G:
+--- 00 E31 (Turn on Glissando and have portas slide in semitones)
+--- 00 E30 (Turn off Glissando and have portas slide smoothly)
+
+Range: x = 0 to turn off glissando, 1 to turn it on (0-1)
+
+By default this value should be set as 0, or doing a smooth slide.
+When it is set to 0, porta to note (effect 3xy) is achieved by just adding or
+subtracting the desired porta value to or from the frequency.
+
+With glissando turned on it is a different story.  The frequency is only set
+to the next highest or lowest semitone (or 8 finetune values), according to
+which direction you are sliding.
+To implement this just keep a glissando flag and check it while doing your
+porta effect in your UpdateEffect function.
+
+To do it is cumbersome to say the least, and I'd rather leave it out because
+of speed reasons, unless there is a better way to achieve it that I don't
+know of.
+
+To find the nearest semitone, you are going to have to search through the
+entire period table until you find a value that is the next semitone to be
+reached in the portamento.
+
+The only ways I can think of now are:
+1. Sequential Search.  Just start at the start of the table and search
+   through to the end.
+   Here it is diagramatically (The reason is to compare it with the 2nd
+   method)
+   The vertical bar |, is used to denote the position currently being
+   searched in the table.
+
+   search 1.   [|--------------]
+   search 2.   [-|-------------]
+   search 3.   [--|------------]
+   search 4.   [---|-----------]
+   search 5.   [----|----------]
+   search 6.   [-----|---------]
+   search 7.   [------|--------]
+   search 8.   [-------|-------]
+   search 9.   [--------|------]
+   search 10.  [---------|-----]
+   search 11.  [----------|----]
+
+   Sequential search uses about N/2 comparisons for both successful and
+   unsuccessful search (on the average)
+
+2. Binary search.  Start searching half way through the table, if the value is
+   smaller than this middle value, then discard the upper half and try from
+   the middle of the lower half.  This is also the case for vice versa, and
+   the procedure is repeated until you narrow it down to the actual answer.
+   As you can see it only takes 4 searches rather than 11 in this case, which
+   makes it a lot more efficient.
+
+   search 1.   [-------|-------]
+   search 2.           [---|---]
+   search 3.           [-|-]
+   search 4.             [|]
+
+   Binary search never uses more than log N+1 comparisons for either
+   successful or unsuccessful search.
+
+3. Other searches include interpolation search, binary tree search etc, but I
+   am not going to go any more into searching algorithms, and you may think
+   that these more complicated methods are not worth the extra calculations
+   anyway, even if the search time is shorter.  If you are interested there
+   are plenty of books on this topic, so go check out your local library.
+
+I used a reference in part of this section on searching algorithms, and
+credit must go to the following book.
+
+Footnote: Algorithms in C
+	  Robert Sedgewick.
+	  ISBN 0-201-51425-7
+	  1990.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿         UPDATED:
+³ °±² 5.20 Effect E4x (Set Vibrato Waveform) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect set the waveform for the vibrato command to follow.
+
+E.G:
+--- 00 E42 (Select the squarewave function for the vibrato command)
+--- 00 E40 (Select the default sinewave for the vibrato command)
+
+Range: x = vibrato function to select (0-7)
+
+The following values of x select its corresponding vibrato function
+x=0 : Set sine wave  (default)
+x=1 : Set Ramp Down  |\|\|\     _   _
+x=2 : Set Squarewave         |_| |_| |_
+x=3 : Set Random     (anywhere)
+x=4 : don't retrig Sine waveform
+x=5 : don't retrig RampDown waveform
+x=6 : don't retrig Squarewave waveform
+x=7 : don't retrig random waveform
+
+Sine wave:
+==========
+This is covered in great detail in the vibrato SECTION 5.5, just apply a sine
+wave to the frequency.
+
+Ramp down:
+==========
+This is done in the following fashion.
+Multiply the absolute value of VIBRATO_POS by 8 (shift left 3 bits).
+if the real value of VIBRATO_POS is smaller than 0, then the value to
+use is the value multiplied by 8, subtracted from 255.
+otherwise it is just the value multiplied by 8.
+
+To make things clearer this is how it works.
+
+	temp = VIBRATO_POS[track] AND'ed with 31 (to get absolute value)
+	temp = temp * 8
+	if ( VIBRATO_POS[track] < 0 ) then, temp=255-temp
+	delta = temp
+
+This gives a constant downwards ramp as the combination of adding and
+subtracting makes it a straight line from top to bottom every time.
+
+Square wave:
+============
+This is easily done by adding and subtracting VIB_DEPTH * 255, then it is
+divided by 128 as usual.
+
+It is added to the frequency if VIBRATO_POS is greater than or equal to 0.
+It is subtracted from the frequency if VIBRATO_POS is smaller than 0.
+
+Retrig waveform:
+================
+This means that you reset the VIBRATO_POS to position 0 every time a new note
+is processed (on tick 0 in other words).  If you have set the wave control
+flag to 4 or more, then the VIBRATO_POS is not reset, and just continues from
+the previous position of where it was.
+
+Pseudocode:
+===========
+This is how the start works, before you set the frequency or increment the
+VIBRATO_POS value.
+
+    temp = VIBRATO_POS[track] AND'ed with 31      (gets absolute value first)
+
+    if (VIBRATO_WAVECONTROL = 0) then {           (sine wave)
+	DELTA = SINE_TABLE[temp]
+    }
+    else if (VIBRATO_WAVECONTROL = 1) then {      (ramp down)
+	temp = temp * 8
+	if ( VIBRATO_POS[track] < 0 ) then, temp=255-temp
+	DELTA = temp
+    }
+    else if (VIBRATO_WAVECONTROL = 2) then {      (square wave)
+	DELTA = 255
+    }
+    else if (VIBRATO_WAVECONTROL = 3) then {
+	DELTA = SINE_TABLE[temp]                  (random - just use sinewave)
+    }
+
+    DELTA = DELTA * VIBRATO_DEPTH[track]
+    DELTA = DELTA / 128
+
+etc.. etc..  Now we know the delta to add or subtract to the frequency.
+
+For real examples of the first 3 waveforms look at the example in SECTION 5.5
+of the vibrato section.
+
+Storage Issue:
+==============
+As these values for vibrato and tremolo only require 4 bits each, the
+  common method is to only use 1 byte, using the upper 4 bits for the tremolo
+  wavecontrol, and the lower 4 bits for the vibrato wavecontrol.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.21 Effect E5x (Set Finetune) ²±° ³ UPDATED: T0?? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect sets the finetune on a selected instrument.
+
+E.G:
+--- 01 E5F (Set the finetune of instrument 1 to -1)
+
+Range: x = value of finetune to set (0h-0Fh)
+
+if the value is > 7, just subtract 16 from it to get the signed value.
+(i.e. 0-7 = 0-7, and 8-15 = -8 to -1)
+This effect is really easy, and I don't know why more players support it,
+apart from it being a fairly useless effect.
+To implement it, just
+- check the instrument number
+- get the value in the effect parameter.
+- set the finetune for that instrument.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.22 Effect E6x (Pattern Loop) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect allows the user to loop a part of a pattern x number of times.
+
+E.G:
+C-2 01 E60 (Set the loop start at this point)
+--- 00 000
+--- 00 E64 (Loop back to the starting point 4 times)
+
+Range: x=marks loop starting point, or sets the number of times to loop to
+	 the starting point (0h-0Fh)
+
+Pseudocode:
+===========
+This effect is done in the following fashion.
+
+ If (parameter X = 0) note down the row number for that channel
+ else {
+     if (PATTERN_LOOP[TRACK] = 0) then set PATTERN_LOOP[TRACK] = x
+     else subtract 1 from PATTERN_LOOP[TRACK]
+     if PATTERN_LOOP[TRACK] > 0 row = stored row number.   (if we are still
+						       looping then jump back)
+ }
+
+Remember when declaring the PATTERN_LOOP variable to initialize it as 0.
+Jumping back should just be a matter of setting your row number to the stored
+pattern loop number, and once the row is finished it should start playing at
+the specified position again.
+
+This is how my function works, in the UPDATE_NOTE function, or handler for
+tick 0.
+case 0x6: if (eparmy == 0) patlooprow[track] = row;   // store pos if param=0
+	  else {
+	      if (patloopno[track] == 0) patloopno[track]=eparmy;
+	      else patloopno[track]--;
+	      if (patloopno[track]) row = patlooprow[track]-1;
+	  }
+
+Remember you keep seperate patlooprow/patloopno variables for EACH channel,
+NOT just 1 of each for the whole song.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿        UPDATED:
+³ °±² 5.23 Effect E7x (Set Tremolo WaveForm) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect set the waveform for the tremolo command to follow, just like
+vibrato.
+
+E.G:
+--- 00 E42 (Select the squarewave function for the tremolo command)
+--- 00 E40 (Select the default sinewave for the tremolo command)
+
+Range: x = tremolo function to select (0-7)
+
+The following values of x select its corresponding tremolo function
+x=0 : Set sine wave  (default)
+x=1 : Set Ramp Down  |\|\|\     _   _
+x=2 : Set Squarewave         |_| |_| |_
+x=3 : Set Random     (anywhere)
+x=4 : don't retrig Sine waveform
+x=5 : don't retrig RampDown waveform
+x=6 : don't retrig Squarewave waveform
+x=7 : don't retrig random waveform
+
+see section 5.20 for more information on wavecontrol, and 5.7 for an example
+of how wavecontrol is implemented with tremolo (it is identical to vibrato).
+
+* As these values for vibrato and tremolo only require 4 bits each, the
+  common method is to only use 1 byte, using the upper 4 bits for the tremolo
+  wavecontrol, and the lower 4 bits for the vibrato wavecontrol.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿         UPDATED:
+³ °±² 5.24 Effect E8x (16 position panning) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect lets you do 16 position panning.
+
+E.G:
+--- 00 E80 (Set the channel's pan value to the far left)
+--- 00 E8F (Set the channel's pan value to the far right)
+
+Range: x=position to pan too (0h-0Fh)
+
+On tick 0, just read in the parameter and set the relative panning value for
+the channel.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.25 Effect E9x (Retrig Note) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect retriggers (plays) the current note every x ticks.
+
+E.G:
+C-2 01 E93 (Retrig the note every 3 ticks - at speed 6 this would retrig once)
+--- 00 000
+C-2 01 E91 (Retrig the note every tick - at speed 6 this would retrig 5 times)
+
+Range: x=ticks between retriggers (0h-0Fh)
+
+On this effect you need to use the modulus operator to check when the retrig
+should happen.  If x is 1 say, then it should retrig the note SPEED number of
+times in one note.
+i.e.
+  tick MOD 1 = 0 always, so you would be retrigging every note.
+  tick MOD 2 = 0 on even numbers, 1 on odd numbers, so you would be retrigging
+		 every other note.
+etc.
+When it does happen just play out the note as you would normally.  The note is
+played on tick 0 as it would normally be.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿         UPDATED:
+³ °±² 5.26 Effect EAx (Fine Volume Slide Up) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect slides the volume up x values per row.
+
+E.G:
+C-2 01 C00 (Start at note at volume 0)
+--- 00 EA1 (Now slide the volume up for the channel by 1 unit)
+--- 00 EA1 (keep sliding up by 1 unit...)
+
+Range: x= amount to slide up by. (0h-Fh)
+
+This effect is only processed once per row, on tick 0, and it is as simple
+as just adding x to the current channel's volume.
+It is only processed on tick 0, and is not touched at all in the other ticks.
+The only checking to be done is for volumes larger than 64.
+hint: for all these volume commands, only do the checking for bounds once,
+just before you actually set the volume.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿         UPDATED:
+³ °±² 5.27 Effect EBx (Fine Volume Slide Down) ²±° ³ T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect slides the volume up x values per row.
+
+E.G:
+C-2 01 EB1  (Slide the volume down for the channel by 1 unit)
+--- 00 EB1  (keep sliding down by 1 unit...)
+--- 00 EB1  (keep sliding down by 1 unit...)
+
+Range: x= amount to slide up by. (0h-Fh)
+
+This effect is only processed once per row, on tick 0, and it is as simple
+as just subtracting x from the current channel's volume.
+It is only processed on tick 0, and is not touched at all in the other ticks.
+The only checking to be done is for volumes smaller than 0.
+hint: for all these volume commands, only do the checking for bounds once,
+just before you actually set the volume.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.28 Effect ECx (Cut Note) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect cuts the volume of the note to 0 after x amount of ticks.
+
+--- 00 F06   (speed is now 6)
+C-2 01 EC3   (Stop the note at tick 3, or half way between 2 notes)
+
+Range: x= number of ticks to wait before zeroing samples volume. (0h-Fh)
+
+This effect is ignored on tick 0, but on tick x when you are updating tick
+based effects, then just set the volume of the channel to 0.
+Of course if the user specified x as a number more than the speed of the song,
+then it would be ok because it would never get to tick x, and the effect is
+ignored.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.29 Effect EDx (Delay Note) ²±° ³ UPDATED: T0? [N] : INBETWEEN? [Y]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect waits for x amount of ticks before it actually plays the sample.
+ * Until the new one comes out, the previous one continues playing normally *
+
+--- 00 F06   (speed is now 6
+C-2 01 ED4   (Delay playing this note for another 4 ticks)
+
+Range: x= number of ticks to wait before playing sample. (0h-Fh)
+
+This effect is ignored on tick 0, AND you must make sure you don't play the
+sample on tick 0.
+When you arrive at tick x then just play the sample as you would normally.
+Again if the user specified x as a number more than the speed of the song,
+then it would be ok because it would never get to tick x, and the effect is
+ignored.
+
+Delay note can be one of the most annoying effects to implement for a number
+of reasons.
+
+--- 00 F06   (speed is now 6)
+C-2 01 C05   (volume is now 5)
+--- 00 000
+E-2 02 ED3   (Here is the tricky part, see below for why)
+
+This requires special handling, as you would normally :
+	1. play the note
+	2. set the channel's volume if there was an instrument number,
+	3. set the channel's frequency if there was a note value,
+
+You don't do any of these things UNTIL tick 3, so you have to ignore everything
+on tick 0 until you get to tick 3, and THEN play the note, set the volume,
+and set the frequency.
+
+Now for the NEXT complication (delays longer than the speed of the song)
+
+--- 00 F04   (speed is now 4)
+C-2 01 C05   (volume is now 5)
+E-2 02 ED5   (here is a delay that will never happen, see below for more.)
+--- 00 ---   (this empty note is here for a reason)
+
+This looks innocent enough, but it is actually quite tricky.  You might say
+that you would just never play the note, but what happens when you get to
+the next row after the delay?
+You would normally set the volume of the channel, so it would jumps from 5 to
+the volume of sample 2, which you previously stored but did not set because
+there was a delay note effect.
+This is very wrong, as we want the volume to stay at 05, and the original
+C-2 01 sample to keep playing.
+It requires a special condition not to remember the volume for the channel
+if an instrument is set, and a delay note effect's parameter is bigger than
+the SPEED of the song.
+
+The reason I emphasize this is you might have coded it so it delayed playing
+the note, but forgot about the volume/frequency parts of this command.
+
+In summary: IF THE NOTE DELAY IS INVALID THEN THE SONG SHOULD PLAY IF THERE
+	    WAS NO SUCH NOTE, OR COMMAND.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.30 Effect EEx (Pattern Delay) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect delays the pattern for the time it would take to play x number of
+notes.
+
+E.G:
+C-2 01 EE8 (Play the c-2 note then wait for 8 notes before..
+C-2 01 000  ... playing the next note)
+
+Range: x= number of notes to delay pattern for. (0h-Fh)
+
+To implement this effect you are going to have to modify your main interrupt
+handler (see section 3.3):
+
+You are going to have to keep a counter that is subtracted every time your
+SPEED number of ticks is up, but don't play the note.  You must still keep
+playing the effects though.
+
+It would look something like this.
+if (tick >= speed) {
+	... blah blah blah etc...
+	if (patdelay = 0) then {
+		increment row.
+		playnote.
+	}
+	else patdelay = patdelay - 1
+}
+else do_effects
+
+This just boils down to not playing the note or incrementing the row for x
+number of notes, until the pattern delay counter is 0.  When it is 0 the mod
+should keep playing as if nothing had happened.
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³ °±² 5.31 Effect EFx (Invert Loop) ²±° ³ UPDATED: T0? [Y] : INBETWEEN? [N]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+This effect inverts a sample loop or plays it backwards.
+
+E.G:
+C-2 01 EF4 (Play the loop in this sample backwards at speed 4)
+
+Range: x = speed to set invert loop at (0h-0Fh)
+
+This effect is not supported in any player or tracker.  Don't bother with it.
+
+
+ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+³                   °±²          : SECTION 6 :          ²±°                  ³
+³                   °±² Protracker 1.1B Format Document ²±°                  ³
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+Offset  Bytes  Description
+   0     20    Songname. Remember to put trailing null bytes at the end...
+
+Information for sample 1-31:
+
+Offset  Bytes  Description
+  20     22    Samplename for sample 1. Pad with null bytes.
+  42      2    Samplelength for sample 1. Stored as number of words.
+	       Multiply by two to get real sample length in bytes.
+  44      1    Lower four bits are the finetune value, stored as a signed
+	       four bit number. The upper four bits are not used, and
+	       should be set to zero.
+	       Value:  Finetune:
+		 0        0
+		 1       +1
+		 2       +2
+		 3       +3
+		 4       +4
+		 5       +5
+		 6       +6
+		 7       +7
+		 8       -8
+		 9       -7
+		 A       -6
+		 B       -5
+		 C       -4
+		 D       -3
+		 E       -2
+		 F       -1
+
+  45      1    Volume for sample 1. Range is $00-$40, or 0-64 decimal.
+  46      2    Repeat point for sample 1. Stored as number of words offset
+	       from start of sample. Multiply by two to get offset in bytes.
+  48      2    Repeat Length for sample 1. Stored as number of words in
+	       loop. Multiply by two to get replen in bytes.
+
+Information for the next 30 samples starts here.  It's just like the info for
+sample 1.
+
+Offset  Bytes  Description
+  50     30    Sample 2...
+  80     30    Sample 3...
+   .
+   .
+   .
+ 890     30    Sample 30...
+ 920     30    Sample 31...
+
+Offset  Bytes  Description
+ 950      1    Songlength. Range is 1-128.
+ 951      1    Well... this little byte here is set to 127, so that old
+	       trackers will search through all patterns when loading.
+	       Noisetracker uses this byte for restart, but we don't.
+ 952    128    Song positions 0-127. Each hold a number from 0-63 that
+	       tells the tracker what pattern to play at that position.
+1080      4    The four letters "M.K." - This is something Mahoney & Kaktus
+	       inserted when they increased the number of samples from
+	       15 to 31. If it's not there, the module/song uses 15 samples
+	       or the text has been removed to make the module harder to
+	       rip. Startrekker puts "FLT4" or "FLT8" there instead.
+
+Offset  Bytes  Description
+1084    1024   Data for pattern 00.
+   .
+   .
+   .
+xxxx  Number of patterns stored is equal to the highest patternnumber
+      in the song position table (at offset 952-1079).
+
+Each note is stored as 4 bytes, and all four notes at each position in
+the pattern are stored after each other.
+
+00 -  chan1  chan2  chan3  chan4
+01 -  chan1  chan2  chan3  chan4
+02 -  chan1  chan2  chan3  chan4
+etc.
+
+Info for each note:
+
+ _____byte 1_____   byte2_    _____byte 3_____   byte4_
+/                 /        /                 /
+0000          0000-00000000  0000          0000-00000000
+
+Upper four    12 bits for    Lower four    Effect command.
+bits of sam-  note period.   bits of sam-
+ple number.                  ple number.
+
+Periodtable for Tuning 0, Normal
+  C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+  C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+  C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+To determine what note to show, scan through the table until you find
+the same period as the one stored in byte 1-2. Use the index to look
+up in a notenames table.

@@ -41,7 +41,7 @@ typedef struct protracker_1_1b_hdr_t {
 } protracker_1_1b_hdr_t;
 
 typedef struct record_t {
-  uint8_t* data_ptr;
+  void* data_ptr;
   size_t sz;
 } record_t;
 
@@ -102,7 +102,7 @@ static uint32_t _words_val_to_bytes_le( uint16_t word_be ) {
 
 /* Sample finetune values are stored as 4-bit signed integers: 0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1
  * NOTE(Anton) this could be a #define for an inline. */
-static int _fine_tune_bits_to_int( uint8_t finetune ) { return finetune < 8 ? (int)finetune : (int)finetune - 16; }
+// static int _fine_tune_bits_to_int( uint8_t finetune ) { return finetune < 8 ? (int)finetune : (int)finetune - 16; }
 
 bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   if ( !filename || !mod_ptr ) { return false; }
@@ -198,7 +198,8 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     memcpy( samplename, hdr_ptr->samples[i]._name, 22 );
     printf( "  Sample %i name: \"%s\"\n", i + 1, samplename );
 
-    mod_ptr->sample_data_ptrs[i] = &record.data_ptr[offset];
+    int8_t* byte_ptr             = record.data_ptr;
+    mod_ptr->sample_data_ptrs[i] = &byte_ptr[offset];
     uint32_t sample_sz           = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
     if ( sample_sz != 0 ) {
       if ( offset + sample_sz > record.sz ) {
@@ -206,13 +207,13 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
         return false;
       }
 
-      printf( "address at data_ptr[%u] is %p\n", offset, &record.data_ptr[offset] );
+      printf( "address at data_ptr[%u] is %p\n", offset, (void*)&byte_ptr[offset] );
       char tmp[64];
       sprintf( tmp, "sample%i.raw", i );
       FILE* of_ptr = fopen( tmp, "wb" );
       if ( !of_ptr ) { return false; }
       printf( "writing %s size %u\n", tmp, sample_sz );
-      int n = fwrite( &record.data_ptr[offset], sample_sz, 1, of_ptr );
+      int n = fwrite( &byte_ptr[offset], sample_sz, 1, of_ptr );
       if ( 1 != n ) { return false; }
       fclose( of_ptr );
     }

@@ -116,6 +116,10 @@ uint32_t apg_utf8_to_cp( const char* mbs, int* sz ) {
     uint8_t part_a = first_byte << 4;             // shift 1110xxxx to xxxx0000
     uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
     uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+
+		(void)part_b; // unused
+		(void)part_c; // unused
+
     // 00000000 00000000 00000000 xxxx0000 << 2 = 00000000 00000000 000000xx xx000000
     uint32_t codepoint = (uint32_t)part_a << 2;
     // 00000000 00000000 000000xx xx000000 | pb = 00000000 00000000 000000xx xxxxxxxx, << 6 = 00000000 00000000 xxxxxxxx xx000000
@@ -174,6 +178,7 @@ int apg_utf8_count_cp( const char* buf ) {
   int nbytes       = 0;
   for ( int i = 0; i < sz; i += nbytes ) {
     uint32_t code = apg_utf8_to_cp( &buf[current_byte], &nbytes );
+		(void)code; // unused
     current_byte += nbytes;
     ncode_points++;
   }
@@ -192,6 +197,7 @@ void apg_utf8_reverse( char* out, const char* in ) {
   while ( byte_idx < sz ) {
     int nbytes  = 0;
     uint32_t cp = apg_utf8_to_cp( &in[byte_idx], &nbytes );
+		(void)cp; // unused
     int out_idx = sz - byte_idx - nbytes;
     memcpy( &tmp_ptr[out_idx], &in[byte_idx], nbytes );
     byte_idx += nbytes;
@@ -372,6 +378,7 @@ void apg_utf8_trim_end( char* buf, int n ) {
   for ( int i = 0; current_byte < sz && i < APG_UNICODE_MAX_STR; i++ ) {
     int nbytes    = 0;
     uint32_t code = apg_utf8_to_cp( &buf[current_byte], &nbytes );
+		(void)code; // unused
     current_byte += nbytes;
     current_code_point++;
     if ( current_code_point >= ncode_points - n ) {
