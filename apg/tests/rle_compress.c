@@ -37,7 +37,7 @@ int main( int argc, char** argv ) {
   }
   size_t out_sz;
   apg_rle_compress( record.data, record.sz, NULL, &out_sz );
-  printf("record sz %i. compressed sz %i\n%.2f%% size when compressed\n", record.sz, out_sz, ((float)out_sz / (float)record.sz)*100 );
+  printf( "record sz %i. compressed sz %i\n%.2f%% size when compressed\n", (int)record.sz, (int)out_sz, ( (float)out_sz / (float)record.sz ) * 100 );
   uint8_t* out_ptr = malloc( out_sz );
   apg_rle_compress( record.data, record.sz, out_ptr, &out_sz );
 

@@ -619,7 +619,7 @@ void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out
   size_t out_n = 0;
   for ( size_t i = 0; i < sz_in; i++ ) {
     uint8_t count = 1;
-    if ( ( i < sz_in - 1 ) && ( bytes_in[i] == bytes_in[i + 1] ) ) {
+    if ( ( i < sz_in - 1 ) && ( bytes_in[i] == bytes_in[i + 1] ) ) { // WARNING clang-tidy "array access from bytes_in results in a null pointer dereference
       count = 2;
       for ( size_t j = i + 2; j < sz_in && count < UINT8_MAX; j++ ) {
         if ( bytes_in[j] != bytes_in[i] ) { break; }
@@ -627,8 +627,8 @@ void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out
       }
     }
     if ( bytes_out ) {
-      bytes_out[out_n] = bytes_in[i];
-      if ( count >= 2 ) { // eg convert AAA to AA3 and AAAA to AA4. AA expands to AA2. A alone stays A
+      bytes_out[out_n] = bytes_in[i]; // WARNING clang-tidy "array access from bytes_in results in a null pointer dereference
+      if ( count >= 2 ) {             // eg convert AAA to AA3 and AAAA to AA4. AA expands to AA2. A alone stays A
         bytes_out[out_n + 1] = bytes_in[i];
         bytes_out[out_n + 2] = count;
       }
