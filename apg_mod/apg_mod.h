@@ -54,6 +54,11 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#define APG_MOD_N_SAMPLES 31       // Default
+#define APG_MOD_SONG_NAME_LEN 20   // Default
+#define APG_MOD_N_PATTERN_ROWS 64  // Default
+#define APG_MOD_SAMPLE_NAME_LEN 22 // Default
+
 APG_MOD_EXPORT typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
   APG_MOD_FMT_FASTTRACKER_2CH,
@@ -70,10 +75,29 @@ APG_MOD_EXPORT typedef enum apg_mod_fmt_t {
 } apg_mod_fmt_t;
 
 APG_MOD_EXPORT typedef struct apg_mod_t {
-  int8_t* sample_data_ptrs[31]; // PCM 8-bit signed samples for *Paula* Amiga chip.
+  // Module
+  void* mod_data_ptr;                        // The entire file loaded into memory. Motorola byte-format (big-endian).
+  uint32_t mod_data_sz;                      // Size of the entire module file.
+  apg_mod_fmt_t mod_fmt;                     // What type of module was detected. Default APG_MOD_FMT_STD_4CH.
+  int n_chans;                               // Number of channels (columns) in each pattern. Default 4.
+  char song_name[APG_MOD_SONG_NAME_LEN + 1]; // Song name with nul-terminator appended so it can be used as a C-string.
+
+  // Orders Table - which order to play the patterns (verses). They can repeat.
+  uint8_t* orders_ptr; // Points into mod_data_ptr.
+  uint8_t n_orders;    // Song length in number of patterns/verses.
+
+  // Patterns
+  uint32_t n_patterns;
+
+  // Samples
+  int8_t* sample_data_ptrs[APG_MOD_N_SAMPLES];                       // PCM 8-bit signed samples for *Paula* Amiga chip. These point into mod_data_ptr.
+  uint32_t sample_bytes[APG_MOD_N_SAMPLES];                          // Size of each sample in bytes. Converted from 16-bit big-endian 'word' lengths.
+  char sample_names[APG_MOD_N_SAMPLES][APG_MOD_SAMPLE_NAME_LEN + 1]; // Sample names with nul-terminator appended so they can be used as C-strings.
 } apg_mod_t;
 
+// Read in a module file from disk. Call apg_mod_free() to release allocated memory.
 APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
+APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
 APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus

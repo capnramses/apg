@@ -32,8 +32,8 @@ typedef struct sample_t {
 // look like they have more data per field e.g. longer songname etc.
 // 1084 bytes.
 typedef struct protracker_1_1b_hdr_t {
-  char _songname[20];        // Should include trailing nul byte(s).
-  sample_t samples[31];      // Sample numbers are 1-31. Early versions had only 15 samples.
+  char _songname[20];                  // Should include trailing nul byte(s).
+  sample_t samples[APG_MOD_N_SAMPLES]; // Sample numbers are 1-31. Early versions had only 15 samples.
   uint8_t song_length;       // Range is 1-128. This is the number of pattern orders (from orders_table) to play in the song, including repeated patterns.
   uint8_t unused;            // Set to 127 to make old trackers parse all patterns. PT used it to mean 'restart'.
   uint8_t orders_table[128]; // Positions 0-127.  Values are a number 0-63 to indicate pattern to play at that position.
@@ -111,32 +111,39 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   if ( !record.data_ptr ) { return false; }
 
   if ( record.sz < 1084 ) {
+    fprintf( stderr, "ERROR: File too small to be a song module with data\n" );
     free( record.data_ptr );
     return false;
   }
 
+  mod_ptr->mod_data_ptr = record.data_ptr;
+  mod_ptr->mod_data_sz  = record.sz;
+
   protracker_1_1b_hdr_t* hdr_ptr = (protracker_1_1b_hdr_t*)record.data_ptr;
 
-  int n_chans       = 0;
-  apg_mod_fmt_t fmt = _mod_type( hdr_ptr->magicletters, &n_chans );
-  if ( fmt == APG_MOD_FMT_UNKNOWN ) {
+  mod_ptr->n_chans = 0;
+  mod_ptr->mod_fmt = _mod_type( hdr_ptr->magicletters, &mod_ptr->n_chans );
+  if ( mod_ptr->mod_fmt == APG_MOD_FMT_UNKNOWN ) {
     fprintf( stderr, "Module format %c%c%c%c unknown.\n", hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2], hdr_ptr->magicletters[3] );
     free( record.data_ptr );
     return false;
   }
-  printf( "Module format type %i: %c%c%c%c.\n", (int)fmt, hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2], hdr_ptr->magicletters[3] );
-  printf( "# Channels:  %i\n", n_chans );
+  printf( "Module format type %i: %c%c%c%c.\n", (int)mod_ptr->mod_fmt, hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2],
+    hdr_ptr->magicletters[3] );
+  printf( "# Channels:  %i\n", mod_ptr->n_chans );
 
-  char songname[21];
-  songname[20] = '\0'; // Song names are usually not nul-terminated.
-  memcpy( songname, hdr_ptr->_songname, 20 );
+  mod_ptr->song_name[20] = '\0'; // Song names are usually not nul-terminated.
+  memcpy( mod_ptr->song_name, hdr_ptr->_songname, 20 );
 
-  printf( "Song name:   \"%s\"\n", songname );
+  printf( "Song name:   \"%s\"\n", mod_ptr->song_name );
   printf( "Song length: %u\n", (uint32_t)hdr_ptr->song_length );
+
+  mod_ptr->orders_ptr = hdr_ptr->orders_table;
+  mod_ptr->n_orders   = hdr_ptr->song_length;
 
   // Determine n of patterns stored in file by looking through order table for biggest pattern index played.
   int max_pattern = 0;
-  printf( "Orders:\n" );
+  printf( "Orders Table:\n" );
   // NOTE(Anton) could probably stop at song_length here, not the full 128
   for ( int i = 0; i < 128; i++ ) {
     if ( hdr_ptr->orders_table[i] > max_pattern ) { max_pattern = hdr_ptr->orders_table[i]; }
@@ -147,8 +154,8 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
       printf( " " );
     }
   }
-  int n_patterns = max_pattern + 1;
-  printf( "# Patterns:  %u\n", n_patterns );
+  mod_ptr->n_patterns = max_pattern + 1;
+  printf( "# Patterns:  %u\n", mod_ptr->n_patterns );
 
   // TODO(Anton) UP TO HERE*********
 
@@ -188,40 +195,40 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   // samples always start with 2 zeroes
 
   // TODO(Anton)! if older type then offset is only + 600 not + 1084!
-  uint32_t offset = 1084 + n_patterns * 64 * n_chans * 4; // 1024*n_patterns+header's offset of 1084
+  uint32_t offset = 1084 + mod_ptr->n_patterns * 64 * mod_ptr->n_chans * 4; // 1024 * n_patterns + header's offset of 1084
 
+  printf( "Samples:\n" );
   // offset &or size is slightly off here somehow
   // some samples i output seemed to be correct as 8-bit signed 1200Hz or 8000Hz PCM waves.
-  for ( int i = 0; i < 31; i++ ) {
-    char samplename[23];
-    samplename[22] = '\0'; // Song names are usually not nul-terminated.
-    memcpy( samplename, hdr_ptr->samples[i]._name, 22 );
-    printf( "  Sample %i name: \"%s\"\n", i + 1, samplename );
+  for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
+    mod_ptr->sample_names[i][22] = '\0';
+    memcpy( mod_ptr->sample_names[i], hdr_ptr->samples[i]._name, 22 );
 
     int8_t* byte_ptr             = record.data_ptr;
     mod_ptr->sample_data_ptrs[i] = &byte_ptr[offset];
-    uint32_t sample_sz           = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
-    if ( sample_sz != 0 ) {
-      if ( offset + sample_sz > record.sz ) {
+    mod_ptr->sample_bytes[i]     = _words_val_to_bytes_le( hdr_ptr->samples[i].length_be );
+    if ( offset + mod_ptr->sample_bytes[i] > record.sz ) {
+      fprintf( stderr, "Sample is outside range of file memory - looks like a corrupted file or wrong format.\n" );
+      return false;
+    }
+    if ( mod_ptr->sample_bytes[i] > 0 ) { printf( "  Sample %i name: \"%s\"\n", i + 1, mod_ptr->sample_names[i] ); }
+#ifdef DUMP_RAW_SAMPLES
+    if ( mod_ptr->sample_bytes[i] != 0 ) {
+      if ( offset + mod_ptr->sample_bytes[i] > record.sz ) {
         fprintf( stderr, "sample to write is outside range of file memory.\n" );
         return false;
       }
-
       printf( "address at data_ptr[%u] is %p\n", offset, (void*)&byte_ptr[offset] );
       char tmp[64];
       sprintf( tmp, "sample%i.raw", i );
       FILE* of_ptr = fopen( tmp, "wb" );
       if ( !of_ptr ) { return false; }
-      printf( "writing %s size %u\n", tmp, sample_sz );
-      int n = fwrite( &byte_ptr[offset], sample_sz, 1, of_ptr );
+      printf( "writing %s size %u\n", tmp, mod_ptr->sample_bytes[i] );
+      int n = fwrite( &byte_ptr[offset], mod_ptr->sample_bytes[i], 1, of_ptr );
       if ( 1 != n ) { return false; }
       fclose( of_ptr );
     }
-
-    offset += sample_sz;
-
-    if ( offset == record.sz ) { printf( "reached EOF\n" ); }
-
+#endif
 #ifdef PRINT_SAMPLE_INFO
     printf( "    Length (bytes): %u\n", sample_sz );
     printf( "    Finetune:       %u\n", (uint32_t)hdr_ptr->samples[i].finetune );
@@ -229,9 +236,19 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     printf( "    Loop point:     %u\n", (uint32_t)hdr_ptr->samples[i].loop_start_be );
     printf( "    Loop length:    %u\n", (uint32_t)hdr_ptr->samples[i].loop_length_be );
 #endif
-  }
 
-  free( record.data_ptr );
+    offset += mod_ptr->sample_bytes[i];
+  } // endfor N_SAMPLES
+
+  return true;
+}
+
+bool apg_mod_free( apg_mod_t* mod_ptr ) {
+  if ( !mod_ptr || !mod_ptr->mod_data_ptr ) { return false; }
+
+  free( mod_ptr->mod_data_ptr );
+  *mod_ptr = ( apg_mod_t ){ .mod_data_ptr = NULL };
+
   return true;
 }
 

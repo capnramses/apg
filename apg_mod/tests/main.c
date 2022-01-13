@@ -13,6 +13,11 @@ int main( int argc, char** argv ) {
     fprintf( stderr, "ERROR: could not open file %s\n", filename_ptr );
     return 1;
   }
+  if ( !apg_mod_free( &mod ) ) {
+    fprintf( stderr, "ERROR: could not free mod\n" );
+    return 1;
+  }
 
+  printf( "Normal exit\n" );
   return 0;
 }
