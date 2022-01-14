@@ -16,6 +16,7 @@ Licence: see header.
 
 // https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
 
+#pragma pack( push, 1 ) // supported on GCC in addition to individual packing attribs
 // Note the module files are Motorola format (big-endian) so any variables >1 byte need a conversion (there are only a few).
 // 30 bytes.
 typedef struct sample_t {
@@ -39,6 +40,7 @@ typedef struct protracker_1_1b_hdr_t {
   uint8_t orders_table[APG_MOD_ORDERS_MAX]; // Positions 0-127.  Values are a number 0-63 to indicate pattern to play at that position.
   char magicletters[4]; // Address 1080. "M.K." (or "FLT4" or "FLT8"). If not here assume song uses only 15 samples or text was removed to obfuscate the music.
 } protracker_1_1b_hdr_t;
+#pragma pack( pop )
 
 typedef struct record_t {
   void* data_ptr;
