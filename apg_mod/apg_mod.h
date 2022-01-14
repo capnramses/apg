@@ -43,7 +43,6 @@ ToDo
 * Move raw sample rip into a test/ or examples/ program.
 * Figure out correct frequency for each sample and create a .wav rip test/
   program.
-* Write a function to decode notes from patterns.
 * Figure out the playback row advance speed and whether to pin it to PAL or NTSC.
 * Write a full tracker/player example program using PortAudio.
 * Add repeat/loop features to samples.
@@ -114,10 +113,8 @@ APG_MOD_EXPORT typedef struct apg_mod_t {
   uint8_t* orders_ptr; // Points into mod_data_ptr.
   uint8_t n_orders;    // Song length in number of patterns/verses.
 
-  // TODO(Anton) maybe just make a function to fetch the broken-down note details given inputs: ( order_i, row_i, channel_i )
   // Patterns (verses).
-  // void* pattern_row_ptrs[APG_MOD_ORDERS_MAX][APG_MOD_N_PATTERN_ROWS]; // Each pattern row is mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES bytes.
-  int n_patterns;
+  int n_patterns; // Number of patterns used in the song. Use apg_mod_fetch_note() to iterate over patterns and retrieve notes.
 
   // Samples (instruments).
   int8_t* sample_data_ptrs[APG_MOD_N_SAMPLES];                       // PCM 8-bit signed samples for *Paula* Amiga chip. These point into mod_data_ptr.
@@ -132,23 +129,23 @@ APG_MOD_EXPORT typedef struct apg_mod_note_t {
   uint16_t effect_params;    // Paramters to effect applied.
 } apg_mod_note_t;
 
-// Read in a module file from disk. Call apg_mod_free() to release allocated memory.
+/** Read in a module file from disk. Call apg_mod_free() to release allocated memory. */
 APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
 
 /** Decode the details for a note (sample and applied effects) to play at a channel in particular row in a given pattern.
  * This function can be called whilst iterating over the pattern indices contained in orders_ptr.
- * @param mod_ptr       Pass it a loaded module.
+ * @param mod_ptr       Pass it a loaded module. Must not be NULL.
  * @param pattern_idx   Up to n_patterns.
  * @param row_idx       Up to APG_MOD_N_PATTERN_ROWS.
  * @param channel_idx   Up to n_chans.
  * @param note_ptr      Output written into a struct. Must not be NULL.
- * @return              False on error.
+ * @return              Returns false on error.
  */
 APG_MOD_EXPORT bool apg_mod_fetch_note( const apg_mod_t* mod_ptr, int pattern_idx, int row_idx, int channel_idx, apg_mod_note_t* note_ptr );
 
 APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
 
-APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
+// APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
 
 #ifdef __cplusplus
 }

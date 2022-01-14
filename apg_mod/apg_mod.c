@@ -101,6 +101,27 @@ static uint32_t _words_val_to_bytes_le( uint16_t word_be ) {
 }
 
 bool apg_mod_fetch_note( const apg_mod_t* mod_ptr, int pattern_idx, int row_idx, int channel_idx, apg_mod_note_t* note_ptr ) {
+  // Load Pattern Data
+  // Note formats newer than MOD/S3M use patterns of variable extended sizes.
+  // "at most a pattern could be is 8192 bytes! -
+  // and that's a 32 channel pattern with 64 rows and 4 bytes per note)"
+
+  // mem per pattern = n_chans * 4 * 64 * n_patterns
+  // pattern i offset = n_chans * 4 * 64 * i;
+
+  // A note is stored in the actual file as 4 bytes:
+  // byte 0   byte 1   byte 2   byte 3
+  // aaaaBBBB cccccccc DDDDeeee FFFFFFFF
+  // where:
+  // aaaaDDDD     = sample number
+  // BBBBCCCCCCCC = sample period value (12 bits?) -> convert to a note number
+  // eeee         = effect number
+  // FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
+
+  // Each note is stored as 4 bytes, and all four notes at each position in the pattern are stored after each other.
+
+  // example code for notes is here https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
+
   if ( !mod_ptr || !mod_ptr->mod_data_ptr || !note_ptr ) { return false; }
 
   uint32_t offset = 1084 + pattern_idx * row_idx * channel_idx * APG_MOD_N_NOTE_BYTES;
@@ -177,29 +198,6 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   mod_ptr->n_patterns = max_pattern + 1;
   printf( "# Patterns:  %u\n", mod_ptr->n_patterns );
 
-  // TODO(Anton) UP TO HERE*********
-
-  // Load Pattern Data
-  // Note formats newer than MOD/S3M use patterns of variable extended sizes.
-  // "at most a pattern could be is 8192 bytes! -
-  // and that's a 32 channel pattern with 64 rows and 4 bytes per note)"
-
-  // mem per pattern = n_chans * 4 * 64 * n_patterns
-  // pattern i offset = n_chans * 4 * 64 * i;
-
-  // A note is stored in the actual file as 4 bytes:
-  // byte 0   byte 1   byte 2   byte 3
-  // aaaaBBBB cccccccc DDDDeeee FFFFFFFF
-  // where:
-  // aaaaDDDD     = sample number
-  // BBBBCCCCCCCC = sample period value (12 bits?) -> convert to a note number
-  // eeee         = effect number
-  // FFFFFFFF     = effect params ( can later be split into 2 parts for certain effects )
-
-  // Each note is stored as 4 bytes, and all four notes at each position in the pattern are stored after each other.
-
-  // example code for notes is here https://github.com/DaveyPocket/Amigo/blob/master/mod-spec.txt
-
   // samples are stored after the patterns.
   // samples always start with 2 zeroes
 
@@ -219,7 +217,10 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
       fprintf( stderr, "Sample is outside range of file memory - looks like a corrupted file or wrong format.\n" );
       return false;
     }
+#define PRINT_SAMPLE_NAMES
+#ifdef PRINT_SAMPLE_NAMES
     if ( mod_ptr->sample_sz_bytes[i] > 0 ) { printf( "  Sample %i name: \"%s\"\n", i + 1, mod_ptr->sample_names[i] ); }
+#endif
 #ifdef DUMP_RAW_SAMPLES
     if ( mod_ptr->sample_sz_bytes[i] != 0 ) {
       if ( offset + mod_ptr->sample_sz_bytes[i] > record.sz ) {
@@ -279,7 +280,9 @@ bool apg_mod_free( apg_mod_t* mod_ptr ) {
   return true;
 }
 
+/*
 bool apg_mod_write_file( const char* filename ) {
   if ( !filename ) { return false; }
   return true;
 }
+*/
