@@ -30,7 +30,7 @@ int main( int argc, char** argv ) {
           char tmp[4];
           strcpy( tmp, "..." );
           if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
-          printf( "%s %i %i %i %i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
+          printf( "%s %i %i %i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
         }
       }
       printf( "\n" );
