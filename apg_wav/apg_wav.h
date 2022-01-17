@@ -56,6 +56,8 @@ bool apg_wav_write( const char* filename, const void* data_ptr, uint32_t data_sz
  */
 bool apg_wav_read( const char* filename, apg_wav_t* wav_data_ptr );
 
+double apg_wav_duration( const apg_wav_t* wav_ptr );
+
 bool apg_wav_free( apg_wav_t* wav_data_ptr );
 
 #ifdef __cplusplus

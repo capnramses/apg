@@ -14,7 +14,8 @@
 
 // User data struct
 typedef struct audio_source_t {
-  apg_wav_t wav;         // Audio data loaded by apg_wav
+  apg_wav_t wav; // Audio data loaded by apg_wav
+  double duration_s;
   uint32_t wav_data_idx; // Counter of where my wav is up to in playback of bytes.
 } audio_source_t;
 
@@ -57,6 +58,7 @@ int main( int argc, char** argv ) {
     fprintf( stderr, "ERROR loading file %s\n", filename );
     return 1;
   }
+  audio_source.duration_s = apg_wav_duration( &audio_source.wav );
 
   // Start PortAudio
   printf( "%s\n", Pa_GetVersionText() );
@@ -82,13 +84,14 @@ int main( int argc, char** argv ) {
     return 1;
   }
 
+  printf( "wav duration %lf\n", audio_source.duration_s );
+
   Pa_StartStream( stream );
   if ( err != paNoError ) {
     printf( "PortAudio error: %s\n", Pa_GetErrorText( err ) );
     return 1;
   }
 
-  // TODO(Anton) make a function work out actual duration of wav here (work out n_samples then -> n_samples / sample_rate in Hz = duration in s ).
   int n_seconds = 10;
   Pa_Sleep( n_seconds * 1000 );
 

@@ -114,6 +114,11 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
   return true;
 }
 
+double apg_wav_duration( const apg_wav_t* wav_ptr ) {
+  if ( !wav_ptr ) { return -0.0; }
+  double d = (double)wav_ptr->header_ptr->data_sz / (double)wav_ptr->header_ptr->byte_rate;
+}
+
 bool apg_wav_free( apg_wav_t* wav_ptr ) {
   if ( !wav_ptr || !wav_ptr->file_data_ptr ) {
     fprintf( stderr, "ERROR freeing wav - wav_ptr is %p and file_data_ptr is %p\n", (void*)wav_ptr, (void*)wav_ptr->file_data_ptr );
