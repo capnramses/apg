@@ -120,6 +120,7 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
 double apg_wav_duration( const apg_wav_t* wav_ptr ) {
   if ( !wav_ptr ) { return -0.0; }
   double d = (double)wav_ptr->header_ptr->data_sz / (double)wav_ptr->header_ptr->byte_rate;
+  return d;
 }
 
 bool apg_wav_free( apg_wav_t* wav_ptr ) {
