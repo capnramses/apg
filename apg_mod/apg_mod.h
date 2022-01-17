@@ -186,7 +186,7 @@ typedef enum apg_mod_effect_t {
   APG_MOD_EFFECT_SET_FINETUNE_VALUE,     // 14 and 5 from next nibble.
   APG_MOD_EFFECT_LOOP_PATTERN,           // 14 and 6 from next nibble.
   APG_MOD_EFFECT_SET_TREMOLO_WAVEFORM,   // 14 and 7 from next nibble.
-  APG_MOD_EFFECT_UNUSED,                 // 14 and 8 from next nibble.
+  APG_MOD_EFFECT_UNUSED2,                // 14 and 8 from next nibble.
   APG_MOD_EFFECT_RETRIGGER_SAMPLE,       // 14 and 9 from next nibble.
   APG_MOD_EFFECT_FINE_VOLUME_SLIDE_UP,   // 14 and 10 from next nibble.
   APG_MOD_EFFECT_FINE_VOLUME_SLIDE_DOWN, // 14 and 11 from next nibble.
