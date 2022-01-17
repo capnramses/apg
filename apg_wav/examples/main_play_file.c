@@ -30,8 +30,7 @@ static int antons_pa_cb( const void* input_buffer_ptr, void* output_buffer_ptr, 
   // because some encoders like ffmpeg break this WAV variable we need to calculate it from the file size.
   uint32_t actual_data_sz = src_ptr->wav.header_ptr->file_sz - 44; // 44 is size of WAV PCM header.
 
-  uint32_t sample_sz = 4;
-  if ( src_ptr->wav.header_ptr->bits_per_sample == 16 ) { sample_sz = 2; }
+  uint32_t sample_sz = src_ptr->wav.header_ptr->bits_per_sample / 8;
 
   if ( src_ptr->wav_data_idx + frames_per_buffer * src_ptr->wav.header_ptr->n_chans * sample_sz < actual_data_sz ) {
     memcpy( output_buffer_ptr, &src_ptr->wav.pcm_data_ptr[src_ptr->wav_data_idx], frames_per_buffer * src_ptr->wav.header_ptr->n_chans * sample_sz );
@@ -55,7 +54,7 @@ int main( int argc, char** argv ) {
   audio_source_t audio_source = ( audio_source_t ){ .wav_data_idx = 0 };
   bool res                    = apg_wav_read( filename, &audio_source.wav );
   if ( !res ) {
-    fprintf( stderr, "ERROR loading file %s\n", filename );
+    fprintf( stderr, "ERROR loading file %s %i\n", filename );
     return 1;
   }
   audio_source.duration_s = apg_wav_duration( &audio_source.wav );
@@ -67,15 +66,23 @@ int main( int argc, char** argv ) {
     printf( "PortAudio error: %s\n", Pa_GetErrorText( err ) );
     return 1;
   }
+  printf( "BPS = %i\n", (int)audio_source.wav.header_ptr->bits_per_sample );
 
   PaSampleFormat fmt = paFloat32;
-  if ( 16 == audio_source.wav.header_ptr->bits_per_sample ) { fmt = paInt16; }
-  PaStream* stream = NULL; // usually just 1 stream per device
+  switch ( audio_source.wav.header_ptr->bits_per_sample ) {
+  case 16: fmt = paInt16; break;
+  case 8: fmt = paUInt8; break; // 8-bit is unsigned in wav, but 16 is signed.
+  default:
+    fprintf( stderr, "WARNING: unhandled bits-per-sample of %i detected.\n", audio_source.wav.header_ptr->bits_per_sample );
+    fmt = paInt16;
+    break; // guess
+  }
 
-  err = Pa_OpenDefaultStream( &stream,
+  PaStream* stream = NULL; // usually just 1 stream per device
+  err              = Pa_OpenDefaultStream( &stream,
     0,                                    // no input channels (mic/record etc)
     audio_source.wav.header_ptr->n_chans, // mono/stereo
-    fmt,                                  // 16-bit int or 32-bit float supported in this demo
+    fmt,                                  // 8-bit, 16-bit int or 32-bit float supported in this demo
     audio_source.wav.header_ptr->sample_rate_hz,
     256, // frames per buffer to request from callback (can use paFramesPerBufferUnspecified)
     antons_pa_cb, &audio_source );
@@ -84,6 +91,7 @@ int main( int argc, char** argv ) {
     return 1;
   }
 
+  printf( "sample Hz: %i\n", audio_source.wav.header_ptr->sample_rate_hz );
   printf( "wav duration %lf\n", audio_source.duration_s );
 
   Pa_StartStream( stream );
@@ -92,8 +100,7 @@ int main( int argc, char** argv ) {
     return 1;
   }
 
-  int n_seconds = 10;
-  Pa_Sleep( n_seconds * 1000 );
+  Pa_Sleep( audio_source.duration_s * 1000 );
 
   err = Pa_StopStream( stream );
   if ( err != paNoError ) {

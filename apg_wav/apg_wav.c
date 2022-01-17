@@ -2,7 +2,7 @@
 Wave file read/write
 Anton Gerdelan <antonofnote at gmail>
 C99
-Version 0.2
+Version 0.2.1
 Licence: see header.
 \*****************************************************************************/
 
@@ -20,10 +20,7 @@ typedef struct entire_file_t {
 
 static bool _read_entire_file( const char* filename, entire_file_t* record_ptr ) {
   FILE* fp = fopen( filename, "rb" );
-  if ( !fp ) {
-    fprintf( stderr, "ERROR: opening file for reading `%s`\n", filename );
-    return false;
-  }
+  if ( !fp ) { return false; }
   fseek( fp, 0L, SEEK_END );
   record_ptr->sz       = (size_t)ftell( fp );
   record_ptr->data_ptr = malloc( record_ptr->sz );
@@ -81,14 +78,17 @@ bool apg_wav_write( const char* filename, const void* data_ptr, uint32_t data_sz
 }
 
 bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
-  if ( !filename || !wav_ptr ) { return 0; }
+  if ( !filename || !wav_ptr ) {
+    fprintf( stderr, "ERROR: NULL params\n" );
+    return false;
+  }
 
   memset( wav_ptr, 0, sizeof( apg_wav_t ) );
 
   entire_file_t record;
   bool ret = _read_entire_file( filename, &record );
   if ( !ret || 0 == record.sz ) {
-    fprintf( stderr, "ERROR: Reading file\n" );
+    fprintf( stderr, "ERROR: Reading file `%s` from disk.\n", filename );
     return false;
   }
   // too small for any data
@@ -101,11 +101,14 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
 
   wav_ptr->header_ptr = (apg_wav_header_t*)record.data_ptr;
   // too small for reported data (not reliable! - might need to remove this validation check).
-  if ( record.sz < wav_ptr->header_ptr->file_sz || record.sz < wav_ptr->header_ptr->data_sz + 44 ) { return false; }
+  if ( record.sz < wav_ptr->header_ptr->file_sz || record.sz < wav_ptr->header_ptr->data_sz + 44 ) {
+    fprintf( stderr, "WARNING: invalid data in header. Corrupted file.\n" );
+    //  return false;
+  }
   // unsupported type
   if ( wav_ptr->header_ptr->fmt_type != 1 || wav_ptr->header_ptr->fmt_sz != 16 ) {
-    fprintf( stderr, "ERROR: fmt_type = %i (expected 1), fmt_sz = %i (expected 16)\n", (int)wav_ptr->header_ptr->fmt_type, wav_ptr->header_ptr->fmt_sz );
-    return false;
+    fprintf( stderr, "WARNING: fmt_type = %i (expected 1), fmt_sz = %i (expected 16)\n", (int)wav_ptr->header_ptr->fmt_type, wav_ptr->header_ptr->fmt_sz );
+    // return false;
   }
 
   wav_ptr->file_data_ptr = byte_ptr;

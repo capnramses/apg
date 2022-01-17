@@ -6,8 +6,10 @@ Licence: See bottom of this file or LICENSE file.
 
 History
 -------
-0.2 - 04 Jan 2022 - Tidied up and testing reading with a PortAudio example.
-0.1 - ???         - First version on GitHub.
+0.2.1   - 17 Jan 2022 - Duration function. Degrated some file parsing errors to
+                        warnings.
+0.2     - 04 Jan 2022 - Tidied up and testing reading with a PortAudio example.
+0.1     - ???         - First version on GitHub.
 \*****************************************************************************/
 
 #ifndef _APG_WAV_H_
