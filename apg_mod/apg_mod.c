@@ -51,6 +51,26 @@ typedef struct record_t {
 static char _magic_strs[APG_MOD_FMT_MAX][4]    = { "M.K.", "2CHN", "6CHN", "8CHN", "CD81", "FLT4", "FLT8", "M!K!", "OCTA", "TDZx", "????" };
 static int _magic_str_n_chans[APG_MOD_FMT_MAX] = { 4, 2, 6, 8, 8, 4, 8, 0, 8, 0, 0 };
 
+// clang-format off
+// This is a list of possible period values that map to notes and octaves for sample pitch.
+// For non-standard octaves 0 and 4 see https://www.fileformat.info/format/mod/spec/3bc11a4842e342498a6230e60187b463/view.htm
+static uint16_t _period_table[] = {
+//  C     C#    D     D#    E     F     F#    G     G#    A     A#    B
+   856,  808,  762,  720,  678,  640,  604,  570,  538,  508,  480,  453, // Octave 1
+   428,  404,  381,  360,  339,  320,  302,  285,  269,  254,  240,  226, // Octave 2
+   214,  202,  190,  180,  170,  160,  151,  143,  135,  127,  120,  113, // Octave 3
+  1712, 1616, 1525, 1440, 1357, 1281, 1209, 1141, 1077, 1017,  961,  907, // Octave 0 (non-standard)
+   107,  101,   95,   90,   85,   80,   76,   71,   67,   64,   60,   57  // Octave 4 (non-standard)
+};
+// clang-format on
+
+int apg_mod_find_period_table_idx( uint16_t period ) {
+  for ( int i = 0; i < 12 * 5; i++ ) {
+    if ( period == _period_table[i] ) { return i; }
+  }
+  return -1;
+}
+
 // If returned record has a NULL ptr or sz == 0 then it failed to read.
 static record_t _read_entire_file( const char* filename ) {
   record_t record = ( record_t ){ .sz = 0 };

@@ -1,6 +1,7 @@
 #include "apg_mod.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 int main( int argc, char** argv ) {
   if ( argc < 2 ) {
@@ -25,8 +26,11 @@ int main( int argc, char** argv ) {
       for ( int c_idx = 0; c_idx < mod.n_chans; c_idx++ ) {
         apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
         if ( apg_mod_fetch_note( &mod, p_idx, r_idx, c_idx, &note ) ) {
-          printf( "c%i] %i %i %i %i %i, ", c_idx, note.sample_idx, note.period_value_12b, note.effect_type_4b, note.effect_params );
-          printf( "%s ", mod.sample_names[note.sample_idx] );
+          int idx = apg_mod_find_period_table_idx( note.period_value_12b );
+          char tmp[4];
+          strcpy( tmp, "..." );
+          if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
+          printf( "%s %i %i %i %i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
         }
       }
       printf( "\n" );

@@ -82,9 +82,10 @@ extern "C" {
 #define APG_MOD_N_SAMPLES 31       // Default
 #define APG_MOD_SONG_NAME_LEN 20   // Default
 #define APG_MOD_ORDERS_MAX 128     // Max song length. Default 128.
-#define APG_MOD_N_PATTERN_ROWS 64  // Default
+#define APG_MOD_N_PATTERN_ROWS 64  // AKA 'divisions'. Default 64 rows per pattern.
 #define APG_MOD_SAMPLE_NAME_LEN 22 // Default
 #define APG_MOD_N_NOTE_BYTES 4     // Default
+#define APG_MOD_MAX_CHANNELS 64    //
 
 typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
@@ -100,6 +101,38 @@ typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_UNKNOWN,
   APG_MOD_FMT_MAX
 } apg_mod_fmt_t;
+
+/* Note about channels from https://www.fileformat.info/format/mod/spec/3bc11a4842e342498a6230e60187b463/view.htm
+"
+Each division contains the data for each channel (1..4) stored after
+each other. Channels 1 and 4 are on the left, and channels 2 and 3 are
+on the right. In the case of more channels: channels 5 and 8 are on the
+left, and channels 6 and 7 are on the right, etc.
+"
+
+Note about samples repeating:
+
+If there is to be no new sample to be played at this division on this
+channel, then the old sample on this channel will continue, or at least
+be "remembered" for any effects. If the sample is 0, then the previous
+sample on that channel is used. Only one sample may play on a channel at
+a time, so playing a new sample will cancel an old one - even if there
+has been no data supplied for the new sample. Though, if you are using a
+"silence" sample (ie. no data, only used to turn off other samples) it
+is polite to set its default volume to 0.
+
+Note about pitch:
+
+To determine what pitch the sample is to be played on, look up the
+period in a table, such as the one below (for finetune 0). If the period
+is 0, then the previous period on that channel is used. Unfortunately,
+some modules do not use these exact values. It is best to do a binary-
+search (unless you use the period as the offset of an array of notes..
+expensive), especially if you plan to use periods outside the "standard"
+range. Periods are the internal representation of the pitch, so effects
+that alter pitch (eg. sliding) alter the period value (see "effects"
+below).
+*/
 
 APG_MOD_EXPORT typedef struct apg_mod_t {
   // Module
@@ -122,15 +155,15 @@ APG_MOD_EXPORT typedef struct apg_mod_t {
   char sample_names[APG_MOD_N_SAMPLES][APG_MOD_SAMPLE_NAME_LEN + 1]; // Sample names with nul-terminator appended so they can be used as C-strings.
 } apg_mod_t;
 
+/** Read in a module file from disk. Call apg_mod_free() to release allocated memory. */
+APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
+
 APG_MOD_EXPORT typedef struct apg_mod_note_t {
   uint8_t sample_idx;        // Which sample index to play from sample_data_ptrs.
   uint16_t period_value_12b; // 12-bit 'period' value for sample timing.
   uint8_t effect_type_4b;    // 4-bit 'effect' code to apply to sample.
   uint16_t effect_params;    // Paramters to effect applied.
 } apg_mod_note_t;
-
-/** Read in a module file from disk. Call apg_mod_free() to release allocated memory. */
-APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
 
 /** Decode the details for a note (sample and applied effects) to play at a channel in particular row in a given pattern.
  * This function can be called whilst iterating over the pattern indices contained in orders_ptr.
@@ -142,6 +175,19 @@ APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr 
  * @return              Returns false on error.
  */
 APG_MOD_EXPORT bool apg_mod_fetch_note( const apg_mod_t* mod_ptr, int pattern_idx, int row_idx, int channel_idx, apg_mod_note_t* note_ptr );
+
+// clang-format off
+// These names are commonly used in Amiga trackers, where "C-1" means "C at octave 1"
+static const char* _note_names[] = {
+  "C-1", "C#1", "D-1", "D#1", "E-1", "F-1", "F#1", "G-1", "G#1", "A-1", "A#1", "B-1", // Octave 1
+  "C-2", "C#2", "D-2", "D#2", "E-2", "F-2", "F#2", "G-2", "G#2", "A-2", "A#2", "B-2", // Octave 2
+  "C-3", "C#3", "D-3", "D#3", "E-3", "F-3", "F#3", "G-3", "G#3", "A-3", "A#3", "B-3", // Octave 3
+  "C-0", "C#0", "D-0", "D#0", "E-0", "F-0", "F#0", "G-0", "G#0", "A-0", "A#0", "B-0", // Octave 0 (non-standard)
+  "C-4", "C#4", "D-4", "D#4", "E-4", "F-4", "F#4", "G-4", "G#4", "A-4", "A#4", "B-4"  // Octave 4 (non-standard)
+};
+// clang-format on
+
+APG_MOD_EXPORT int apg_mod_find_period_table_idx( uint16_t period );
 
 APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
 
