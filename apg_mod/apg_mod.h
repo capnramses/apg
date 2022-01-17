@@ -155,15 +155,50 @@ APG_MOD_EXPORT typedef struct apg_mod_t {
   char sample_names[APG_MOD_N_SAMPLES][APG_MOD_SAMPLE_NAME_LEN + 1]; // Sample names with nul-terminator appended so they can be used as C-strings.
 } apg_mod_t;
 
-/** Read in a module file from disk. Call apg_mod_free() to release allocated memory. */
-APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
-
 APG_MOD_EXPORT typedef struct apg_mod_note_t {
   uint8_t sample_idx;        // Which sample index to play from sample_data_ptrs.
   uint16_t period_value_12b; // 12-bit 'period' value for sample timing.
   uint8_t effect_type_4b;    // 4-bit 'effect' code to apply to sample.
   uint16_t effect_params;    // Paramters to effect applied.
 } apg_mod_note_t;
+
+// See here for descriptions https://www.fileformat.info/format/mod/spec/3bc11a4842e342498a6230e60187b463/view.htm
+typedef enum apg_mod_effect_t {
+  APG_MOD_EFFECT_ARPEGGIO = 0,
+  APG_MOD_EFFECT_SLIDE_UP,
+  APG_MOD_EFFECT_SLIDE_DOWN,
+  APG_MOD_EFFECT_SLIDE_TO_NOTE,
+  APG_MOD_EFFECT_VIBRATO,
+  APG_MOD_EFFECT_SLIDE_TO_NOTE_VOLUME_SLIDE,
+  APG_MOD_EFFECT_VIBRATO_VOLUME_SLIDE,
+  APG_MOD_EFFECT_TREMOLO,
+  APG_MOD_EFFECT_UNUSED,
+  APG_MOD_EFFECT_SET_SAMPLE_OFFSET,
+  APG_MOD_EFFECT_VOLUME_SLIDE,
+  APG_MOD_EFFECT_POSITION_JUMP,
+  APG_MOD_EFFECT_SET_VOLUME,
+  APG_MOD_EFFECT_PATTERN_BREAK,          // 13
+  APG_MOD_EFFECT_SET_FILTER_ON_OFF,      // 14 and 0 from next nibble.
+  APG_MOD_EFFECT_FINESLIDE_UP,           // 14 and 1 from next nibble.
+  APG_MOD_EFFECT_FINESLIDE_DOWN,         // 14 and 2 from next nibble.
+  APG_MOD_EFFECT_SET_GLISSANDO_ON_OFF,   // 14 and 3 from next nibble.
+  APG_MOD_EFFECT_SET_VIBRATO_WAVEFORM,   // 14 and 4 from next nibble.
+  APG_MOD_EFFECT_SET_FINETUNE_VALUE,     // 14 and 5 from next nibble.
+  APG_MOD_EFFECT_LOOP_PATTERN,           // 14 and 6 from next nibble.
+  APG_MOD_EFFECT_SET_TREMOLO_WAVEFORM,   // 14 and 7 from next nibble.
+  APG_MOD_EFFECT_UNUSED,                 // 14 and 8 from next nibble.
+  APG_MOD_EFFECT_RETRIGGER_SAMPLE,       // 14 and 9 from next nibble.
+  APG_MOD_EFFECT_FINE_VOLUME_SLIDE_UP,   // 14 and 10 from next nibble.
+  APG_MOD_EFFECT_FINE_VOLUME_SLIDE_DOWN, // 14 and 11 from next nibble.
+  APG_MOD_EFFECT_CUT_SAMPLE,             // 14 and 12 from next nibble.
+  APG_MOD_EFFECT_DELAY_SAMPLE,           // 14 and 13 from next nibble.
+  APG_MOD_EFFECT_DELAY_PATTERN,          // 14 and 14 from next nibble.
+  APG_MOD_EFFECT_INVERT_LOOP,            // 14 and 15 from next nibble.
+  APG_MOD_EFFECT_SET_SPEED,              // 15.
+} apg_mod_effect_t;
+
+/** Read in a module file from disk. Call apg_mod_free() to release allocated memory. */
+APG_MOD_EXPORT bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr );
 
 /** Decode the details for a note (sample and applied effects) to play at a channel in particular row in a given pattern.
  * This function can be called whilst iterating over the pattern indices contained in orders_ptr.
