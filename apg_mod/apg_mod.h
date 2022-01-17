@@ -187,7 +187,12 @@ static const char* _note_names[] = {
 };
 // clang-format on
 
-APG_MOD_EXPORT int apg_mod_find_period_table_idx( uint16_t period );
+/** Look up a period number's index in the period table, which corresponds to an index into the _note_names table,
+ * giving the note name, and octave number.
+ * @param period_value_12b Use the value of a variable of the same name from an apg_mod_note_t struct.
+ * @return                 Returns -1 if period is not found in the table, otherwise the index in the table.
+ */
+APG_MOD_EXPORT int apg_mod_find_period_table_idx( uint16_t period_value_12b );
 
 APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
 

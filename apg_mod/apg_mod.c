@@ -64,9 +64,9 @@ static uint16_t _period_table[] = {
 };
 // clang-format on
 
-int apg_mod_find_period_table_idx( uint16_t period ) {
+int apg_mod_find_period_table_idx( uint16_t period_value_12b ) {
   for ( int i = 0; i < 12 * 5; i++ ) {
-    if ( period == _period_table[i] ) { return i; }
+    if ( period_value_12b == _period_table[i] ) { return i; }
   }
   return -1;
 }
