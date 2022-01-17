@@ -86,7 +86,7 @@ extern "C" {
 #define APG_MOD_SAMPLE_NAME_LEN 22 // Default
 #define APG_MOD_N_NOTE_BYTES 4     // Default
 
-APG_MOD_EXPORT typedef enum apg_mod_fmt_t {
+typedef enum apg_mod_fmt_t {
   APG_MOD_FMT_STD_4CH, // Original M.K. 4-channel .MOD
   APG_MOD_FMT_FASTTRACKER_2CH,
   APG_MOD_FMT_FASTTRACKER_6CH,

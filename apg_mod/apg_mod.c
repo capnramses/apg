@@ -171,34 +171,20 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
     free( record.data_ptr );
     return false;
   }
-  printf( "Module format type %i: %c%c%c%c.\n", (int)mod_ptr->mod_fmt, hdr_ptr->magicletters[0], hdr_ptr->magicletters[1], hdr_ptr->magicletters[2],
-    hdr_ptr->magicletters[3] );
-  printf( "# Channels:  %i\n", mod_ptr->n_chans );
 
   mod_ptr->song_name[APG_MOD_SONG_NAME_LEN] = '\0'; // Song names are usually not nul-terminated.
   memcpy( mod_ptr->song_name, hdr_ptr->_songname, APG_MOD_SONG_NAME_LEN );
-
-  printf( "Song name:   \"%s\"\n", mod_ptr->song_name );
-  printf( "Song length: %u\n", (uint32_t)hdr_ptr->song_length );
 
   mod_ptr->orders_ptr = hdr_ptr->orders_table;
   mod_ptr->n_orders   = hdr_ptr->song_length;
 
   // Determine n of patterns stored in file by looking through order table for biggest pattern index played.
   int max_pattern = 0;
-  printf( "Orders Table:\n" );
   // NOTE(Anton) could probably stop at song_length here, not the full 128
   for ( int i = 0; i < APG_MOD_ORDERS_MAX; i++ ) {
     if ( hdr_ptr->orders_table[i] > max_pattern ) { max_pattern = hdr_ptr->orders_table[i]; }
-    printf( "%02i", hdr_ptr->orders_table[i] );
-    if ( ( 0 == ( i + 1 ) % 32 ) ) {
-      printf( "\n" );
-    } else {
-      printf( " " );
-    }
   }
   mod_ptr->n_patterns = max_pattern + 1;
-  printf( "# Patterns:  %u\n", mod_ptr->n_patterns );
 
   // samples are stored after the patterns.
   // samples always start with 2 zeroes
@@ -206,7 +192,6 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   // TODO(Anton)! if older type then offset is only + 600 not + 1084!
   uint32_t offset = 1084 + mod_ptr->n_patterns * APG_MOD_N_PATTERN_ROWS * mod_ptr->n_chans * APG_MOD_N_NOTE_BYTES; // 1024 * n_patterns + header's offset of 1084
 
-  printf( "Samples:\n" );
   // offset &or size is slightly off here somehow
   // some samples i output seemed to be correct as 8-bit signed 1200Hz or 8000Hz PCM waves.
   for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
@@ -219,10 +204,6 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
       fprintf( stderr, "Sample is outside range of file memory - looks like a corrupted file or wrong format.\n" );
       return false;
     }
-#define PRINT_SAMPLE_NAMES
-#ifdef PRINT_SAMPLE_NAMES
-    if ( mod_ptr->sample_sz_bytes[i] > 0 ) { printf( "  Sample %i name: \"%s\"\n", i + 1, mod_ptr->sample_names[i] ); }
-#endif
 #ifdef DUMP_RAW_SAMPLES
     if ( mod_ptr->sample_sz_bytes[i] != 0 ) {
       if ( offset + mod_ptr->sample_sz_bytes[i] > record.sz ) {
