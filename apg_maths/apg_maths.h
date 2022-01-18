@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 ==================================================================================================
 History:
+v0.14  18 Jan 2022 - Added a couple of vec2 functions.
 v0.13   8 Jul 2021 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
 v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
 v0.11  17 Feb 2021 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
@@ -103,6 +104,7 @@ vec3 vec3_from_vec4( vec4 v );
 vec4 vec4_from_vec3f( vec3 v, float w );
 
 vec3 add_vec3_f( vec3 a, float b );
+vec2 add_vec2_vec2( vec2 a, vec2 b );
 vec3 add_vec3_vec3( vec3 a, vec3 b );
 
 vec3 sub_vec3_f( vec3 a, float b );
@@ -128,6 +130,7 @@ float length_vec3( vec3 v );
 /** Squared length. */
 float length2_vec3( vec3 v );
 
+vec2 normalise_vec2( vec2 v );
 vec3 normalise_vec3( vec3 v );
 
 /** Note that plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.

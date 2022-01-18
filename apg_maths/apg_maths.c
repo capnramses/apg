@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.13
+Version: 0.14
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -33,6 +33,8 @@ vec4 vec4_from_vec3f( vec3 v, float w ) { return ( vec4 ){ .x = v.x, .y = v.y, .
 
 vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
 
+vec2 add_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x + b.x, .y = a.y + b.y }; }
+
 vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z }; }
 
 vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
@@ -62,6 +64,15 @@ float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z );
 
 /* squared length */
 float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
+
+vec2 normalise_vec2( vec2 v ) {
+  vec2 vb;
+  float l = length_vec2( v );
+  if ( 0.0f == l ) { return ( vec2 ){ .x = 0.0f, .y = 0.0f }; }
+  vb.x = v.x / l;
+  vb.y = v.y / l;
+  return vb;
+}
 
 vec3 normalise_vec3( vec3 v ) {
   vec3 vb;
