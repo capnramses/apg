@@ -2,9 +2,10 @@
 Anton's 3D Maths Library (C99 version)
 URL:     https://github.com/capnramses/apg
 Licence: See bottom of file.
-Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
+Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
 History:
+v0.15  02 Feb 2022 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
 v0.14  18 Jan 2022 - Added a couple of vec2 functions.
 v0.13   8 Jul 2021 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
 v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
@@ -21,8 +22,6 @@ v0.2 - 12 Apr 2016 - Switched to .x .y .z notation for vectors and quaternions.
 v0.1 -  5 May 2015 - Branched from C++ original.
 ==================================================================================================
 TODO:
-Vectors
-  project and reject vectors
 Matrix
   arbitrary axis rot
 Quaternions
@@ -46,6 +45,10 @@ extern "C" {
 #include <stdbool.h> // `bool` in C99
 #include <stdio.h>   // Used for printing vectors to stdout.
 
+/* ===============================================================================================
+   Definitions and Macros
+=============================================================================================== */
+
 #define APG_M_PI 3.14159265358979323846f                  // Stable pi. C99 removed M_PI and it is .: not stable between builds.
 #define APG_M_ONE_DEG_IN_RAD ( 2.0f * APG_M_PI ) / 360.0f // 0.017444444
 #define APG_M_ONE_RAD_IN_DEG 360.0f / ( 2.0f * APG_M_PI ) // 57.2957795
@@ -53,6 +56,10 @@ extern "C" {
 #define APG_M_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define APG_M_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #define APG_M_CLAMP( x, lo, hi ) ( APG_M_MIN( hi, APG_M_MAX( lo, x ) ) )
+
+/* ===============================================================================================
+   Types
+=============================================================================================== */
 
 typedef struct vec2 {
   float x, y;
@@ -91,11 +98,19 @@ typedef struct aabb_t {
   vec3 min, max;
 } aabb_t;
 
+/* ===============================================================================================
+   Print Functions (to stdout)
+=============================================================================================== */
+
 void print_vec2( vec2 v );
 void print_vec3( vec3 v );
 void print_vec4( vec4 v );
 void print_mat4( mat4 m );
 void print_quat( versor q );
+
+/* ===============================================================================================
+   Type Conversion Functions
+=============================================================================================== */
 
 /** Truncate a vec4 to a vec3. */
 vec3 vec3_from_vec4( vec4 v );
@@ -103,16 +118,20 @@ vec3 vec3_from_vec4( vec4 v );
 /** Expand a vec3 to a vec4 by specifying a w component. */
 vec4 vec4_from_vec3f( vec3 v, float w );
 
-vec3 add_vec3_f( vec3 a, float b );
+/* ===============================================================================================
+   Basic Vector Functions
+=============================================================================================== */
+
 vec2 add_vec2_vec2( vec2 a, vec2 b );
+vec3 add_vec3_f( vec3 a, float b );
 vec3 add_vec3_vec3( vec3 a, vec3 b );
 
-vec3 sub_vec3_f( vec3 a, float b );
 vec2 sub_vec2_vec2( vec2 a, vec2 b );
+vec3 sub_vec3_f( vec3 a, float b );
 vec3 sub_vec3_vec3( vec3 a, vec3 b );
 
-vec3 mult_vec3_f( vec3 a, float b );
-vec3 mult_vec3_vec3( vec3 a, vec3 b );
+vec3 mul_vec3_f( vec3 a, float b );
+vec3 mul_vec3_vec3( vec3 a, vec3 b );
 
 vec3 div_vec3_f( vec3 a, float b );
 vec3 div_vec3_vec3( vec3 a, vec3 b );
@@ -133,26 +152,47 @@ float length2_vec3( vec3 v );
 vec2 normalise_vec2( vec2 v );
 vec3 normalise_vec3( vec3 v );
 
-/** Note that plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.
-Based on FoGED Vol 1 Ch 3.4.2 pg 115 by Eric Lengyel. */
-vec4 normalise_plane( vec4 xyzd );
-
 float dot_vec3( vec3 a, vec3 b );
 
+/** Calculate vector cross product a × b.
+ *
+ * a×b (e.g. +y or right-hand thumb)
+ *  |
+ *  |  / b (e.g. +z or right-hand second finger)
+ *  | /
+ *  |/_______a (e.g. +x or right-hand first finger)
+ *  |
+ *  |
+ *  |
+ * b×a = -a×b (e.g. -y)
+ *
+ * a×b = ‖a‖‖b‖sin(θ)n
+ * where θ is the angle between a and b, and n is a unit vector pointing in the direction of a×b.
+ */
 vec3 cross_vec3( vec3 a, vec3 b );
 
-/** Converts an un-normalised direction vector's X,Z components into a heading in degrees. */
-float vec3_to_heading( vec3 d );
+/** Calculate projection of a onto b. That is, the component of vector a that is parallel to vector b.
+ * This is also equal to a∥b = ‖a‖ cos θ.
+ */
+vec3 project_vec3( vec3 a, vec3 b );
 
-/** Very informal function to convert a heading (e.g. y-axis orientation) into a 3D vector with components in x and z axes. */
-vec3 heading_to_vec3( float degrees );
+/** Calculate part of a that is perpendicular to b.
+ * This is done by subtracting project_vec3( a, b ) from the original vector a.
+ * This is also equal to a⊥b = ‖a‖ sin θ.
+ */
+vec3 reject_vec3( vec3 a, vec3 b );
+
+/* ===============================================================================================
+   Basic Matrix Functions
+=============================================================================================== */
 
 mat4 identity_mat4();
 
-mat4 mult_mat4_mat4( mat4 a, mat4 b );
+mat4 mul_mat4_mat4( mat4 a, mat4 b );
 
-vec4 mult_mat4_vec4( mat4 m, vec4 v );
+vec4 mul_mat4_vec4( mat4 m, vec4 v );
 
+/** Deteriminent of a 4x4 matrix. */
 float det_mat4( mat4 mm );
 
 /** Determine the inverse of a 4x4 matrix.
@@ -176,6 +216,10 @@ mat4 rot_y_deg_mat4( float deg );
 mat4 rot_z_deg_mat4( float deg );
 
 mat4 scale_mat4( vec3 v );
+
+/* ===============================================================================================
+   Virtual Camera Matrix Functions
+=============================================================================================== */
 
 /** Creates a camera view matrix, using typical "look at" parameters. Most graphics mathematics libraries have a similar function. */
 mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up );
@@ -228,9 +272,13 @@ void frustum_points_from_PV( mat4 PV, vec3* corners_wor );
  */
 void frustum_planes_from_PV( mat4 PV, vec4* planes_xyxd, bool normalise_planes );
 
+/* ===============================================================================================
+   Quaternion Functions
+=============================================================================================== */
+
 versor div_quat_f( versor qq, float s );
 
-versor mult_quat_f( versor qq, float s );
+versor mul_quat_f( versor qq, float s );
 
 /** Rotates vector v using quaternion q by calculating the sandwich product: v' = qvq^-1
  * From pg 89 in E.Lengyel's "FOGED: Mathematics".
@@ -243,12 +291,12 @@ versor mult_quat_f( versor qq, float s );
  *
  * @warning This function has not been unit-tested. TODO(Anton)
  */
-vec3 mult_quat_vec3( versor q, vec3 v );
+vec3 mul_quat_vec3( versor q, vec3 v );
 
 /** This function is useful for maintaining a versor's unit quaternion state. */
 versor normalise_quat( versor q );
 
-versor mult_quat_quat( versor a, versor b );
+versor mul_quat_quat( versor a, versor b );
 
 versor add_quat_quat( versor a, versor b );
 
@@ -257,7 +305,7 @@ versor quat_from_axis_rad( float radians, vec3 axis );
 
 versor quat_from_axis_deg( float degrees, vec3 axis );
 
-/** Creates a 4x4 rotation matrix from a quaternion. See also: mult_quat_vec3().
+/** Creates a 4x4 rotation matrix from a quaternion. See also: mul_quat_vec3().
  * @note It is also possible to create a quaternion from a matrix.
  * See pg 93 in E.Lengyel's "FOGED: Mathematics".
  */
@@ -271,6 +319,16 @@ float dot_quat( versor q, versor r );
  */
 versor slerp_quat( versor q, versor r, float t );
 
+/* ===============================================================================================
+   Angle Functions
+=============================================================================================== */
+
+/** Converts an un-normalised direction vector's X,Z components into a heading in degrees. */
+float vec3_to_heading( vec3 d );
+
+/** Very informal function to convert a heading (e.g. y-axis orientation) into a 3D vector with components in x and z axes. */
+vec3 heading_to_vec3( float degrees );
+
 /** Reduce or normalise an angle in degrees into the repeating range of [0, 360]. */
 float wrap_degrees_360( float degrees );
 
@@ -278,6 +336,14 @@ float wrap_degrees_360( float degrees );
  * The input angles do not need to be expressed in the [0, 360] range.
  */
 float abs_diff_btw_degrees( float first, float second );
+
+/* ===============================================================================================
+   Geometry and Intersection Test Functions
+=============================================================================================== */
+
+/** Note that plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.
+Based on FoGED Vol 1 Ch 3.4.2 pg 115 by Eric Lengyel. */
+vec4 normalise_plane( vec4 xyzd );
 
 /** Test if and where a ray intersects with a plane.
  * @return t, The distance along the infinite line of the ray from ray origin to intersection.

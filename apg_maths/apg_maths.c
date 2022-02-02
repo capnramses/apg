@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.14
+Version: 0.15
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -10,6 +10,10 @@ Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
 #include <assert.h> // assert(). Note that release builds may remove checks for invalid data pointers.
 #include <float.h>  // FLT_EPSILON, etc.
 #include <math.h>   // sinf() etc.
+
+/* ===============================================================================================
+   Print Functions (to stdout)
+=============================================================================================== */
 
 void print_vec2( vec2 v ) { printf( "[%.2f, %.2f]\n", v.x, v.y ); }
 
@@ -27,25 +31,33 @@ void print_mat4( mat4 m ) {
 
 void print_quat( versor q ) { printf( "[%.2f ,%.2f, %.2f, %.2f]\n", q.w, q.x, q.y, q.z ); }
 
+/* ===============================================================================================
+   Type Conversion Functions
+=============================================================================================== */
+
 vec3 vec3_from_vec4( vec4 v ) { return ( vec3 ){ .x = v.x, .y = v.y, .z = v.z }; }
 
 vec4 vec4_from_vec3f( vec3 v, float w ) { return ( vec4 ){ .x = v.x, .y = v.y, .z = v.z, .w = w }; }
 
-vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
+/* ===============================================================================================
+   Basic Vector Functions
+=============================================================================================== */
 
 vec2 add_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x + b.x, .y = a.y + b.y }; }
 
-vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z }; }
+vec3 add_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x + b, .y = a.y + b, .z = a.z + b }; }
 
-vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
+vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z }; }
 
 vec2 sub_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x - b.x, .y = a.y - b.y }; }
 
+vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
+
 vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z }; }
 
-vec3 mult_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x * b, .y = a.y * b, .z = a.z * b }; }
+vec3 mul_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x * b, .y = a.y * b, .z = a.z * b }; }
 
-vec3 mult_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z }; }
+vec3 mul_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z }; }
 
 vec3 div_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x / b, .y = a.y / b, .z = a.z / b }; }
 
@@ -53,16 +65,12 @@ vec3 div_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x / b.x, .y = a.y
 
 vec4 div_vec4_f( vec4 v, float f ) { return ( vec4 ){ .x = v.x / f, .y = v.y / f, .z = v.z / f, .w = v.w / f }; }
 
-/* magnitude or length of a vec2 */
 float length_vec2( vec2 v ) { return sqrtf( v.x * v.x + v.y * v.y ); }
 
-/* squared length */
 float length2_vec2( vec2 v ) { return v.x * v.x + v.y * v.y; }
 
-/* magnitude or length of a vec3 */
 float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z ); }
 
-/* squared length */
 float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 
 vec2 normalise_vec2( vec2 v ) {
@@ -84,30 +92,23 @@ vec3 normalise_vec3( vec3 v ) {
   return vb;
 }
 
-vec4 normalise_plane( vec4 xyzd ) {
-  vec4 out = xyzd;
-  // "To normalize a plane we multiply _all four_ components by 1/||n|| (where n is the 3d part) but only n has unit length after normalization".
-  float mag = length_vec3( vec3_from_vec4( xyzd ) );
-  if ( fabsf( mag ) > 0.0f ) {
-    float one_over_mag = 1.0f / mag;
-    out.x *= one_over_mag;
-    out.y *= one_over_mag;
-    out.z *= one_over_mag;
-    out.w *= one_over_mag;
-  }
-  return out;
-}
-
 float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 vec3 cross_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.y * b.z - a.z * b.y, .y = a.z * b.x - a.x * b.z, .z = a.x * b.y - a.y * b.x }; }
 
-float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * APG_M_ONE_RAD_IN_DEG; }
-
-vec3 heading_to_vec3( float degrees ) {
-  float rad = degrees * APG_M_ONE_DEG_IN_RAD;
-  return ( vec3 ){ .x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad ) };
+vec3 project_vec3( vec3 a, vec3 b ) {
+  float dot_bb = dot_vec3( b, b );
+  return dot_bb != 0.0f ? mul_vec3_f( b, dot_vec3( a, b ) / dot_bb ) : ( vec3 ){ .x = 0.0f };
 }
+
+vec3 reject_vec3( vec3 a, vec3 b ) {
+  float dot_bb = dot_vec3( b, b );
+  return dot_bb != 0.0f ? sub_vec3_vec3( a, project_vec3( a, b ) ) : ( vec3 ){ .x = 0.0f };
+}
+
+/* ===============================================================================================
+   Basic Matrix Functions
+=============================================================================================== */
 
 mat4 identity_mat4() {
   mat4 r  = { { 0 } };
@@ -118,7 +119,7 @@ mat4 identity_mat4() {
   return r;
 }
 
-mat4 mult_mat4_mat4( mat4 a, mat4 b ) {
+mat4 mul_mat4_mat4( mat4 a, mat4 b ) {
   mat4 r      = { { 0 } };
   int r_index = 0;
   for ( int col = 0; col < 4; col++ ) {
@@ -132,7 +133,7 @@ mat4 mult_mat4_mat4( mat4 a, mat4 b ) {
   return r;
 }
 
-vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
+vec4 mul_mat4_vec4( mat4 m, vec4 v ) {
   float x = m.m[0] * v.x + m.m[4] * v.y + m.m[8] * v.z + m.m[12] * v.w;
   float y = m.m[1] * v.x + m.m[5] * v.y + m.m[9] * v.z + m.m[13] * v.w;
   float z = m.m[2] * v.x + m.m[6] * v.y + m.m[10] * v.z + m.m[14] * v.w;
@@ -141,54 +142,78 @@ vec4 mult_mat4_vec4( mat4 m, vec4 v ) {
 }
 
 float det_mat4( mat4 mm ) {
-  return mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[10] * mm.m[3] +
-         mm.m[4] * mm.m[13] * mm.m[10] * mm.m[3] + mm.m[8] * mm.m[5] * mm.m[14] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[14] * mm.m[3] -
-         mm.m[12] * mm.m[9] * mm.m[2] * mm.m[7] + mm.m[8] * mm.m[13] * mm.m[2] * mm.m[7] + mm.m[12] * mm.m[1] * mm.m[10] * mm.m[7] -
-         mm.m[0] * mm.m[13] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[1] * mm.m[14] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[14] * mm.m[7] +
-         mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[2] * mm.m[11] - mm.m[12] * mm.m[1] * mm.m[6] * mm.m[11] +
-         mm.m[0] * mm.m[13] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[1] * mm.m[14] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[14] * mm.m[11] -
-         mm.m[8] * mm.m[5] * mm.m[2] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[2] * mm.m[15] + mm.m[8] * mm.m[1] * mm.m[6] * mm.m[15] -
-         mm.m[0] * mm.m[9] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[1] * mm.m[10] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
+  // clang-format off
+  return mm.m[12] * mm.m[9]  * mm.m[6]  * mm.m[3]  - mm.m[8]  * mm.m[13] * mm.m[6]  * mm.m[3]  -
+         mm.m[12] * mm.m[5]  * mm.m[10] * mm.m[3]  + mm.m[4]  * mm.m[13] * mm.m[10] * mm.m[3]  +
+         mm.m[8]  * mm.m[5]  * mm.m[14] * mm.m[3]  - mm.m[4]  * mm.m[9]  * mm.m[14] * mm.m[3]  -
+         mm.m[12] * mm.m[9]  * mm.m[2]  * mm.m[7]  + mm.m[8]  * mm.m[13] * mm.m[2]  * mm.m[7]  +
+         mm.m[12] * mm.m[1]  * mm.m[10] * mm.m[7]  - mm.m[0]  * mm.m[13] * mm.m[10] * mm.m[7]  -
+         mm.m[8]  * mm.m[1]  * mm.m[14] * mm.m[7]  + mm.m[0]  * mm.m[9]  * mm.m[14] * mm.m[7]  +
+         mm.m[12] * mm.m[5]  * mm.m[2]  * mm.m[11] - mm.m[4]  * mm.m[13] * mm.m[2]  * mm.m[11] -
+         mm.m[12] * mm.m[1]  * mm.m[6]  * mm.m[11] + mm.m[0]  * mm.m[13] * mm.m[6]  * mm.m[11] +
+         mm.m[4]  * mm.m[1]  * mm.m[14] * mm.m[11] - mm.m[0]  * mm.m[5]  * mm.m[14] * mm.m[11] -
+         mm.m[8]  * mm.m[5]  * mm.m[2]  * mm.m[15] + mm.m[4]  * mm.m[9]  * mm.m[2]  * mm.m[15] +
+         mm.m[8]  * mm.m[1]  * mm.m[6]  * mm.m[15] - mm.m[0]  * mm.m[9]  * mm.m[6]  * mm.m[15] -
+         mm.m[4]  * mm.m[1]  * mm.m[10] * mm.m[15] + mm.m[0]  * mm.m[5]  * mm.m[10] * mm.m[15];
+  // clang-format on
 }
 
 mat4 inverse_mat4( mat4 mm ) {
+  // clang-format off
   float det = det_mat4( mm );
   if ( 0.0f == det ) { return mm; }
   float inv_det = 1.0f / det;
   mat4 r;
-  r.m[0]  = inv_det * ( mm.m[9] * mm.m[14] * mm.m[7] - mm.m[13] * mm.m[10] * mm.m[7] + mm.m[13] * mm.m[6] * mm.m[11] - mm.m[5] * mm.m[14] * mm.m[11] -
-                       mm.m[9] * mm.m[6] * mm.m[15] + mm.m[5] * mm.m[10] * mm.m[15] );
-  r.m[1]  = inv_det * ( mm.m[13] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[2] * mm.m[11] + mm.m[1] * mm.m[14] * mm.m[11] +
-                       mm.m[9] * mm.m[2] * mm.m[15] - mm.m[1] * mm.m[10] * mm.m[15] );
-  r.m[2]  = inv_det * ( mm.m[5] * mm.m[14] * mm.m[3] - mm.m[13] * mm.m[6] * mm.m[3] + mm.m[13] * mm.m[2] * mm.m[7] - mm.m[1] * mm.m[14] * mm.m[7] -
-                       mm.m[5] * mm.m[2] * mm.m[15] + mm.m[1] * mm.m[6] * mm.m[15] );
-  r.m[3]  = inv_det * ( mm.m[9] * mm.m[6] * mm.m[3] - mm.m[5] * mm.m[10] * mm.m[3] - mm.m[9] * mm.m[2] * mm.m[7] + mm.m[1] * mm.m[10] * mm.m[7] +
-                       mm.m[5] * mm.m[2] * mm.m[11] - mm.m[1] * mm.m[6] * mm.m[11] );
-  r.m[4]  = inv_det * ( mm.m[12] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[14] * mm.m[7] - mm.m[12] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[14] * mm.m[11] +
-                       mm.m[8] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[10] * mm.m[15] );
-  r.m[5]  = inv_det * ( mm.m[8] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[10] * mm.m[3] + mm.m[12] * mm.m[2] * mm.m[11] - mm.m[0] * mm.m[14] * mm.m[11] -
-                       mm.m[8] * mm.m[2] * mm.m[15] + mm.m[0] * mm.m[10] * mm.m[15] );
-  r.m[6]  = inv_det * ( mm.m[12] * mm.m[6] * mm.m[3] - mm.m[4] * mm.m[14] * mm.m[3] - mm.m[12] * mm.m[2] * mm.m[7] + mm.m[0] * mm.m[14] * mm.m[7] +
-                       mm.m[4] * mm.m[2] * mm.m[15] - mm.m[0] * mm.m[6] * mm.m[15] );
-  r.m[7]  = inv_det * ( mm.m[4] * mm.m[10] * mm.m[3] - mm.m[8] * mm.m[6] * mm.m[3] + mm.m[8] * mm.m[2] * mm.m[7] - mm.m[0] * mm.m[10] * mm.m[7] -
-                       mm.m[4] * mm.m[2] * mm.m[11] + mm.m[0] * mm.m[6] * mm.m[11] );
-  r.m[8]  = inv_det * ( mm.m[8] * mm.m[13] * mm.m[7] - mm.m[12] * mm.m[9] * mm.m[7] + mm.m[12] * mm.m[5] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[11] -
-                       mm.m[8] * mm.m[5] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[15] );
-  r.m[9]  = inv_det * ( mm.m[12] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[1] * mm.m[11] + mm.m[0] * mm.m[13] * mm.m[11] +
-                       mm.m[8] * mm.m[1] * mm.m[15] - mm.m[0] * mm.m[9] * mm.m[15] );
-  r.m[10] = inv_det * ( mm.m[4] * mm.m[13] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[3] + mm.m[12] * mm.m[1] * mm.m[7] - mm.m[0] * mm.m[13] * mm.m[7] -
-                        mm.m[4] * mm.m[1] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[15] );
-  r.m[11] = inv_det * ( mm.m[8] * mm.m[5] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[3] - mm.m[8] * mm.m[1] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[7] +
-                        mm.m[4] * mm.m[1] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[11] );
-  r.m[12] = inv_det * ( mm.m[12] * mm.m[9] * mm.m[6] - mm.m[8] * mm.m[13] * mm.m[6] - mm.m[12] * mm.m[5] * mm.m[10] + mm.m[4] * mm.m[13] * mm.m[10] +
-                        mm.m[8] * mm.m[5] * mm.m[14] - mm.m[4] * mm.m[9] * mm.m[14] );
-  r.m[13] = inv_det * ( mm.m[8] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[9] * mm.m[2] + mm.m[12] * mm.m[1] * mm.m[10] - mm.m[0] * mm.m[13] * mm.m[10] -
-                        mm.m[8] * mm.m[1] * mm.m[14] + mm.m[0] * mm.m[9] * mm.m[14] );
-  r.m[14] = inv_det * ( mm.m[12] * mm.m[5] * mm.m[2] - mm.m[4] * mm.m[13] * mm.m[2] - mm.m[12] * mm.m[1] * mm.m[6] + mm.m[0] * mm.m[13] * mm.m[6] +
-                        mm.m[4] * mm.m[1] * mm.m[14] - mm.m[0] * mm.m[5] * mm.m[14] );
-  r.m[15] = inv_det * ( mm.m[4] * mm.m[9] * mm.m[2] - mm.m[8] * mm.m[5] * mm.m[2] + mm.m[8] * mm.m[1] * mm.m[6] - mm.m[0] * mm.m[9] * mm.m[6] -
-                        mm.m[4] * mm.m[1] * mm.m[10] + mm.m[0] * mm.m[5] * mm.m[10] );
+  r.m[0]  = inv_det * ( mm.m[9]  * mm.m[14] * mm.m[7]  - mm.m[13] * mm.m[10] * mm.m[7]  +  
+												mm.m[13] * mm.m[6]  * mm.m[11] - mm.m[5]  * mm.m[14] * mm.m[11] - 
+												mm.m[9]  * mm.m[6]  * mm.m[15] + mm.m[5]  * mm.m[10] * mm.m[15] );
+  r.m[1]  = inv_det * ( mm.m[13] * mm.m[10] * mm.m[3]  - mm.m[9]  * mm.m[14] * mm.m[3]  -  
+												mm.m[13] * mm.m[2]  * mm.m[11] + mm.m[1]  * mm.m[14] * mm.m[11] + 
+												mm.m[9]  * mm.m[2]  * mm.m[15] - mm.m[1]  * mm.m[10] * mm.m[15] );
+  r.m[2]  = inv_det * ( mm.m[5]  * mm.m[14] * mm.m[3]  - mm.m[13] * mm.m[6]  * mm.m[3]  + 
+												mm.m[13] * mm.m[2]  * mm.m[7]  - mm.m[1]  * mm.m[14] * mm.m[7]  - 
+												mm.m[5]  * mm.m[2]  * mm.m[15] + mm.m[1]  * mm.m[6]  * mm.m[15] );
+  r.m[3]  = inv_det * ( mm.m[9]  * mm.m[6]  * mm.m[3]  - mm.m[5]  * mm.m[10] * mm.m[3]  - 
+												mm.m[9]  * mm.m[2]  * mm.m[7]  + mm.m[1]  * mm.m[10] * mm.m[7]  + 
+												mm.m[5]  * mm.m[2]  * mm.m[11] - mm.m[1]  * mm.m[6]  * mm.m[11] );
+  r.m[4]  = inv_det * ( mm.m[12] * mm.m[10] * mm.m[7]  - mm.m[8]  * mm.m[14] * mm.m[7]  -  
+												mm.m[12] * mm.m[6]  * mm.m[11] + mm.m[4]  * mm.m[14] * mm.m[11] + 
+												mm.m[8]  * mm.m[6]  * mm.m[15] - mm.m[4]  * mm.m[10] * mm.m[15] );
+  r.m[5]  = inv_det * ( mm.m[8]  * mm.m[14] * mm.m[3]  - mm.m[12] * mm.m[10] * mm.m[3]  +  
+    									  mm.m[12] * mm.m[2]  * mm.m[11] - mm.m[0]  * mm.m[14] * mm.m[11] - 
+    										mm.m[8]  * mm.m[2]  * mm.m[15] + mm.m[0]  * mm.m[10] * mm.m[15] );
+  r.m[6]  = inv_det * ( mm.m[12] * mm.m[6]  * mm.m[3]  - mm.m[4]  * mm.m[14] * mm.m[3]  -
+												mm.m[12] * mm.m[2]  * mm.m[7]  + mm.m[0]  * mm.m[14] * mm.m[7]  +
+												mm.m[4]  * mm.m[2]  * mm.m[15] - mm.m[0]  * mm.m[6]  * mm.m[15] );
+  r.m[7]  = inv_det * ( mm.m[4]  * mm.m[10] * mm.m[3]  - mm.m[8]  * mm.m[6]  * mm.m[3]  +
+												mm.m[8]  * mm.m[2]  * mm.m[7]  - mm.m[0]  * mm.m[10] * mm.m[7]  -
+												mm.m[4]  * mm.m[2]  * mm.m[11] + mm.m[0]  * mm.m[6]  * mm.m[11] );
+  r.m[8]  = inv_det * ( mm.m[8]  * mm.m[13] * mm.m[7]  - mm.m[12] * mm.m[9]  * mm.m[7]  +
+												mm.m[12] * mm.m[5]  * mm.m[11] - mm.m[4]  * mm.m[13] * mm.m[11] -
+                       	mm.m[8]  * mm.m[5]  * mm.m[15] + mm.m[4]  * mm.m[9]  * mm.m[15] );
+  r.m[9]  = inv_det * ( mm.m[12] * mm.m[9]  * mm.m[3]  - mm.m[8]  * mm.m[13] * mm.m[3]  -
+												mm.m[12] * mm.m[1]  * mm.m[11] + mm.m[0]  * mm.m[13] * mm.m[11] +
+                       	mm.m[8]  * mm.m[1]  * mm.m[15] - mm.m[0]  * mm.m[9]  * mm.m[15] );
+  r.m[10] = inv_det * ( mm.m[4]  * mm.m[13] * mm.m[3]  - mm.m[12] * mm.m[5]  * mm.m[3]  +
+	                      mm.m[12] * mm.m[1]  * mm.m[7]  - mm.m[0]  * mm.m[13] * mm.m[7]  -
+                        mm.m[4]  * mm.m[1]  * mm.m[15] + mm.m[0]  * mm.m[5]  * mm.m[15] );
+  r.m[11] = inv_det * ( mm.m[8]  * mm.m[5]  * mm.m[3]  - mm.m[4]  * mm.m[9]  * mm.m[3]  -
+												mm.m[8]  * mm.m[1]  * mm.m[7]  + mm.m[0]  * mm.m[9]  * mm.m[7]  +
+                        mm.m[4]  * mm.m[1]  * mm.m[11] - mm.m[0]  * mm.m[5]  * mm.m[11] );
+  r.m[12] = inv_det * ( mm.m[12] * mm.m[9]  * mm.m[6]  - mm.m[8]  * mm.m[13] * mm.m[6]  -
+												mm.m[12] * mm.m[5]  * mm.m[10] + mm.m[4]  * mm.m[13] * mm.m[10] +
+                        mm.m[8]  * mm.m[5]  * mm.m[14] - mm.m[4]  * mm.m[9]  * mm.m[14] );
+  r.m[13] = inv_det * ( mm.m[8]  * mm.m[13] * mm.m[2]  - mm.m[12] * mm.m[9]  * mm.m[2]  +
+												mm.m[12] * mm.m[1]  * mm.m[10] - mm.m[0]  * mm.m[13] * mm.m[10] -
+                        mm.m[8]  * mm.m[1]  * mm.m[14] + mm.m[0]  * mm.m[9]  * mm.m[14] );
+  r.m[14] = inv_det * ( mm.m[12] * mm.m[5]  * mm.m[2]  - mm.m[4]  * mm.m[13] * mm.m[2]  -
+	                      mm.m[12] * mm.m[1]  * mm.m[6]  + mm.m[0]  * mm.m[13] * mm.m[6]  +
+                        mm.m[4]  * mm.m[1]  * mm.m[14] - mm.m[0]  * mm.m[5]  * mm.m[14] );
+  r.m[15] = inv_det * ( mm.m[4]  * mm.m[9]  * mm.m[2]  - mm.m[8]  * mm.m[5]  * mm.m[2]  +
+												mm.m[8]  * mm.m[1]  * mm.m[6]  - mm.m[0]  * mm.m[9]  * mm.m[6]  -
+                        mm.m[4]  * mm.m[1]  * mm.m[10] + mm.m[0]  * mm.m[5]  * mm.m[10] );
   return r;
+  // clang-format on
 }
 
 mat4 transpose_mat4( mat4 mm ) {
@@ -255,6 +280,10 @@ mat4 scale_mat4( vec3 v ) {
   return r;
 }
 
+/* ===============================================================================================
+   Virtual Camera Matrix Functions
+=============================================================================================== */
+
 mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
   mat4 p    = translate_mat4( ( vec3 ){ .x = -cam_pos.x, .y = -cam_pos.y, .z = -cam_pos.z } );
   vec3 d    = sub_vec3_vec3( targ_pos, cam_pos );
@@ -271,7 +300,7 @@ mat4 look_at( vec3 cam_pos, vec3 targ_pos, vec3 up ) {
   ori.m[2]  = -f.x;
   ori.m[6]  = -f.y;
   ori.m[10] = -f.z;
-  return mult_mat4_mat4( ori, p );
+  return mul_mat4_mat4( ori, p );
 }
 
 mat4 orthographic( float l, float r, float b, float t, float n, float f ) {
@@ -326,7 +355,7 @@ mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp_x, int subvp_
   M.m[13] = -2.0f * subvp_y_ndc / subvp_h_ndc - 1.0f;
   M.m[15] = 1.0f;
   // Pre-Multiply M to the original projection matrix P
-  mat4 P_asym = mult_mat4_mat4( M, P_orig );
+  mat4 P_asym = mul_mat4_mat4( M, P_orig );
   return P_asym;
 }
 
@@ -347,7 +376,7 @@ void frustum_points_from_PV( mat4 PV, vec3* corners_wor ) {
     ( vec4 ){ 1, -1, 1, 1 }    // will be fbr 7
   };
   for ( int i = 0; i < 8; i++ ) {
-    corners_clip[i] = mult_mat4_vec4( clip_to_world, corners_clip[i] );
+    corners_clip[i] = mul_mat4_vec4( clip_to_world, corners_clip[i] );
     corners_wor[i]  = vec3_from_vec4( div_vec4_f( corners_clip[i], corners_clip[i].w ) ); // perspective division
   }
 }
@@ -366,16 +395,20 @@ void frustum_planes_from_PV( mat4 PV, vec4* planes_xyxd, bool normalise_planes )
   }
 }
 
+/* ===============================================================================================
+   Quaternion Functions
+=============================================================================================== */
+
 versor div_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w / s, .x = qq.x / s, .y = qq.y / s, .z = qq.z / s }; }
 
-versor mult_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s }; }
+versor mul_quat_f( versor qq, float s ) { return ( versor ){ .w = qq.w * s, .x = qq.x * s, .y = qq.y * s, .z = qq.z * s }; }
 
-vec3 mult_quat_vec3( versor q, vec3 v ) {
+vec3 mul_quat_vec3( versor q, vec3 v ) {
   vec3 b      = ( vec3 ){ .x = q.x, .y = q.y, .z = q.z };
   float b2    = b.x * b.x + b.y * b.y + b.z * b.z;
-  vec3 part_a = mult_vec3_f( v, q.w * q.w - b2 );
-  vec3 part_b = mult_vec3_f( b, dot_vec3( v, b ) * 2.0f );
-  vec3 part_c = mult_vec3_f( cross_vec3( b, v ), q.w * 2.0f );
+  vec3 part_a = mul_vec3_f( v, q.w * q.w - b2 );
+  vec3 part_b = mul_vec3_f( b, dot_vec3( v, b ) * 2.0f );
+  vec3 part_c = mul_vec3_f( cross_vec3( b, v ), q.w * 2.0f );
   vec3 out    = add_vec3_vec3( part_a, add_vec3_vec3( part_b, part_c ) );
   return out;
 }
@@ -388,7 +421,7 @@ versor normalise_quat( versor q ) {
   return div_quat_f( q, mag );
 }
 
-versor mult_quat_quat( versor a, versor b ) {
+versor mul_quat_quat( versor a, versor b ) {
   versor result;
   result.w = b.w * a.w - b.x * a.x - b.y * a.y - b.z * a.z;
   result.x = b.w * a.x + b.x * a.w - b.y * a.z + b.z * a.y;
@@ -444,7 +477,7 @@ float dot_quat( versor q, versor r ) { return q.w * r.w + q.x * r.x + q.y * r.y 
 versor slerp_quat( versor q, versor r, float t ) {
   float cos_half_theta = dot_quat( q, r );
   if ( cos_half_theta < 0.0f ) {
-    q              = mult_quat_f( q, -1.0f );
+    q              = mul_quat_f( q, -1.0f );
     cos_half_theta = dot_quat( q, r );
   }
   if ( fabsf( cos_half_theta ) >= 1.0f ) { return q; }
@@ -467,6 +500,16 @@ versor slerp_quat( versor q, versor r, float t ) {
   return result;
 }
 
+/* ===============================================================================================
+   Angle Functions
+=============================================================================================== */
+float vec3_to_heading( vec3 d ) { return atan2f( -d.x, -d.z ) * APG_M_ONE_RAD_IN_DEG; }
+
+vec3 heading_to_vec3( float degrees ) {
+  float rad = degrees * APG_M_ONE_DEG_IN_RAD;
+  return ( vec3 ){ .x = -sinf( rad ), .y = 0.0f, .z = -cosf( rad ) };
+}
+
 float wrap_degrees_360( float degrees ) {
   if ( degrees >= 0.0f && degrees < 360.0f ) { return degrees; }
   int multiples = (int)( degrees / 360.0f );
@@ -485,6 +528,24 @@ float abs_diff_btw_degrees( float first, float second ) {
   float diff = fabsf( first - second );
   if ( diff >= 180.0f ) { diff = fabsf( diff - 360.0f ); }
   return diff;
+}
+
+/* ===============================================================================================
+   Geometry and Intersection Test Functions
+=============================================================================================== */
+
+vec4 normalise_plane( vec4 xyzd ) {
+  vec4 out = xyzd;
+  // "To normalize a plane we multiply _all four_ components by 1/||n|| (where n is the 3d part) but only n has unit length after normalization".
+  float mag = length_vec3( vec3_from_vec4( xyzd ) );
+  if ( fabsf( mag ) > 0.0f ) {
+    float one_over_mag = 1.0f / mag;
+    out.x *= one_over_mag;
+    out.y *= one_over_mag;
+    out.z *= one_over_mag;
+    out.w *= one_over_mag;
+  }
+  return out;
 }
 
 float ray_plane( vec3 ray_origin, vec3 ray_direction, vec3 plane_normal, float plane_d ) {
