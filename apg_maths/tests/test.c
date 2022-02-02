@@ -66,7 +66,7 @@ int main() {
   printf("\ntests for frustum_planes_from_PV()\n");
     mat4 P  = perspective( 45, 1, 10, 100 );
     mat4 V  = look_at( ( vec3 ){.x = 0, .y = 0, .z = 0}, ( vec3 ){.z = -100}, ( vec3 ){.y = 1} );
-    mat4 PV = mult_mat4_mat4( P, V );
+    mat4 PV = mul_mat4_mat4( P, V );
     vec4 planes_xyzd[6];
     bool normalise = true;
     frustum_planes_from_PV( PV, planes_xyzd, normalise );
