@@ -26,7 +26,7 @@
  * On most systems just include apg_jobs.h in your source code and add apg_job.c to your compiled source files.
  * On Windows apg_jobs will default to using Win32 threads under a pthread-compatible interface.
  * If you have a Windows implementation of Posix threads already, e.g. with MinGW GCC, then define APG_JOBS_USE_WIN32_PTHREAD,
- * which will exclude the Win32/posix interface and instead use pthreads directly.
+ * which will exclude the Win32/Posix interface and instead use pthreads directly.
  * Link against `-pthread` on pthread systems.
  *
  * USAGE EXAMPLE
