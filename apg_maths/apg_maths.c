@@ -142,7 +142,7 @@ vec4 mul_mat4_vec4( mat4 m, vec4 v ) {
 }
 
 float det_mat4( mat4 mm ) {
-  // clang-format off
+  // #-format off
   return mm.m[12] * mm.m[9]  * mm.m[6]  * mm.m[3]  - mm.m[8]  * mm.m[13] * mm.m[6]  * mm.m[3]  -
          mm.m[12] * mm.m[5]  * mm.m[10] * mm.m[3]  + mm.m[4]  * mm.m[13] * mm.m[10] * mm.m[3]  +
          mm.m[8]  * mm.m[5]  * mm.m[14] * mm.m[3]  - mm.m[4]  * mm.m[9]  * mm.m[14] * mm.m[3]  -
@@ -165,52 +165,52 @@ mat4 inverse_mat4( mat4 mm ) {
   float inv_det = 1.0f / det;
   mat4 r;
   r.m[0]  = inv_det * ( mm.m[9]  * mm.m[14] * mm.m[7]  - mm.m[13] * mm.m[10] * mm.m[7]  +  
-												mm.m[13] * mm.m[6]  * mm.m[11] - mm.m[5]  * mm.m[14] * mm.m[11] - 
-												mm.m[9]  * mm.m[6]  * mm.m[15] + mm.m[5]  * mm.m[10] * mm.m[15] );
+                        mm.m[13] * mm.m[6]  * mm.m[11] - mm.m[5]  * mm.m[14] * mm.m[11] - 
+                        mm.m[9]  * mm.m[6]  * mm.m[15] + mm.m[5]  * mm.m[10] * mm.m[15] );
   r.m[1]  = inv_det * ( mm.m[13] * mm.m[10] * mm.m[3]  - mm.m[9]  * mm.m[14] * mm.m[3]  -  
-												mm.m[13] * mm.m[2]  * mm.m[11] + mm.m[1]  * mm.m[14] * mm.m[11] + 
-												mm.m[9]  * mm.m[2]  * mm.m[15] - mm.m[1]  * mm.m[10] * mm.m[15] );
+                        mm.m[13] * mm.m[2]  * mm.m[11] + mm.m[1]  * mm.m[14] * mm.m[11] + 
+                        mm.m[9]  * mm.m[2]  * mm.m[15] - mm.m[1]  * mm.m[10] * mm.m[15] );
   r.m[2]  = inv_det * ( mm.m[5]  * mm.m[14] * mm.m[3]  - mm.m[13] * mm.m[6]  * mm.m[3]  + 
-												mm.m[13] * mm.m[2]  * mm.m[7]  - mm.m[1]  * mm.m[14] * mm.m[7]  - 
-												mm.m[5]  * mm.m[2]  * mm.m[15] + mm.m[1]  * mm.m[6]  * mm.m[15] );
+                        mm.m[13] * mm.m[2]  * mm.m[7]  - mm.m[1]  * mm.m[14] * mm.m[7]  - 
+                        mm.m[5]  * mm.m[2]  * mm.m[15] + mm.m[1]  * mm.m[6]  * mm.m[15] );
   r.m[3]  = inv_det * ( mm.m[9]  * mm.m[6]  * mm.m[3]  - mm.m[5]  * mm.m[10] * mm.m[3]  - 
-												mm.m[9]  * mm.m[2]  * mm.m[7]  + mm.m[1]  * mm.m[10] * mm.m[7]  + 
-												mm.m[5]  * mm.m[2]  * mm.m[11] - mm.m[1]  * mm.m[6]  * mm.m[11] );
+                        mm.m[9]  * mm.m[2]  * mm.m[7]  + mm.m[1]  * mm.m[10] * mm.m[7]  + 
+                        mm.m[5]  * mm.m[2]  * mm.m[11] - mm.m[1]  * mm.m[6]  * mm.m[11] );
   r.m[4]  = inv_det * ( mm.m[12] * mm.m[10] * mm.m[7]  - mm.m[8]  * mm.m[14] * mm.m[7]  -  
-												mm.m[12] * mm.m[6]  * mm.m[11] + mm.m[4]  * mm.m[14] * mm.m[11] + 
-												mm.m[8]  * mm.m[6]  * mm.m[15] - mm.m[4]  * mm.m[10] * mm.m[15] );
+                        mm.m[12] * mm.m[6]  * mm.m[11] + mm.m[4]  * mm.m[14] * mm.m[11] + 
+                        mm.m[8]  * mm.m[6]  * mm.m[15] - mm.m[4]  * mm.m[10] * mm.m[15] );
   r.m[5]  = inv_det * ( mm.m[8]  * mm.m[14] * mm.m[3]  - mm.m[12] * mm.m[10] * mm.m[3]  +  
-    									  mm.m[12] * mm.m[2]  * mm.m[11] - mm.m[0]  * mm.m[14] * mm.m[11] - 
-    										mm.m[8]  * mm.m[2]  * mm.m[15] + mm.m[0]  * mm.m[10] * mm.m[15] );
+                        mm.m[12] * mm.m[2]  * mm.m[11] - mm.m[0]  * mm.m[14] * mm.m[11] - 
+                        mm.m[8]  * mm.m[2]  * mm.m[15] + mm.m[0]  * mm.m[10] * mm.m[15] );
   r.m[6]  = inv_det * ( mm.m[12] * mm.m[6]  * mm.m[3]  - mm.m[4]  * mm.m[14] * mm.m[3]  -
-												mm.m[12] * mm.m[2]  * mm.m[7]  + mm.m[0]  * mm.m[14] * mm.m[7]  +
-												mm.m[4]  * mm.m[2]  * mm.m[15] - mm.m[0]  * mm.m[6]  * mm.m[15] );
+                        mm.m[12] * mm.m[2]  * mm.m[7]  + mm.m[0]  * mm.m[14] * mm.m[7]  +
+                        mm.m[4]  * mm.m[2]  * mm.m[15] - mm.m[0]  * mm.m[6]  * mm.m[15] );
   r.m[7]  = inv_det * ( mm.m[4]  * mm.m[10] * mm.m[3]  - mm.m[8]  * mm.m[6]  * mm.m[3]  +
-												mm.m[8]  * mm.m[2]  * mm.m[7]  - mm.m[0]  * mm.m[10] * mm.m[7]  -
-												mm.m[4]  * mm.m[2]  * mm.m[11] + mm.m[0]  * mm.m[6]  * mm.m[11] );
+                        mm.m[8]  * mm.m[2]  * mm.m[7]  - mm.m[0]  * mm.m[10] * mm.m[7]  -
+                        mm.m[4]  * mm.m[2]  * mm.m[11] + mm.m[0]  * mm.m[6]  * mm.m[11] );
   r.m[8]  = inv_det * ( mm.m[8]  * mm.m[13] * mm.m[7]  - mm.m[12] * mm.m[9]  * mm.m[7]  +
-												mm.m[12] * mm.m[5]  * mm.m[11] - mm.m[4]  * mm.m[13] * mm.m[11] -
-                       	mm.m[8]  * mm.m[5]  * mm.m[15] + mm.m[4]  * mm.m[9]  * mm.m[15] );
+                        mm.m[12] * mm.m[5]  * mm.m[11] - mm.m[4]  * mm.m[13] * mm.m[11] -
+                        mm.m[8]  * mm.m[5]  * mm.m[15] + mm.m[4]  * mm.m[9]  * mm.m[15] );
   r.m[9]  = inv_det * ( mm.m[12] * mm.m[9]  * mm.m[3]  - mm.m[8]  * mm.m[13] * mm.m[3]  -
-												mm.m[12] * mm.m[1]  * mm.m[11] + mm.m[0]  * mm.m[13] * mm.m[11] +
+                        mm.m[12] * mm.m[1]  * mm.m[11] + mm.m[0]  * mm.m[13] * mm.m[11] +
                        	mm.m[8]  * mm.m[1]  * mm.m[15] - mm.m[0]  * mm.m[9]  * mm.m[15] );
   r.m[10] = inv_det * ( mm.m[4]  * mm.m[13] * mm.m[3]  - mm.m[12] * mm.m[5]  * mm.m[3]  +
-	                      mm.m[12] * mm.m[1]  * mm.m[7]  - mm.m[0]  * mm.m[13] * mm.m[7]  -
+                        mm.m[12] * mm.m[1]  * mm.m[7]  - mm.m[0]  * mm.m[13] * mm.m[7]  -
                         mm.m[4]  * mm.m[1]  * mm.m[15] + mm.m[0]  * mm.m[5]  * mm.m[15] );
   r.m[11] = inv_det * ( mm.m[8]  * mm.m[5]  * mm.m[3]  - mm.m[4]  * mm.m[9]  * mm.m[3]  -
-												mm.m[8]  * mm.m[1]  * mm.m[7]  + mm.m[0]  * mm.m[9]  * mm.m[7]  +
+                        mm.m[8]  * mm.m[1]  * mm.m[7]  + mm.m[0]  * mm.m[9]  * mm.m[7]  +
                         mm.m[4]  * mm.m[1]  * mm.m[11] - mm.m[0]  * mm.m[5]  * mm.m[11] );
   r.m[12] = inv_det * ( mm.m[12] * mm.m[9]  * mm.m[6]  - mm.m[8]  * mm.m[13] * mm.m[6]  -
-												mm.m[12] * mm.m[5]  * mm.m[10] + mm.m[4]  * mm.m[13] * mm.m[10] +
+                        mm.m[12] * mm.m[5]  * mm.m[10] + mm.m[4]  * mm.m[13] * mm.m[10] +
                         mm.m[8]  * mm.m[5]  * mm.m[14] - mm.m[4]  * mm.m[9]  * mm.m[14] );
   r.m[13] = inv_det * ( mm.m[8]  * mm.m[13] * mm.m[2]  - mm.m[12] * mm.m[9]  * mm.m[2]  +
-												mm.m[12] * mm.m[1]  * mm.m[10] - mm.m[0]  * mm.m[13] * mm.m[10] -
+                        mm.m[12] * mm.m[1]  * mm.m[10] - mm.m[0]  * mm.m[13] * mm.m[10] -
                         mm.m[8]  * mm.m[1]  * mm.m[14] + mm.m[0]  * mm.m[9]  * mm.m[14] );
   r.m[14] = inv_det * ( mm.m[12] * mm.m[5]  * mm.m[2]  - mm.m[4]  * mm.m[13] * mm.m[2]  -
-	                      mm.m[12] * mm.m[1]  * mm.m[6]  + mm.m[0]  * mm.m[13] * mm.m[6]  +
+                        mm.m[12] * mm.m[1]  * mm.m[6]  + mm.m[0]  * mm.m[13] * mm.m[6]  +
                         mm.m[4]  * mm.m[1]  * mm.m[14] - mm.m[0]  * mm.m[5]  * mm.m[14] );
   r.m[15] = inv_det * ( mm.m[4]  * mm.m[9]  * mm.m[2]  - mm.m[8]  * mm.m[5]  * mm.m[2]  +
-												mm.m[8]  * mm.m[1]  * mm.m[6]  - mm.m[0]  * mm.m[9]  * mm.m[6]  -
+                        mm.m[8]  * mm.m[1]  * mm.m[6]  - mm.m[0]  * mm.m[9]  * mm.m[6]  -
                         mm.m[4]  * mm.m[1]  * mm.m[10] + mm.m[0]  * mm.m[5]  * mm.m[10] );
   return r;
   // clang-format on
