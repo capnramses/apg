@@ -22,7 +22,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 
 ## LICENCE
 
-Libraries is this repository are dual-licenced and may be used by you under the terms of your
+Libraries is this repository are dual-licensed and may be used by you under the terms of your
 choice of licence. See subsections below for licences of optional third-party components.
 
 -------------------------------------------------------------------------------------
