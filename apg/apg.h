@@ -319,18 +319,20 @@ void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
 }
 
 /** Return a hash index ( hash code ) for a single value key->table mapping. */
+/*
 int apg_hashi( uint32_t key, int table_n ) {
   if ( table_n < 1 ) { return -1; }
   float T        = APG_GOLDEN_RATIO_FRAC;
   float int_part = 0.0f;
   int hash_index = (int)( table_n * modff( (float)key * T, &int_part ) );
   return hash_index;
-}
+}*/
 
-/** Returns a hash for a string key->table mapping.
+/** Returns a hash for a key->table mapping.
+ * If your key is eg an integer, convert it into 4 string bytes + a null char first.
  * Be sure to compute hash_index = hash % table_N after calling this function.
  */
-uint32_t apg_hash_str( const char* keystr ) {
+uint32_t apg_hash( const char* keystr ) {
   // sdbm based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 0;
   size_t len    = strlen( keystr );
@@ -339,72 +341,43 @@ uint32_t apg_hash_str( const char* keystr ) {
   return hash;
 }
 
-uint32_t apg_hash_rehash_str( const char* keystr ) {
+/** A second hash function, using djb2 (based on http://www.cse.yorku.ca/~oz/hash.html),
+ * This is used by store and search functions on first collision for a double-hashing approach.
+ */
+uint32_t apg_hash_rehash( const char* keystr ) {
   // djb2 based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 5381;
   size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
-  printf( "strkey %s -> hash %u\n", keystr, hash );
+  printf( "strkey %s -> rehash %u\n", keystr, hash );
   return hash;
 }
 
-int apg_hash_searchi( uint32_t key, apg_hash_table_t* table_ptr ) {
-  if ( !table_ptr || table_ptr->count_stored == 0 ) { return -1; }
-  int idx = apg_hashi( key, table_ptr->n );
-  if ( idx < 0 ) { return -1; }
-  for ( int i = 0; i < table_ptr->n; i++ ) {
-    if ( table_ptr->list_ptr[idx].value_ptr == NULL ) { return -1; }
-    if ( table_ptr->list_ptr[idx].key == key ) { return idx; }
-    idx = ( idx + 1 ) % table_ptr->n;
-  }
-  return -1;
-}
+// TODO apg_hash_search
 
 /**
  */
-int apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  if ( !value_ptr || !table_ptr ) { return -1; }
-  if ( table_ptr->count_stored >= table_ptr->n ) { return -2; } // table is full
-  int idx = apg_hashi( key, table_ptr->n );
+uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  uint32_t hash = apg_hash( keystr );
+  uint32_t idx  = hash % table_ptr->n;
 
-  if ( idx < 0 ) { return -3; }
+  // first do a rehash
   if ( table_ptr->list_ptr[idx].value_ptr ) {
-    for ( int i = 0; i < table_ptr->n; i++ ) {
-      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = key, .value_ptr = value_ptr };
-        table_ptr->count_stored++;
-        return idx;
-        // key already has a value in the table.
-      } else if ( table_ptr->list_ptr[idx].key == key ) {
-        return -4;
-      }
-      if ( collision_ptr ) {
-        ( *collision_ptr )++;
-        printf( "key %u collided with %u at index %i\n", key, table_ptr->list_ptr[idx].key, idx );
-      }
-      idx = ( idx + 1 ) % table_ptr->n;
+    if ( collision_ptr ) {
+      ( *collision_ptr )++;
+      printf( "key %s collided at index %u\n", keystr, idx );
     }
+    hash = apg_hash_rehash( keystr );
+    idx  = hash % table_ptr->n;
   }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = key, .value_ptr = value_ptr };
-  table_ptr->count_stored++;
-  return idx;
-}
 
-/**
- */
-uint32_t apg_hash_storestr( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  uint32_t idx = apg_hash_str( keystr ) % table_ptr->n;
-
+  // then linear probing
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
       if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = 0, .value_ptr = value_ptr };
+        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
         table_ptr->count_stored++;
         return idx;
-        // key already has a value in the table.
-        // } else if ( table_ptr->list_ptr[idx].key == key ) {
-        // commented out because strings dont store the whole key TODO -- think about this
-        //      return -4;
       }
       if ( collision_ptr ) {
         ( *collision_ptr )++;
@@ -413,7 +386,7 @@ uint32_t apg_hash_storestr( const char* keystr, void* value_ptr, apg_hash_table_
       idx = ( idx + 1 ) % table_ptr->n;
     }
   }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = 0, .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .hash = hash, .value_ptr = value_ptr };
   table_ptr->count_stored++;
   return idx;
 }
