@@ -23,11 +23,12 @@ Usage Instructions
 #ifndef _APG_H_
 #define _APG_H_
 
-/* types */
-#include <stdint.h>
+#include <math.h>  /* modff() */
+#include <stdint.h>/* types */
 #include <stdbool.h>
 #include <stddef.h>/* size_t */
 #include <stdio.h> /* FILE* */
+#include <string.h>
 
 /*=================================================================================================
 COMPILER HELPERS
@@ -259,6 +260,140 @@ PARAMS
 void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
 void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
 
+/*=================================================================================================
+HASH TABLE
+=================================================================================================*/
+
+/** Golden ratio is (1+sqrt(5))/2 = 1.618033988749...
+ *  The fractional part is useful as a multiplier.
+ */
+#define APG_GOLDEN_RATIO_FRAC 0.618033988749
+
+typedef struct apg_hash_table_elementi_t {
+  uint32_t key;    // Useful to retain for table resizing.
+  void* value_ptr; // Can point e.g. into another array.
+} apg_hash_table_elementi_t;
+
+typedef struct apg_hash_table_t {
+  apg_hash_table_elementi_t* list_ptr;
+  int n;
+  int count_stored;
+} apg_hash_table_t;
+
+/** Allocates memory for a hash table of size `table_n`.
+ * @param table_n For a well performing table use a prime number somewhat larger than minimum required space.
+ * @return A generated, empty, hash table, or an empty table ( list_ptr == NULL ) on out of memory error.
+ */
+apg_hash_table_t apg_hash_table_create( int table_n ) {
+  apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
+  if ( table_n < 0 ) { return table; }
+  table.list_ptr = calloc( table_n, sizeof( apg_hash_table_elementi_t ) );
+  if ( !table.list_ptr ) { return table; } // OOM error.
+  table.n = table_n;
+  return table;
+}
+
+/**
+ * @warning Ensure any memory you have manually allocated into table element `value_ptr` is freed first.
+ */
+void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
+  if ( !table_ptr ) { return; }
+  if ( table_ptr->list_ptr ) { free( table_ptr->list_ptr ); }
+  *table_ptr = ( apg_hash_table_t ){ .n = 0 };
+}
+
+/** Return a hash index ( hash code ) for a single value key->table mapping. */
+int apg_hashi( uint32_t key, int table_n ) {
+  if ( table_n < 1 ) { return -1; }
+  float T        = APG_GOLDEN_RATIO_FRAC;
+  float int_part = 0.0f;
+  int hash_index = (int)( table_n * modff( (float)key * T, &int_part ) );
+  return hash_index;
+}
+
+/** Return a hash index ( hash code ) for a string key->table mapping. */
+int apg_hashstr( const char* key, int table_n ) {
+  // Based on http://www.cse.yorku.ca/~oz/hash.html
+  uint32_t hash = 5381;
+  size_t len    = strlen( key );
+  for ( uint32_t i = 0; i < len; i++ ) {
+    // hash = key[i] + ( hash << 6 ) + ( hash << 16 ) - hash;
+    hash = ( ( hash << 5 ) + hash ) + key[i];
+  }
+  hash %= table_n;
+  printf( "strkey %s -> ikey %u\n", key, hash );
+  return hash;
+}
+
+int apg_hash_searchi( uint32_t key, apg_hash_table_t* table_ptr ) {
+  if ( !table_ptr || table_ptr->count_stored == 0 ) { return -1; }
+  int idx = apg_hashi( key, table_ptr->n );
+  if ( idx < 0 ) { return -1; }
+  for ( int i = 0; i < table_ptr->n; i++ ) {
+    if ( table_ptr->list_ptr[idx].value_ptr == NULL ) { return -1; }
+    if ( table_ptr->list_ptr[idx].key == key ) { return idx; }
+    idx = ( idx + 1 ) % table_ptr->n;
+  }
+  return -1;
+}
+
+/**
+ */
+int apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  if ( !value_ptr || !table_ptr ) { return -1; }
+  if ( table_ptr->count_stored >= table_ptr->n ) { return -2; } // table is full
+  int idx = apg_hashi( key, table_ptr->n );
+
+  if ( idx < 0 ) { return -3; }
+  if ( table_ptr->list_ptr[idx].value_ptr ) {
+    for ( int i = 0; i < table_ptr->n; i++ ) {
+      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
+        table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = key, .value_ptr = value_ptr };
+        table_ptr->count_stored++;
+        return idx;
+        // key already has a value in the table.
+      } else if ( table_ptr->list_ptr[idx].key == key ) {
+        return -4;
+      }
+      if ( collision_ptr ) {
+        ( *collision_ptr )++;
+        printf( "key %u collided with %u at index %i\n", key, table_ptr->list_ptr[idx].key, idx );
+      }
+      idx = ( idx + 1 ) % table_ptr->n;
+    }
+  }
+  table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = key, .value_ptr = value_ptr };
+  table_ptr->count_stored++;
+  return idx;
+}
+
+/**
+ */
+int apg_hash_storestr( const char* key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  int idx = apg_hashstr( key, table_ptr->n );
+
+  if ( table_ptr->list_ptr[idx].value_ptr ) {
+    for ( int i = 0; i < table_ptr->n; i++ ) {
+      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
+        table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = 0, .value_ptr = value_ptr };
+        table_ptr->count_stored++;
+        return idx;
+        // key already has a value in the table.
+        // } else if ( table_ptr->list_ptr[idx].key == key ) {
+        // commented out because strings dont store the whole key TODO -- think about this
+        //      return -4;
+      }
+      if ( collision_ptr ) {
+        ( *collision_ptr )++;
+        printf( "key %s collided at index %i\n", key, idx );
+      }
+      idx = ( idx + 1 ) % table_ptr->n;
+    }
+  }
+  table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = 0, .value_ptr = value_ptr };
+  table_ptr->count_stored++;
+  return idx;
+}
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
