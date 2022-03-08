@@ -262,6 +262,17 @@ void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_o
 
 /*=================================================================================================
 HASH TABLE
+Motivation
+ - no run-time memory allocation (so linear probing rather than chained buckets)
+ - allow user to detect collisions and hash table capacity
+ - allow user to determine when to rebuild the hash-table
+ - string and integer key interfaces
+ - minimal aux memory overhead
+ - fast and simple
+ Not decided
+ - storing keys allows for resize() and duplicate detection although strings require mem to do this.
+ - could just keep the hash functions here with instructions for how to % n and create the table
+   and linear probing example in test/
 =================================================================================================*/
 
 /** Golden ratio is (1+sqrt(5))/2 = 1.618033988749...
