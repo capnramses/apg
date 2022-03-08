@@ -331,23 +331,19 @@ int apg_hashi( uint32_t key, int table_n ) {
  * Be sure to compute hash_index = hash % table_N after calling this function.
  */
 uint32_t apg_hash_str( const char* keystr ) {
-  // Based on http://www.cse.yorku.ca/~oz/hash.html
+  // sdbm based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 0;
   size_t len    = strlen( keystr );
-  for ( uint32_t i = 0; i < len; i++ ) {
-    hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; // sdbm: hash = 0 to start
-  }
+  for ( uint32_t i = 0; i < len; i++ ) { hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; }
   printf( "strkey %s -> hash %u\n", keystr, hash );
   return hash;
 }
 
-uint32_t apg_hash_str_djb2( const char* keystr ) {
-  // Based on http://www.cse.yorku.ca/~oz/hash.html
+uint32_t apg_hash_rehash_str( const char* keystr ) {
+  // djb2 based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 5381;
   size_t len    = strlen( keystr );
-  for ( uint32_t i = 0; i < len; i++ ) {
-    hash = ( ( hash << 5 ) + hash ) + keystr[i]; // djb2: hash = 5381 to start
-  }
+  for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
   printf( "strkey %s -> hash %u\n", keystr, hash );
   return hash;
 }
