@@ -280,13 +280,13 @@ Motivation
  */
 #define APG_GOLDEN_RATIO_FRAC 0.618033988749
 
-typedef struct apg_hash_table_elementi_t {
+typedef struct apg_hash_table_element_t {
   uint32_t key;    // Useful to retain for table resizing.
   void* value_ptr; // Can point e.g. into another array.
-} apg_hash_table_elementi_t;
+} apg_hash_table_element_t;
 
 typedef struct apg_hash_table_t {
-  apg_hash_table_elementi_t* list_ptr;
+  apg_hash_table_element_t* list_ptr;
   int n;
   int count_stored;
 } apg_hash_table_t;
@@ -298,7 +298,7 @@ typedef struct apg_hash_table_t {
 apg_hash_table_t apg_hash_table_create( int table_n ) {
   apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
   if ( table_n < 0 ) { return table; }
-  table.list_ptr = calloc( table_n, sizeof( apg_hash_table_elementi_t ) );
+  table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
   if ( !table.list_ptr ) { return table; } // OOM error.
   table.n = table_n;
   return table;
@@ -359,7 +359,7 @@ int apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr,
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
       if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = key, .value_ptr = value_ptr };
+        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = key, .value_ptr = value_ptr };
         table_ptr->count_stored++;
         return idx;
         // key already has a value in the table.
@@ -373,7 +373,7 @@ int apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr,
       idx = ( idx + 1 ) % table_ptr->n;
     }
   }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = key, .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = key, .value_ptr = value_ptr };
   table_ptr->count_stored++;
   return idx;
 }
@@ -386,7 +386,7 @@ int apg_hash_storestr( const char* key, void* value_ptr, apg_hash_table_t* table
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
       if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = 0, .value_ptr = value_ptr };
+        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = 0, .value_ptr = value_ptr };
         table_ptr->count_stored++;
         return idx;
         // key already has a value in the table.
@@ -401,7 +401,7 @@ int apg_hash_storestr( const char* key, void* value_ptr, apg_hash_table_t* table
       idx = ( idx + 1 ) % table_ptr->n;
     }
   }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_elementi_t ){ .key = 0, .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .key = 0, .value_ptr = value_ptr };
   table_ptr->count_stored++;
   return idx;
 }
