@@ -295,7 +295,7 @@ typedef struct apg_hash_table_t {
 } apg_hash_table_t;
 
 /** Allocates memory for a hash table of size `table_n`.
- * @param table_n For a well performing table use a prime number somewhat larger than minimum required space.
+ * @param table_n For a well performing table use a number somewhat larger than required space.
  * @return A generated, empty, hash table, or an empty table ( list_ptr == NULL ) on out of memory error.
  */
 apg_hash_table_t apg_hash_table_create( int table_n ) {
@@ -324,17 +324,14 @@ void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
  * @warning check if table full first TODO
  */
 uint32_t apg_hashi( uint32_t key, uint32_t table_n ) {
-  const double T      = APG_GOLDEN_RATIO_FRAC;
   double int_part     = 0.0;
-  uint32_t hash_index = (uint32_t)( (double)table_n * modf( (double)key * T, &int_part ) );
+  uint32_t hash_index = (uint32_t)( (double)table_n * modf( (double)key * APG_GOLDEN_RATIO_FRAC, &int_part ) );
   return hash_index;
 }
 
 uint32_t apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  uint32_t hash = key; // this is for resizing later
+  uint32_t hash = key; // This is retained for resizing the table later.
   uint32_t idx  = apg_hashi( key, table_ptr->n );
-  //printf( "st) hash = %u, idx= %u\n", hash, idx );
-
   // linear probing
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
@@ -343,10 +340,7 @@ uint32_t apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table
         table_ptr->count_stored++;
         return idx;
       }
-      if ( collision_ptr ) {
-        ( *collision_ptr )++;
-        //  printf( "key %u collided at index %u\n", key, idx );
-      }
+      if ( collision_ptr ) { ( *collision_ptr )++; }
       idx = ( idx + 1 ) % table_ptr->n;
     }
   }
@@ -364,7 +358,6 @@ uint32_t apg_hash( const char* keystr ) {
   uint32_t hash = 0;
   size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) { hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; }
-  //printf( "h) strkey %s -> hash %u\n", keystr, hash );
   return hash;
 }
 
@@ -376,7 +369,6 @@ uint32_t apg_hash_rehash( const char* keystr ) {
   uint32_t hash = 5381;
   size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
-  //printf( "re) strkey %s -> rehash %u\n", keystr, hash );
   return hash;
 }
 
@@ -387,17 +379,12 @@ uint32_t apg_hash_rehash( const char* keystr ) {
 uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
   uint32_t hash = apg_hash( keystr );
   uint32_t idx  = hash % table_ptr->n;
-
   // first do a rehash
   if ( table_ptr->list_ptr[idx].value_ptr ) {
-    if ( collision_ptr ) {
-      ( *collision_ptr )++;
-   //   printf( "st) key %s collided at index %u\n", keystr, idx );
-    }
+    if ( collision_ptr ) { ( *collision_ptr )++; }
     hash = apg_hash_rehash( keystr );
     idx  = hash % table_ptr->n;
   }
-
   // then linear probing
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
@@ -406,10 +393,7 @@ uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* 
         table_ptr->count_stored++;
         return idx;
       }
-      if ( collision_ptr ) {
-        ( *collision_ptr )++;
-     //   printf( "lp) key %s collided at index %u\n", keystr, idx );
-      }
+      if ( collision_ptr ) { ( *collision_ptr )++; }
       idx = ( idx + 1 ) % table_ptr->n;
     }
   }
@@ -417,6 +401,7 @@ uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* 
   table_ptr->count_stored++;
   return idx;
 }
+
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
