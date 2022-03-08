@@ -17,33 +17,33 @@ int main() {
       char keystr[5] = { i + 3, ( i >> 4 ) + 7, ( i >> 8 ) + 33, ( i >> 12 ) + 37, '\0' };
       //  int idx        = apg_hash_store( keystr, &values[i], &table, &collisions );
       int idx = apg_hash_storei( i, &values[i], &table, &collisions );
-      printf( "key %i, value %c -> hash index %i\n", i, values[i], idx );
+    //  printf( "mr) key %i, value %c -> hash index %i\n", i, values[i], idx );
       if ( idx < 0 ) { return 1; }
     }
 
     apg_hash_table_free( &table );
-    printf( "Collisions=%i\n", collisions );
-  }/*
+    printf( "Integer hash collisions=%i\n", collisions );
+  }
   printf( "===========================================\n" ); 
    {
-     apg_hash_table_t table = apg_hash_table_create( 1000 );
+     apg_hash_table_t table = apg_hash_table_create( 2048 );
      if ( !table.list_ptr ) { return 1; } // OOM
 
      int collisions = 0;
 
- #define SN 500 // hash table 4x the size of the items stored seems reasonable collision wise
+ #define SN 666 // hash table 4x the size of the items stored seems reasonable collision wise
 
      char values[SN][32];
      for ( int i = 0; i < SN; i++ ) {
        for ( int j = 0; j < 31; j++ ) { values[i][j] = ( ( i + 2 ) * 35 * ( j + 1 ) ) % 127; }
        values[i][31] = 0;
        uint32_t idx  = apg_hash_store( values[i], &values[i], &table, &collisions );
-       printf( "= key %s, -> hash index %u\n", values[i], idx );
+      // printf( "= key %s, -> hash index %u\n", values[i], idx );
      }
 
      apg_hash_table_free( &table );
-     printf( "Collisions=%i\n", collisions );
-   }*/
+     printf( "String hash collisions=%i\n", collisions );
+   }
  
   printf( "Normal exit.\n" );
   return 0;

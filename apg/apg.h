@@ -284,9 +284,7 @@ TODO
 #define APG_GOLDEN_RATIO_FRAC 0.618033988749
 
 typedef struct apg_hash_table_element_t {
-  uint32_t key; // Useful to retain for table resizing.
-  // TODO modify hashi
-  uint32_t hash;   // Hash code before % N is applied. TODO actually use
+  uint32_t hash;   // Hash code before % N is applied.
   void* value_ptr; // Can point e.g. into another array.
 } apg_hash_table_element_t;
 
@@ -335,7 +333,7 @@ uint32_t apg_hashi( uint32_t key, uint32_t table_n ) {
 uint32_t apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
   uint32_t hash = key; // this is for resizing later
   uint32_t idx  = apg_hashi( key, table_ptr->n );
-  printf( "hash = %u, idx= %u\n", hash, idx );
+  //printf( "st) hash = %u, idx= %u\n", hash, idx );
 
   // linear probing
   if ( table_ptr->list_ptr[idx].value_ptr ) {
@@ -366,7 +364,7 @@ uint32_t apg_hash( const char* keystr ) {
   uint32_t hash = 0;
   size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) { hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; }
-  printf( "strkey %s -> hash %u\n", keystr, hash );
+  //printf( "h) strkey %s -> hash %u\n", keystr, hash );
   return hash;
 }
 
@@ -378,7 +376,7 @@ uint32_t apg_hash_rehash( const char* keystr ) {
   uint32_t hash = 5381;
   size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
-  printf( "strkey %s -> rehash %u\n", keystr, hash );
+  //printf( "re) strkey %s -> rehash %u\n", keystr, hash );
   return hash;
 }
 
@@ -394,7 +392,7 @@ uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* 
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     if ( collision_ptr ) {
       ( *collision_ptr )++;
-      printf( "key %s collided at index %u\n", keystr, idx );
+   //   printf( "st) key %s collided at index %u\n", keystr, idx );
     }
     hash = apg_hash_rehash( keystr );
     idx  = hash % table_ptr->n;
@@ -410,7 +408,7 @@ uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* 
       }
       if ( collision_ptr ) {
         ( *collision_ptr )++;
-        printf( "key %s collided at index %u\n", keystr, idx );
+     //   printf( "lp) key %s collided at index %u\n", keystr, idx );
       }
       idx = ( idx + 1 ) % table_ptr->n;
     }
