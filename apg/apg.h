@@ -273,6 +273,9 @@ Motivation
  - storing keys allows for resize() and duplicate detection although strings require mem to do this.
  - could just keep the hash functions here with instructions for how to % n and create the table
    and linear probing example in test/
+
+TODO
+ - move impl to impl part
 =================================================================================================*/
 
 /** Golden ratio is (1+sqrt(5))/2 = 1.618033988749...
@@ -281,7 +284,9 @@ Motivation
 #define APG_GOLDEN_RATIO_FRAC 0.618033988749
 
 typedef struct apg_hash_table_element_t {
-  uint32_t key;    // Useful to retain for table resizing.
+  uint32_t key; // Useful to retain for table resizing.
+  // TODO modify hashi
+  uint32_t hash;   // Hash code before % N is applied. TODO actually use
   void* value_ptr; // Can point e.g. into another array.
 } apg_hash_table_element_t;
 
@@ -322,17 +327,28 @@ int apg_hashi( uint32_t key, int table_n ) {
   return hash_index;
 }
 
-/** Return a hash index ( hash code ) for a string key->table mapping. */
-int apg_hashstr( const char* key, int table_n ) {
+/** Returns a hash for a string key->table mapping.
+ * Be sure to compute hash_index = hash % table_N after calling this function.
+ */
+uint32_t apg_hash_str( const char* keystr ) {
+  // Based on http://www.cse.yorku.ca/~oz/hash.html
+  uint32_t hash = 0;
+  size_t len    = strlen( keystr );
+  for ( uint32_t i = 0; i < len; i++ ) {
+    hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; // sdbm: hash = 0 to start
+  }
+  printf( "strkey %s -> hash %u\n", keystr, hash );
+  return hash;
+}
+
+uint32_t apg_hash_str_djb2( const char* keystr ) {
   // Based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 5381;
-  size_t len    = strlen( key );
+  size_t len    = strlen( keystr );
   for ( uint32_t i = 0; i < len; i++ ) {
-    // hash = key[i] + ( hash << 6 ) + ( hash << 16 ) - hash;
-    hash = ( ( hash << 5 ) + hash ) + key[i];
+    hash = ( ( hash << 5 ) + hash ) + keystr[i]; // djb2: hash = 5381 to start
   }
-  hash %= table_n;
-  printf( "strkey %s -> ikey %u\n", key, hash );
+  printf( "strkey %s -> hash %u\n", keystr, hash );
   return hash;
 }
 
@@ -380,8 +396,8 @@ int apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr,
 
 /**
  */
-int apg_hash_storestr( const char* key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  int idx = apg_hashstr( key, table_ptr->n );
+uint32_t apg_hash_storestr( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  uint32_t idx = apg_hash_str( keystr ) % table_ptr->n;
 
   if ( table_ptr->list_ptr[idx].value_ptr ) {
     for ( int i = 0; i < table_ptr->n; i++ ) {
@@ -396,7 +412,7 @@ int apg_hash_storestr( const char* key, void* value_ptr, apg_hash_table_t* table
       }
       if ( collision_ptr ) {
         ( *collision_ptr )++;
-        printf( "key %s collided at index %i\n", key, idx );
+        printf( "key %s collided at index %u\n", keystr, idx );
       }
       idx = ( idx + 1 ) % table_ptr->n;
     }

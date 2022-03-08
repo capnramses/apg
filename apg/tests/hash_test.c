@@ -24,20 +24,19 @@ int main() {
   }
   printf( "===========================================\n" );
   {
-    apg_hash_table_t table = apg_hash_table_create( 1024 );
+    apg_hash_table_t table = apg_hash_table_create( 1000 );
     if ( !table.list_ptr ) { return 1; } // OOM
 
     int collisions = 0;
 
-#define  SN 256 // hash table 4x the size of the items stored seems reasonable collision wise
+#define SN 500 // hash table 4x the size of the items stored seems reasonable collision wise
 
     char values[SN][32];
     for ( int i = 0; i < SN; i++ ) {
       for ( int j = 0; j < 31; j++ ) { values[i][j] = ( ( i + 2 ) * 35 * ( j + 1 ) ) % 127; }
       values[i][31] = 0;
-      int idx      = apg_hash_storestr( values[i], &values[i], &table, &collisions );
-      printf( "key %s, -> hash index %i\n", values[i], idx );
-      if ( idx < 0 ) { return 1; }
+      uint32_t idx  = apg_hash_storestr( values[i], &values[i], &table, &collisions );
+      printf( "= key %s, -> hash index %u\n", values[i], idx );
     }
 
     apg_hash_table_free( &table );
