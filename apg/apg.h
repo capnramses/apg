@@ -402,6 +402,35 @@ uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* 
   return idx;
 }
 
+bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr ) {
+  if ( !keystr || !table_ptr || !idx_ptr || table_ptr->count_stored == 0 ) { return false; }
+  uint32_t hash = apg_hash( keystr );
+  uint32_t idx  = hash % table_ptr->n;
+  if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
+
+  if ( hash == table_ptr->list_ptr[idx].hash ) {
+    *idx_ptr = idx;
+    return true;
+  }
+  // first do a rehash
+  if ( collision_ptr ) { ( *collision_ptr )++; }
+  hash = apg_hash_rehash( keystr );
+  idx  = hash % table_ptr->n;
+  if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
+  // then linear probing
+  for ( int i = 0; i < table_ptr->n; i++ ) {
+    if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
+    if ( hash == table_ptr->list_ptr[idx].hash ) {
+      *idx_ptr = idx;
+      return true;
+    }
+    if ( collision_ptr ) { ( *collision_ptr )++; }
+    idx = ( idx + 1 ) % table_ptr->n;
+  }
+
+  return false;
+}
+
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
