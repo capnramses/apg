@@ -318,15 +318,44 @@ void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
   *table_ptr = ( apg_hash_table_t ){ .n = 0 };
 }
 
-/** Return a hash index ( hash code ) for a single value key->table mapping. */
-/*
-int apg_hashi( uint32_t key, int table_n ) {
-  if ( table_n < 1 ) { return -1; }
-  float T        = APG_GOLDEN_RATIO_FRAC;
-  float int_part = 0.0f;
-  int hash_index = (int)( table_n * modff( (float)key * T, &int_part ) );
+// NOTE(Anton) I have no idea why this function is SO MUCH FASTER than the string version.
+// 19 comparisons compared to 255 for the same data.
+// i must have a mistake somewhere in my int->str conversion.
+
+/** Return a hash index ( hash code ) for a single value key->table mapping.
+ * @warning check if table full first TODO
+ */
+uint32_t apg_hashi( uint32_t key, uint32_t table_n ) {
+  const double T      = APG_GOLDEN_RATIO_FRAC;
+  double int_part     = 0.0;
+  uint32_t hash_index = (uint32_t)( (double)table_n * modf( (double)key * T, &int_part ) );
   return hash_index;
-}*/
+}
+
+uint32_t apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  uint32_t hash = key; // this is for resizing later
+  uint32_t idx  = apg_hashi( key, table_ptr->n );
+  printf( "hash = %u, idx= %u\n", hash, idx );
+
+  // linear probing
+  if ( table_ptr->list_ptr[idx].value_ptr ) {
+    for ( int i = 0; i < table_ptr->n; i++ ) {
+      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
+        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
+        table_ptr->count_stored++;
+        return idx;
+      }
+      if ( collision_ptr ) {
+        ( *collision_ptr )++;
+        //  printf( "key %u collided at index %u\n", key, idx );
+      }
+      idx = ( idx + 1 ) % table_ptr->n;
+    }
+  }
+  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .hash = hash, .value_ptr = value_ptr };
+  table_ptr->count_stored++;
+  return idx;
+}
 
 /** Returns a hash for a key->table mapping.
  * If your key is eg an integer, convert it into 4 string bytes + a null char first.
