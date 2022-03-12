@@ -16,7 +16,7 @@ int main() {
 
     { // Storing random keys, collision test.
 
-#define SN 32 // hash table 4x the size of the items stored seems reasonable collision wise
+#define SN 64 // hash table 4x the size of the items stored seems reasonable collision wise
 #define ASTRLENMAX 16
 
       srand( time( NULL ) );
@@ -74,6 +74,20 @@ int main() {
       if ( apg_hash_search( "Anton Gerdelan", &table, &search_idx, &collisions ) ) { printf( "search found `Anton Gerdelan` at index %u\n", search_idx ); }
       if ( apg_hash_search( "Anton2", &table, &search_idx, &collisions ) ) { printf( "search found `Anton2` at index %u\n", search_idx ); }
     }
+
+    printf( "table cap %u/%u\n", table.count_stored, table.n );
+    // try auto-expand (should be right on the realloc point at 50%)
+    if ( !apg_hash_auto_expand( &table, APG_GIGABYTES( 4 ) ) ) {
+      printf( "ERROR: realloc failed1\n" );
+      return 1;
+    }
+    printf( "new table cap %u/%u\n", table.count_stored, table.n );
+    // try again - should do nothing
+    if ( !apg_hash_auto_expand( &table, APG_GIGABYTES( 4 ) ) ) {
+      printf( "ERROR: realloc failed2\n" );
+      return 1;
+    }
+    printf( "new table cap %u/%u\n", table.count_stored, table.n );
 
     apg_hash_table_free( &table );
   }

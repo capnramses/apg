@@ -219,9 +219,10 @@ MEMORY
 #include <alloca.h>
 #endif
 
-#define APG_KILOBYTES( value ) ( (value)*1024 )
-#define APG_MEGABYTES( value ) ( APG_KILOBYTES( value ) * 1024 )
-#define APG_GIGABYTES( value ) ( APG_MEGABYTES( value ) * 1024 )
+// NB `ULL` postfix is necessary or numbers ~4GB will be interpreted as integer constants and overflow.
+#define APG_KILOBYTES( value ) ( (value)*1024ULL )
+#define APG_MEGABYTES( value ) ( APG_KILOBYTES( value ) * 1024ULL )
+#define APG_GIGABYTES( value ) ( APG_MEGABYTES( value ) * 1024ULL )
 
 /* avoid use of malloc at runtime. use alloca() for up to ~1MB, or scratch_mem() for reusing a larger preallocated heap block */
 
@@ -270,13 +271,8 @@ Motivation:
  - Minimal aux. memory overhead.
  - Fast and simple.
  - Allow user to determine when to rebuild the hash-table. There should never be surprise table reallocations at run-time!
-   To do this:
-   * Each time a key is stored, check for capacity e.g. >=70%.
-   * Then create a new table at ~x2 capacity.
-   * And run the hash function on the stored key of each valid element (value_ptr != NULL) in the table.
-     * NB If I stored the hash value ( before the % table_n ) then we could skip the first hash function call and start with just applying % n.
-     * But if there's a collision in the new table index it gets more complex -> need to rehash still.
-   * And memcpy the element to the correct position new table.
+   To explicitly allow (constrained) resizing:
+   * After a key is stored with apg_hash_store(), run apg_hash_table_auto_resize( &my_table, max_bytes ).
 
 Potential improvements:
  - If the user program reliably retains strings as well as values, we could avoid string memory allocation during hash_store calls, and just point to external.
@@ -332,6 +328,11 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
  */
 bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, uint32_t* collision_ptr );
 
+/** Expand when hash table when >= 50% full, and double its size if so, but don't allocate a table of more than `max_bytes`.
+ *  This function could be improved in performance (at expense of brevity) by manually writing out apg_hash_store() and excluding string allocations.
+ *  This function could be upgraded into _auto_resize() which also scales down on e.g. < 25% load.
+ */
+bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
@@ -786,7 +787,7 @@ uint32_t apg_hash_rehash( const char* keystr ) {
   // djb2 based on http://www.cse.yorku.ca/~oz/hash.html
   uint32_t hash = 5381;
   size_t len    = strlen( keystr );
-  for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
+  for ( size_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
   return hash;
 }
 
@@ -799,7 +800,7 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
   uint32_t idx        = hash % table_ptr->n;
 
   // Check for best case scenario: landed on an empty index first try.
-  if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }
+  if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto apg_hash_store_enter_key; }
 
   // Otherwise, first try a rehash.
   if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; } // Key is already in table.
@@ -809,8 +810,8 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
 
   // Then proceed with linear probing from the rehashed index.
   for ( uint32_t i = 0; i < table_ptr->n; i++ ) {
-    if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }     // Needs to be at top of loop since also covers rehash's first check.
-    if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; } // Key is already in table.
+    if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto apg_hash_store_enter_key; } // Needs to be at top of loop since also covers rehash's first check.
+    if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; }      // Key is already in table.
     collisions++;
     idx = ( idx + 1 ) % table_ptr->n;
   }
@@ -818,7 +819,7 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
   assert( false && "Shouldn't get here because it means the table is full, and we DO check for that earlier." );
   return false;
 
-enter_key_label:
+apg_hash_store_enter_key:
   table_ptr->list_ptr[idx]        = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
   table_ptr->list_ptr[idx].keystr = strdup( keystr ); // NOTE(Anton) Could use strndup here to guard against unterminated strings.
   table_ptr->count_stored++;
@@ -852,6 +853,31 @@ bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t*
     idx = ( idx + 1 ) % table_ptr->n;
   }
   return false; // This only happens if the table is full, and the key isn't in there.
+}
+
+bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
+  if ( !table_ptr || 0 == max_bytes ) { return false; }
+  if ( table_ptr->count_stored < table_ptr->n / 2 ) { return true; } // Already big enough.
+  uint32_t tmp_n = table_ptr->n * 2;
+  if ( tmp_n < table_ptr->n ) { return false; } // Overflow check.
+  size_t tmp_bytes = tmp_n * sizeof( apg_hash_table_element_t );
+  if ( tmp_bytes >= max_bytes ) { return false; } // Too much memory would be used.
+
+  apg_hash_table_t tmp_table = apg_hash_table_create( tmp_n );
+  if ( !tmp_table.list_ptr ) { return false; } // OOM.
+
+  // Rehash valid entries to new table size.
+  for ( uint32_t i = 0; i < table_ptr->n; i++ ) {
+    if ( table_ptr->list_ptr[i].value_ptr ) {
+      if ( !apg_hash_store( table_ptr->list_ptr[i].keystr, table_ptr->list_ptr[i].value_ptr, &tmp_table, NULL ) ) {
+        apg_hash_table_free( &tmp_table );
+        return false;
+      }
+    }
+  }
+  apg_hash_table_free( table_ptr ); // free everything including allocated strings.
+  *table_ptr = tmp_table;           // allocated list_ptr, including allocated strings, n, count_stored.
+  return true;
 }
 
 #endif /* APG_IMPLEMENTATION */
