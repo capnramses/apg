@@ -1,5 +1,4 @@
 /*apg.h - Generic C utility functions.
-Licence: see bottom of file.
 C89 ( Implementation is C99 )
 Licence: see bottom of file.
 Version History:
