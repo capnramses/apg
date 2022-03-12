@@ -292,15 +292,15 @@ typedef struct apg_hash_table_element_t {
 
 typedef struct apg_hash_table_t {
   apg_hash_table_element_t* list_ptr;
-  int n;
-  int count_stored;
+  uint32_t n;
+  uint32_t count_stored;
 } apg_hash_table_t;
 
 /** Allocates memory for a hash table of size `table_n`.
  * @param table_n For a well performing table use a number somewhat larger than required space.
  * @return A generated, empty, hash table, or an empty table ( list_ptr == NULL ) on out of memory error.
  */
-apg_hash_table_t apg_hash_table_create( int table_n );
+apg_hash_table_t apg_hash_table_create( uint32_t table_n );
 
 /** Free any memory allocated to the table, including allocated key string memory. */
 void apg_hash_table_free( apg_hash_table_t* table_ptr );
@@ -324,13 +324,13 @@ uint32_t apg_hash_rehash( const char* keystr );
  * @return              This function returns true on success. It returns false in cases where the table is full,
  *                      the key was already stored in the table, or the parameters are invalid.
  */
-bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr );
+bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, uint32_t* collision_ptr );
 
 /**
  * @return This function returns true if the key is found in the table. In this case the integer pointed to by `idx_ptr` is set to the corresponding table
  * index. This function returns false if the table is empty, the parameters are invalid, or the key is not stored in the table.
  */
-bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr );
+bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, uint32_t* collision_ptr );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -737,9 +737,9 @@ void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_o
 HASH TABLE
 =================================================================================================*/
 
-apg_hash_table_t apg_hash_table_create( int table_n ) {
+apg_hash_table_t apg_hash_table_create( uint32_t table_n ) {
   apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
-  if ( table_n < 0 ) { return table; }
+  if ( table_n == 0 ) { return table; }
   table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
   if ( !table.list_ptr ) { return table; } // OOM error.
   table.n = table_n;
@@ -749,7 +749,7 @@ apg_hash_table_t apg_hash_table_create( int table_n ) {
 void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
   if ( !table_ptr ) { return; }
   // Free any allocated key strings.
-  for ( int i = 0; i < table_ptr->n; i++ ) {
+  for ( uint32_t i = 0; i < table_ptr->n; i++ ) {
     if ( table_ptr->list_ptr[i].value_ptr ) {
       if ( table_ptr->list_ptr[i].keystr ) { free( table_ptr->list_ptr[i].keystr ); }
     }
@@ -790,13 +790,13 @@ uint32_t apg_hash_rehash( const char* keystr ) {
   return hash;
 }
 
-bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, uint32_t* collision_ptr ) {
   if ( !keystr || !value_ptr || !table_ptr ) { return false; }
   if ( table_ptr->count_stored >= table_ptr->n ) { return false; } // Table full. Should resize before here.
 
-  int collisions = 0;
-  uint32_t hash  = apg_hash( keystr );
-  uint32_t idx   = hash % table_ptr->n;
+  uint32_t collisions = 0;
+  uint32_t hash       = apg_hash( keystr );
+  uint32_t idx        = hash % table_ptr->n;
 
   // Check for best case scenario: landed on an empty index first try.
   if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }
@@ -808,7 +808,7 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
   idx  = hash % table_ptr->n;
 
   // Then proceed with linear probing from the rehashed index.
-  for ( int i = 0; i < table_ptr->n; i++ ) {
+  for ( uint32_t i = 0; i < table_ptr->n; i++ ) {
     if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }     // Needs to be at top of loop since also covers rehash's first check.
     if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; } // Key is already in table.
     collisions++;
@@ -826,7 +826,7 @@ enter_key_label:
   return true;
 }
 
-bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr ) {
+bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, uint32_t* collision_ptr ) {
   if ( !keystr || !table_ptr || !idx_ptr || table_ptr->count_stored == 0 ) { return false; }
 
   uint32_t hash = apg_hash( keystr );
@@ -842,7 +842,7 @@ bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t*
   hash = apg_hash_rehash( keystr );
   idx  = hash % table_ptr->n;
   // With linear probing following on from there.
-  for ( int i = 0; i < table_ptr->n; i++ ) {
+  for ( uint32_t i = 0; i < table_ptr->n; i++ ) {
     if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
     if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) {
       *idx_ptr = idx;
