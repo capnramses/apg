@@ -1,9 +1,8 @@
 /*apg.h - Generic C utility functions.
-Version: 1.3. 4th May 2020.
 Licence: see bottom of file.
 C89 ( Implementation is C99 )
 Licence: see bottom of file.
-History:
+Version History:
 1.4 - 12 Mar 2022. Hash table functions.
 1.3 - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
 1.2 - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
