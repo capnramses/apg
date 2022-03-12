@@ -23,6 +23,7 @@ Usage Instructions
 #ifndef _APG_H_
 #define _APG_H_
 
+#include <assert.h>
 #include <math.h>  /* modff() */
 #include <stdint.h>/* types */
 #include <stdbool.h>
@@ -262,30 +263,26 @@ void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_o
 
 /*=================================================================================================
 HASH TABLE
-Motivation
- - no run-time memory allocation (so linear probing rather than chained buckets)
- - allow user to detect collisions and hash table capacity
- - allow user to determine when to rebuild the hash-table
- - string and integer key interfaces
- - minimal aux memory overhead
- - fast and simple
- Not decided
- - storing keys allows for resize() and duplicate detection although strings require mem to do this.
- - could just keep the hash functions here with instructions for how to % n and create the table
-   and linear probing example in test/
+Motivation:
+ - Avoid performance-disruptive run-time memory allocation, so it's linear probing rather than chained buckets. -> It Still needs to malloc() key strings though.
+ - Allow user to check collisions and hash table capacity so user can decide on a good initial table size based on their data.
+ - Minimal aux. memory overhead.
+ - Fast and simple.
+ - Allow user to determine when to rebuild the hash-table. There should never be surprise table reallocations at run-time!
+   To do this:
+   * Each time a key is stored, check for capacity e.g. >=70%.
+   * Then create a new table at ~x2 capacity.
+   * And run the hash function on the stored key of each valid element (value_ptr != NULL) in the table.
+   * And memcpy the element to the correct position new table.
 
-TODO
- - move impl to impl part
-=================================================================================================*/
-
-/** Golden ratio is (1+sqrt(5))/2 = 1.618033988749...
- *  The fractional part is useful as a multiplier.
- */
-#define APG_GOLDEN_RATIO_FRAC 0.618033988749
+Potential improvements:
+ - If the user program reliably retains strings as well as values, we could avoid string memory allocation during hash_store calls, and just point to external.
+ - If I also stored the hash in apg_hash_table_element_t it would avoid many potentially lengthy strcmp() calls during search.
+ ================================================================================================*/
 
 typedef struct apg_hash_table_element_t {
-  uint32_t hash;   // Hash code before % N is applied.
-  void* value_ptr; // Can point e.g. into another array.
+  char* keystr;    // This is either an allocated ASCII string or an integer value.
+  void* value_ptr; // Address of value in user code. Value data is not allocated or stored directly in the table. If NULL then element is empty.
 } apg_hash_table_element_t;
 
 typedef struct apg_hash_table_t {
@@ -298,138 +295,37 @@ typedef struct apg_hash_table_t {
  * @param table_n For a well performing table use a number somewhat larger than required space.
  * @return A generated, empty, hash table, or an empty table ( list_ptr == NULL ) on out of memory error.
  */
-apg_hash_table_t apg_hash_table_create( int table_n ) {
-  apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
-  if ( table_n < 0 ) { return table; }
-  table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
-  if ( !table.list_ptr ) { return table; } // OOM error.
-  table.n = table_n;
-  return table;
-}
+apg_hash_table_t apg_hash_table_create( int table_n );
 
-/**
- * @warning Ensure any memory you have manually allocated into table element `value_ptr` is freed first.
- */
-void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
-  if ( !table_ptr ) { return; }
-  if ( table_ptr->list_ptr ) { free( table_ptr->list_ptr ); }
-  *table_ptr = ( apg_hash_table_t ){ .n = 0 };
-}
-
-// NOTE(Anton) I have no idea why this function is SO MUCH FASTER than the string version.
-// 19 comparisons compared to 255 for the same data.
-// i must have a mistake somewhere in my int->str conversion.
-
-/** Return a hash index ( hash code ) for a single value key->table mapping.
- * @warning check if table full first TODO
- */
-uint32_t apg_hashi( uint32_t key, uint32_t table_n ) {
-  double int_part     = 0.0;
-  uint32_t hash_index = (uint32_t)( (double)table_n * modf( (double)key * APG_GOLDEN_RATIO_FRAC, &int_part ) );
-  return hash_index;
-}
-
-uint32_t apg_hash_storei( uint32_t key, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  uint32_t hash = key; // This is retained for resizing the table later.
-  uint32_t idx  = apg_hashi( key, table_ptr->n );
-  // linear probing
-  if ( table_ptr->list_ptr[idx].value_ptr ) {
-    for ( int i = 0; i < table_ptr->n; i++ ) {
-      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
-        table_ptr->count_stored++;
-        return idx;
-      }
-      if ( collision_ptr ) { ( *collision_ptr )++; }
-      idx = ( idx + 1 ) % table_ptr->n;
-    }
-  }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .hash = hash, .value_ptr = value_ptr };
-  table_ptr->count_stored++;
-  return idx;
-}
+/** Free any memory allocated to the table, including allocated key string memory. */
+void apg_hash_table_free( apg_hash_table_t* table_ptr );
 
 /** Returns a hash for a key->table mapping.
- * If your key is eg an integer, convert it into 4 string bytes + a null char first.
  * Be sure to compute hash_index = hash % table_N after calling this function.
  */
-uint32_t apg_hash( const char* keystr ) {
-  // sdbm based on http://www.cse.yorku.ca/~oz/hash.html
-  uint32_t hash = 0;
-  size_t len    = strlen( keystr );
-  for ( uint32_t i = 0; i < len; i++ ) { hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; }
-  return hash;
-}
+uint32_t apg_hash( const char* keystr );
 
 /** A second hash function, using djb2 (based on http://www.cse.yorku.ca/~oz/hash.html),
  * This is used by store and search functions on first collision for a double-hashing approach.
  */
-uint32_t apg_hash_rehash( const char* keystr ) {
-  // djb2 based on http://www.cse.yorku.ca/~oz/hash.html
-  uint32_t hash = 5381;
-  size_t len    = strlen( keystr );
-  for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
-  return hash;
-}
+uint32_t apg_hash_rehash( const char* keystr );
 
-// TODO apg_hash_search
+/** Store a key-value pair in a given hash table.
+ * @param keystr        A null-terminated C string. Must not be NULL.
+ * @param value_ptr     Address of external memory to point to. Must not be NULL.
+ * @param table_ptr     Address of a hash table previously allocated with a call to apg_hash_table_create().
+ * @param collision_ptr Optional argument. If non-NULL, then the integer pointed to is set to the number of collisions incurred by this function call.
+ *                      In cases where the function returns false then the collision counter is not incremented.
+ * @return              This function returns true on success. It returns false in cases where the table is full,
+ *                      the key was already stored in the table, or the parameters are invalid.
+ */
+bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr );
 
 /**
+ * @return This function returns true if the key is found in the table. In this case the integer pointed to by `idx_ptr` is set to the corresponding table
+ * index. This function returns false if the table is empty, the parameters are invalid, or the key is not stored in the table.
  */
-uint32_t apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
-  uint32_t hash = apg_hash( keystr );
-  uint32_t idx  = hash % table_ptr->n;
-  // first do a rehash
-  if ( table_ptr->list_ptr[idx].value_ptr ) {
-    if ( collision_ptr ) { ( *collision_ptr )++; }
-    hash = apg_hash_rehash( keystr );
-    idx  = hash % table_ptr->n;
-  }
-  // then linear probing
-  if ( table_ptr->list_ptr[idx].value_ptr ) {
-    for ( int i = 0; i < table_ptr->n; i++ ) {
-      if ( table_ptr->list_ptr[idx].value_ptr == NULL ) {
-        table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
-        table_ptr->count_stored++;
-        return idx;
-      }
-      if ( collision_ptr ) { ( *collision_ptr )++; }
-      idx = ( idx + 1 ) % table_ptr->n;
-    }
-  }
-  table_ptr->list_ptr[idx] = ( apg_hash_table_element_t ){ .hash = hash, .value_ptr = value_ptr };
-  table_ptr->count_stored++;
-  return idx;
-}
-
-bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr ) {
-  if ( !keystr || !table_ptr || !idx_ptr || table_ptr->count_stored == 0 ) { return false; }
-  uint32_t hash = apg_hash( keystr );
-  uint32_t idx  = hash % table_ptr->n;
-  if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
-
-  if ( hash == table_ptr->list_ptr[idx].hash ) {
-    *idx_ptr = idx;
-    return true;
-  }
-  // first do a rehash
-  if ( collision_ptr ) { ( *collision_ptr )++; }
-  hash = apg_hash_rehash( keystr );
-  idx  = hash % table_ptr->n;
-  if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
-  // then linear probing
-  for ( int i = 0; i < table_ptr->n; i++ ) {
-    if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
-    if ( hash == table_ptr->list_ptr[idx].hash ) {
-      *idx_ptr = idx;
-      return true;
-    }
-    if ( collision_ptr ) { ( *collision_ptr )++; }
-    idx = ( idx + 1 ) % table_ptr->n;
-  }
-
-  return false;
-}
+bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -484,7 +380,6 @@ static uint64_t _frequency = 1000000, _offset;
 
 void apg_time_init( void ) {
 #ifdef _WIN32
-  uint64_t counter;
   _frequency = 1000; // QueryPerformanceCounter default
   QueryPerformanceFrequency( (LARGE_INTEGER*)&_frequency );
   QueryPerformanceCounter( (LARGE_INTEGER*)&_offset );
@@ -831,6 +726,127 @@ void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_o
     if ( count > 1 ) { i += 2; }
   }
   *sz_out = out_n;
+}
+
+/*=================================================================================================
+HASH TABLE
+=================================================================================================*/
+
+apg_hash_table_t apg_hash_table_create( int table_n ) {
+  apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
+  if ( table_n < 0 ) { return table; }
+  table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
+  if ( !table.list_ptr ) { return table; } // OOM error.
+  table.n = table_n;
+  return table;
+}
+
+void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
+  if ( !table_ptr ) { return; }
+  // Free any allocated key strings.
+  for ( int i = 0; i < table_ptr->n; i++ ) {
+    if ( table_ptr->list_ptr[i].value_ptr ) {
+      if ( table_ptr->list_ptr[i].keystr ) { free( table_ptr->list_ptr[i].keystr ); }
+    }
+  }
+  if ( table_ptr->list_ptr ) { free( table_ptr->list_ptr ); }
+  *table_ptr = ( apg_hash_table_t ){ .n = 0 };
+}
+
+/** Return a hash index ( hash code ) for a single value key->table mapping.
+
+TODO(Anton) reusue this for a hash-set implementation?
+
+* Golden ratio is (1+sqrt(5))/2 = 1.618033988749...
+ *  The fractional part is useful as a multiplier.
+ *
+#define APG_GOLDEN_RATIO_FRAC 0.618033988749
+
+uint32_t apg_hashi( uint32_t key, uint32_t table_n ) {
+  double int_part     = 0.0;
+  uint32_t hash_index = (uint32_t)( (double)table_n * modf( (double)key * APG_GOLDEN_RATIO_FRAC, &int_part ) );
+  return hash_index;
+}
+*/
+
+uint32_t apg_hash( const char* keystr ) {
+  // sdbm based on http://www.cse.yorku.ca/~oz/hash.html
+  uint32_t hash = 0;
+  size_t len    = strlen( keystr );
+  for ( uint32_t i = 0; i < len; i++ ) { hash = keystr[i] + ( hash << 6 ) + ( hash << 16 ) - hash; }
+  return hash;
+}
+
+uint32_t apg_hash_rehash( const char* keystr ) {
+  // djb2 based on http://www.cse.yorku.ca/~oz/hash.html
+  uint32_t hash = 5381;
+  size_t len    = strlen( keystr );
+  for ( uint32_t i = 0; i < len; i++ ) { hash = ( ( hash << 5 ) + hash ) + keystr[i]; }
+  return hash;
+}
+
+bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* table_ptr, int* collision_ptr ) {
+  if ( !keystr || !value_ptr || !table_ptr ) { return false; }
+  if ( table_ptr->count_stored >= table_ptr->n ) { return false; } // Table full. Should resize before here.
+
+  int collisions = 0;
+  uint32_t hash  = apg_hash( keystr );
+  uint32_t idx   = hash % table_ptr->n;
+
+  // Check for best case scenario: landed on an empty index first try.
+  if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }
+
+  // Otherwise, first try a rehash.
+  if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; } // Key is already in table.
+  collisions++;
+  hash = apg_hash_rehash( keystr );
+  idx  = hash % table_ptr->n;
+
+  // Then proceed with linear probing from the rehashed index.
+  for ( int i = 0; i < table_ptr->n; i++ ) {
+    if ( NULL == table_ptr->list_ptr[idx].value_ptr ) { goto enter_key_label; }     // Needs to be at top of loop since also covers rehash's first check.
+    if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) { return false; } // Key is already in table.
+    collisions++;
+    idx = ( idx + 1 ) % table_ptr->n;
+  }
+
+  assert( false && "Shouldn't get here because it means the table is full, and we DO check for that earlier." );
+  return false;
+
+enter_key_label:
+  table_ptr->list_ptr[idx]        = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx].keystr = strdup( keystr ); // NOTE(Anton) Could use strndup here to guard against unterminated strings.
+  table_ptr->count_stored++;
+  if ( collision_ptr ) { *collision_ptr = *collision_ptr + collisions; }
+  return true;
+}
+
+bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t* idx_ptr, int* collision_ptr ) {
+  if ( !keystr || !table_ptr || !idx_ptr || table_ptr->count_stored == 0 ) { return false; }
+
+  uint32_t hash = apg_hash( keystr );
+  uint32_t idx  = hash % table_ptr->n;
+  if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
+
+  if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) {
+    *idx_ptr = idx;
+    return true;
+  }
+  // First do a rehash.
+  if ( collision_ptr ) { ( *collision_ptr )++; }
+  hash = apg_hash_rehash( keystr );
+  idx  = hash % table_ptr->n;
+  // With linear probing following on from there.
+  for ( int i = 0; i < table_ptr->n; i++ ) {
+    if ( !table_ptr->list_ptr[idx].value_ptr ) { return false; }
+    if ( strcmp( keystr, table_ptr->list_ptr[idx].keystr ) == 0 ) {
+      *idx_ptr = idx;
+      return true;
+    }
+    if ( collision_ptr ) { ( *collision_ptr )++; }
+    idx = ( idx + 1 ) % table_ptr->n;
+  }
+  return false; // This only happens if the table is full, and the key isn't in there.
 }
 
 #endif /* APG_IMPLEMENTATION */
