@@ -274,6 +274,8 @@ Motivation:
    * Each time a key is stored, check for capacity e.g. >=70%.
    * Then create a new table at ~x2 capacity.
    * And run the hash function on the stored key of each valid element (value_ptr != NULL) in the table.
+     * NB If I stored the hash value ( before the % table_n ) then we could skip the first hash function call and start with just applying % n.
+     * But if there's a collision in the new table index it gets more complex -> need to rehash still.
    * And memcpy the element to the correct position new table.
 
 Potential improvements:
