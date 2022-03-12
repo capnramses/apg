@@ -1,7 +1,11 @@
 /*
 BMP File Reader/Writer Implementation
-Anton Gerdelan
-Version: 3.1 18 March 2020.
+Original author: Anton Gerdelan
+
+Version History:
+  3.2 - 22 March 2022. Minor signed/unsigned tweaks to constants.
+  3.1 - 18 March 2020.
+
 Licence: see bottom of file.
 C89 ( Implementation is C99 )
 

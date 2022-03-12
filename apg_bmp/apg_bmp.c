@@ -1,7 +1,7 @@
 /*
 BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3
+Version: 3.2
 Licence: see apg_bmp.h
 C99
 */
@@ -18,9 +18,9 @@ C99
    NOTE: 65536*65536 is the biggest number storable in 32 bits.
    This needs to be multiplied by n_channels so actual memory indices are not uint32 but size_t to avoid overflow.
    Note this will crash stb_image_write et al at maximum size which use 32bits, so reduce max size to accom. */
-#define _BMP_MAX_DIMS 65536
-#define _BMP_FILE_HDR_SZ 14
-#define _BMP_MIN_DIB_HDR_SZ 40
+#define _BMP_MAX_DIMS 65536U
+#define _BMP_FILE_HDR_SZ 14ULL
+#define _BMP_MIN_DIB_HDR_SZ 40ULL
 #define _BMP_MIN_HDR_SZ ( _BMP_FILE_HDR_SZ + _BMP_MIN_DIB_HDR_SZ )
 
 #pragma pack( push, 1 ) // supported on GCC in addition to individual packing attribs
@@ -125,7 +125,7 @@ static uint32_t _bitscan( uint32_t dword ) {
     if ( 1 & dword ) { return i; }
     dword = dword >> 1;
   }
-  return -1;
+  return 0;
 }
 
 unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans ) {
