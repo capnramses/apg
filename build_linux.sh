@@ -16,6 +16,7 @@ echo "building apg tests..."
 cd apg
 $CC $FLAGS -o test_rle_compress_file.bin tests/rle_compress.c -I ./
 $CC $FLAGS -o test_rle_string.bin tests/rle_test.c -I ./
+$CC $FLAGS -o test_hash.bin tests/hash_test.c -I ./
 cd ..
 
 #
