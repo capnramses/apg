@@ -281,6 +281,7 @@ Motivation:
 Potential improvements:
  - If the user program reliably retains strings as well as values, we could avoid string memory allocation during hash_store calls, and just point to external.
  - If I also stored the hash in apg_hash_table_element_t it would avoid many potentially lengthy strcmp() calls during search.
+ - String safety isn't checked at all. strndup and strncmp could be used if the user supplies a maximum string length.
  ================================================================================================*/
 
 typedef struct apg_hash_table_element_t {
