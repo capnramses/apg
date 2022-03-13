@@ -78,21 +78,6 @@ I believe the trick is to have all the parentheses. same deal for clamp */
 #define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
 
-/* like clamp, but if > max then returns min e.g. loops back to 0
-and if < min, returns max e.g. loops back to 99
-NOTE: does not preserve differences > 1, so suitable for iterating++ counters
-but not big differences
-
-NOTE(Anton): would it make sense to offset by the difference here, instead of
-a fixed = max or = min? if so a #define might be better b/c it could apply
-to more variable types
-*/
-static inline int apg_loopi( int val, int min, int max ) {
-  if ( val < min ) { return max; }
-  if ( val > max ) { return min; }
-  return val;
-}
-
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS
 =================================================================================================*/
