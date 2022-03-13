@@ -1,7 +1,9 @@
 /*apg.h - Generic C utility functions.
-C89 ( Implementation is C99 )
 Licence: see bottom of file.
+C89 ( Implementation is C99 )
+
 Version History:
+1.5 - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
 1.4 - 12 Mar 2022. Hash table functions.
 1.3 - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
 1.2 - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
@@ -11,7 +13,13 @@ Version History:
 Usage Instructions
 ------------------
 * In one file #define APG_IMPLEMENTATION above the #include.
-* On MinGW you may have to link against some system libs with -limagehlp
+* For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
+  * You can exclude this by
+    
+  #define APG_NO_BACKTRACES
+  #include apg.h
+    
+    (or just copy-paste the snippets form this file that you want to use).
 
  TODO
 ------------------
@@ -23,7 +31,6 @@ Usage Instructions
 #define _APG_H_
 
 #include <assert.h>
-#include <math.h>  /* modff() */
 #include <stdint.h>/* types */
 #include <stdbool.h>
 #include <stddef.h>/* size_t */
@@ -210,12 +217,6 @@ extern char** g_apg_argv;
 /*=================================================================================================
 MEMORY
 =================================================================================================*/
-/* fix used in bgfx and imgui to get around mingw not supplying alloca.h */
-#if defined( _MSC_VER ) || defined( __MINGW32__ )
-#include <malloc.h>
-#else
-#include <alloca.h>
-#endif
 
 // NB `ULL` postfix is necessary or numbers ~4GB will be interpreted as integer constants and overflow.
 #define APG_KILOBYTES( value ) ( (value)*1024ULL )
@@ -338,19 +339,22 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 #undef APG_IMPLEMENTATION
 
 #include <assert.h>
+#include <math.h>   /* modff() */
 #include <signal.h> /* for crash handling */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h> /* for strcasecmp */
 #include <time.h>
-#include <unistd.h> /* linux-only? */
 #ifdef _WIN32
 #include <windows.h> /* for backtraces and timers */
+#ifndef APG_NO_BACKTRACES
 #include <dbghelp.h> /* SymInitialize */
+#endif
 #else
 #include <execinfo.h>
+#include <strings.h> /* for strcasecmp */
+#include <unistd.h>  /* linux-only? */
 #endif
 /* includes for timers */
 #ifdef _WIN32
@@ -359,6 +363,17 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 #include <mach/mach_time.h>
 #else
 #include <sys/time.h>
+#endif
+/* fix used in bgfx and imgui to get around mingw not supplying alloca.h */
+#if defined( _MSC_VER ) || defined( __MINGW32__ )
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
+#ifdef _MSC_VER
+// not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
 #endif
 
 /*=================================================================================================
@@ -548,6 +563,7 @@ void apg_log_err( const char* message, ... ) {
 /*=================================================================================================
 BACKTRACES AND DUMPS IMPLEMENTATION
 =================================================================================================*/
+#ifndef APG_NO_BACKTRACES
 static void _crash_handler( int sig ) {
   switch ( sig ) {
   case SIGSEGV: {
@@ -658,7 +674,7 @@ void apg_deliberate_divzero() {
   printf( "%i\n", bad );
 }
 #endif /* APG_UNIT_TESTS */
-
+#endif /* APG_BACKTRACES */
 /*=================================================================================================
 COMMAND LINE PARAMETERS IMPLEMENTATION
 =================================================================================================*/
