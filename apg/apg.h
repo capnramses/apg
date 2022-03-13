@@ -435,7 +435,7 @@ double apg_time_s( void ) {
 
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms ) {
-#ifdef WIN32
+#ifdef _WIN32
   Sleep( ms ); /* NOTE(Anton) may not need this since using gcc on Windows and usleep() works */
 #elif _POSIX_C_SOURCE >= 199309L
   struct timespec ts;
