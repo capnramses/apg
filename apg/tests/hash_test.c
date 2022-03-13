@@ -1,4 +1,5 @@
 #define APG_IMPLEMENTATION
+#define APG_NO_BACKTRACES
 #include "../apg.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,10 +20,10 @@ int main() {
 #define SN 64 // hash table 4x the size of the items stored seems reasonable collision wise
 #define ASTRLENMAX 16
 
-      srand( time( NULL ) );
+      apg_srand( (uint32_t)time( NULL ) ); // I use my own rand so i get consistent results on windows vs linux etc.
       char values[SN][ASTRLENMAX];
       for ( uint32_t i = 0; i < SN; i++ ) {
-        for ( uint32_t j = 0; j < ASTRLENMAX - 1; j++ ) { values[i][j] = rand() % 64 + 'A'; }
+        for ( uint32_t j = 0; j < ASTRLENMAX - 1; j++ ) { values[i][j] = apg_rand() % 64 + 'A'; }
         values[i][ASTRLENMAX - 1] = 0;
         if ( !apg_hash_store( values[i], &values[i], &table, &collisions ) ) {
           printf( "ERROR: failed to store key %s in table with %u/%u entries.\n", values[i], table.count_stored, table.n );
