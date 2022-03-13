@@ -4,7 +4,6 @@ REM "we recommend you compile by using either the /W3 or /W4 warning level"
 REM C4221 is nonstandard extension used in struct literals.
 REM C4996 is strdup -> _strdup deprecation warning
 set COMPILER_FLAGS=/W4 /D_CRT_SECURE_NO_WARNINGS /wd4221 /wd4996 /MTd
-set LINKER_FLAGS=/out:hash_test.exe
 REM set LIBS=imagehlp.lib
 
 set BUILD_DIR=".\build"
@@ -14,8 +13,18 @@ pushd %BUILD_DIR%
 set I=/I ..\ ^
 /I ..\tests\
 
+REM ==============================================================
+REM HASH TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:hash_test.exe
 set SRC=..\tests\hash_test.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
 
+REM ==============================================================
+REM GREEDY TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:greedy_test.exe
+set SRC=..\tests\greedy_test.c
 cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
 
 pause

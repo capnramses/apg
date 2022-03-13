@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.6  - 13 Mar 2022. Greedy Best-First Search first implementation.
   1.5  - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
   1.4  - 12 Mar 2022. Hash table functions.
   1.3  - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
@@ -19,10 +20,10 @@ Usage Instructions
   * In one file #define APG_IMPLEMENTATION above the #include.
   * For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
     You can exclude this by:
-    
+
   #define APG_NO_BACKTRACES
   #include apg.h
-    
+
 ToDo
 -----------------------------
 * linearise/unlinearise function. Note(Anton): I can't remember what this even means.
@@ -319,6 +320,27 @@ bool apg_hash_search( const char* keystr, apg_hash_table_t* table_ptr, uint32_t*
  *  This function could be upgraded into _auto_resize() which also scales down on e.g. < 25% load.
  */
 bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
+
+/*=================================================================================================
+GREEDY BEST-FIRST SEARCH
+=================================================================================================*/
+
+/** Greedy best-first search.
+ * This function was designed so that no heap memory is allocated. It has some stack memory limits but that's usually fine for real-time applications.
+ * I usually use an index or a handles as unique O(1) look-up for graph nodes/voxels/etc. But these could also have been pointers/addresses.
+ * @param start_key,target_key  The user provides initial 2 node/vertex keys, expressed as integers
+ * @param h_cb_ptr()            User-defined function to return a distance heuristic, h, for a key.
+ * @param neighs_cb_ptr()       User-defined function to pass an array of up to 4 (for now) neighbours' keys.
+ *                              It should return the count of keys in the array.
+ * @param reverse_path_ptr      Pointer to a user-created array of size `max_path_steps`.
+ *                              On success the function will write the reversed path of keys into this array.
+ * @param path_n                The number of steps in reverse_path_ptr is written to the integer at address `path_n`.
+ * @return                      If a path is found the function returns `true`.
+ *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
+ */
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
+  int max_path_steps );
+
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
 =================================================================================================*/
@@ -879,6 +901,84 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
   apg_hash_table_free( table_ptr ); // free everything including allocated strings.
   *table_ptr = tmp_table;           // allocated list_ptr, including allocated strings, n, count_stored.
   return true;
+}
+
+/*=================================================================================================
+GREEDY BEST-FIRST SEARCH
+=================================================================================================*/
+
+#define APG_GBFS_ARRAY_MAX 1024
+
+// Aux. memory retained to represent a 'vertex' in the search graph.
+typedef struct apg_gbfs_node_t {
+  int parent_idx; // Index of parent in the evaluated_nodes list.
+  int our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
+  int h;          // Distance to goal.
+} apg_gbfs_node_t;
+
+// Called whenever an item is _inserted_ into the queue - with biggest h towards the start (reverse order).
+static int _apg_gbfs_sort_queue_comp_cb( const void* a_ptr, const void* b_ptr ) {
+  apg_gbfs_node_t a_node = *(apg_gbfs_node_t*)a_ptr;
+  apg_gbfs_node_t b_node = *(apg_gbfs_node_t*)b_ptr;
+  return b_node.h - a_node.h;
+}
+
+// Called whenever an item is _inserted_ into the visited set - with smallest parent_key towards the start (correct order for bsearch).
+static int _apg_gbfs_sort_vset_comp_cb( const void* a_ptr, const void* b_ptr ) { return *(int*)a_ptr - *(int*)b_ptr; }
+
+// Called whenever we check if an item has been visited already. should return -ve if key < element.
+static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
+
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
+  int max_path_steps ) {
+  apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX];           // ~96kB. Descending-order sorted by h O(n log n) to avoid the need to search the queue.
+  apg_gbfs_node_t evaluated_nodes[APG_GBFS_ARRAY_MAX]; // ~96kB. Used to recreate path on success. Only includes nodes that had childen added to the queue.
+  int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Sorted in ascending order by key O(n log n) to allow binary search O(log n).
+  int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
+  visited_set_keys[0] = start_key;                                                                                 // Mark start as visited
+  queue[0]            = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+  while ( n_queue > 0 ) {
+    apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
+    int neigh_keys[4];
+    int n_neighs     = neighs_cb_ptr( curr.our_key, neigh_keys );
+    bool neigh_added = false, found_path = false;
+    for ( int neigh_idx = 0; neigh_idx < n_neighs; neigh_idx++ ) {
+      if ( neigh_keys[neigh_idx] == target_key ) {
+        found_path = neigh_added = true; // Resolve path including the final item's key. Break here and flag so that we add the final node.
+        break;
+      }
+      if ( bsearch( &neigh_keys[neigh_idx], visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+      if ( n_visited_set >= 1024 || n_queue >= 1024 ) { return false; }
+      visited_set_keys[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
+      // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
+      queue[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+      qsort( visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );
+      qsort( queue, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb );
+      neigh_added = true;
+    } // endfor neighbours
+    if ( neigh_added ) {
+      if ( n_evaluated_nodes >= 1024 ) { return false; }
+      evaluated_nodes[n_evaluated_nodes++] = curr;
+    }
+    if ( found_path ) {
+      int tmp_path_n                 = 0;
+      int parent_eval_idx            = n_evaluated_nodes - 1;
+      reverse_path_ptr[tmp_path_n++] = target_key;
+      for ( int i = 0; i < n_evaluated_nodes; i++ ) {         // Some sort of timeout in case of logic error.
+        if ( tmp_path_n >= max_path_steps ) { return false; } // Maxed out path length.
+        apg_gbfs_node_t path_tmp       = evaluated_nodes[parent_eval_idx];
+        reverse_path_ptr[tmp_path_n++] = path_tmp.our_key;
+        parent_eval_idx                = path_tmp.parent_idx;
+        if ( path_tmp.parent_idx == -1 ) {
+          *path_n = tmp_path_n;
+          return true;
+        }
+      }
+      assert( false && "failed to find path back to start" );
+      return false;
+    }
+  } // endwhile queue not empty
+  return false;
 }
 
 #endif /* APG_IMPLEMENTATION */
