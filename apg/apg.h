@@ -30,7 +30,6 @@ Usage Instructions
 #ifndef _APG_H_
 #define _APG_H_
 
-#include <assert.h>
 #include <stdint.h>/* types */
 #include <stdbool.h>
 #include <stddef.h>/* size_t */
