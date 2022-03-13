@@ -14,7 +14,7 @@ Version History and Copyright
 
 Usage Instructions
 -----------------------------
-* Just copy-paste the snippets form this file that you want to use.
+* Just copy-paste the snippets from this file that you want to use.
 * Or, to use all of it:
   * In one file #define APG_IMPLEMENTATION above the #include.
   * For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
