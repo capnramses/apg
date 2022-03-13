@@ -1,3 +1,9 @@
+/* hash_test.h Test of hash functions from apg.h
+Author:   Anton Gerdelan  antongerdelan.net
+Licence:  Submitted to the public domain 13 March 2022.
+Language: C99
+*/
+
 #define APG_IMPLEMENTATION
 #define APG_NO_BACKTRACES
 #include "../apg.h"
@@ -20,9 +26,11 @@ int main() {
 #define SN 64 // hash table 4x the size of the items stored seems reasonable collision wise
 #define ASTRLENMAX 16
 
-      apg_srand( (uint32_t)time( NULL ) ); // I use my own rand so i get consistent results on windows vs linux etc.
+      // Commented the following line out so I can test for consistency between MSVC/gcc etc.
+      // apg_srand( (uint32_t)time( NULL ) );
       char values[SN][ASTRLENMAX];
       for ( uint32_t i = 0; i < SN; i++ ) {
+        // I use my own rand so i get consistent results on windows vs linux etc.
         for ( uint32_t j = 0; j < ASTRLENMAX - 1; j++ ) { values[i][j] = apg_rand() % 64 + 'A'; }
         values[i][ASTRLENMAX - 1] = 0;
         if ( !apg_hash_store( values[i], &values[i], &table, &collisions ) ) {
@@ -30,7 +38,6 @@ int main() {
           if ( table.count_stored >= table.n ) { printf( "  -> Hash table was full\n" ); } // set SN to bigger than 2048 to test this
           return 1;
         }
-        // printf( "= key %s, -> hash index %u\n", values[i], idx );
       }
 
       int anton_value = 666;

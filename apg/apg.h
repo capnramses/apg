@@ -1,40 +1,43 @@
-/*apg.h - Generic C utility functions.
-Licence: see bottom of file.
-C89 ( Implementation is C99 )
+/* apg.h  Author's generic C utility functions.
+Author:   Anton Gerdelan  antongerdelan.net
+Licence:  See bottom of this file.
+Language: C89 interface, C99 implementation.
 
-Version History:
-1.5 - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
-1.4 - 12 Mar 2022. Hash table functions.
-1.3 - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
-1.2 - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
-1.1 -  4 May 2020. Added custom rand() functions.
-1.0 -  8 May 2015. By Anton Gerdelan.
+Version History and Copyright
+-----------------------------
+  1.5  - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
+  1.4  - 12 Mar 2022. Hash table functions.
+  1.3  - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
+  1.2  - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
+  1.1  -  4 May 2020. Added custom rand() functions.
+  1.0  -  8 May 2015. First version by Anton Gerdelan.
 
 Usage Instructions
-------------------
-* In one file #define APG_IMPLEMENTATION above the #include.
-* For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
-  * You can exclude this by
+-----------------------------
+* Just copy-paste the snippets form this file that you want to use.
+* Or, to use all of it:
+  * In one file #define APG_IMPLEMENTATION above the #include.
+  * For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
+    You can exclude this by:
     
   #define APG_NO_BACKTRACES
   #include apg.h
     
-    (or just copy-paste the snippets form this file that you want to use).
-
- TODO
-------------------
-* linearise/unlinearise function
-* string manip/trim
+ToDo
+-----------------------------
+* linearise/unlinearise function. Note(Anton): I can't remember what this even means.
+* more string manipulation/trimming utils
+* maybe a generic KEY VALUE settings file parser that can be queried for KEY to get VALUE
+* swap. everyone has a swap in their utils file
 */
 
 #ifndef _APG_H_
 #define _APG_H_
 
-#include <stdint.h>/* types */
 #include <stdbool.h>
 #include <stddef.h>/* size_t */
+#include <stdint.h>/* types */
 #include <stdio.h> /* FILE* */
-#include <string.h>
 
 /*=================================================================================================
 COMPILER HELPERS
