@@ -1,6 +1,5 @@
 /* hash_test.h Test of hash functions from apg.h
 Author:   Anton Gerdelan  antongerdelan.net
-Licence:  Submitted to the public domain 13 March 2022.
 Language: C99
 */
 
