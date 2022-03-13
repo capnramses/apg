@@ -330,7 +330,7 @@ GREEDY BEST-FIRST SEARCH
  * I usually use an index or a handles as unique O(1) look-up for graph nodes/voxels/etc. But these could also have been pointers/addresses.
  * @param start_key,target_key  The user provides initial 2 node/vertex keys, expressed as integers
  * @param h_cb_ptr()            User-defined function to return a distance heuristic, h, for a key.
- * @param neighs_cb_ptr()       User-defined function to pass an array of up to 4 (for now) neighbours' keys.
+ * @param neighs_cb_ptr()       User-defined function to pass an array of up to 6 (for now) neighbours' keys.
  *                              It should return the count of keys in the array.
  * @param reverse_path_ptr      Pointer to a user-created array of size `max_path_steps`.
  *                              On success the function will write the reversed path of keys into this array.
@@ -908,6 +908,7 @@ GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
 #define APG_GBFS_ARRAY_MAX 1024
+#define APG_GBFS_NEIGHBOURS_MAX 6
 
 // Aux. memory retained to represent a 'vertex' in the search graph.
 typedef struct apg_gbfs_node_t {
@@ -939,8 +940,9 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
   queue[0]            = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
-    int neigh_keys[4];
+    int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
     int n_neighs     = neighs_cb_ptr( curr.our_key, neigh_keys );
+    if ( n_neighs > APG_GBFS_NEIGHBOURS_MAX ) { return false; }
     bool neigh_added = false, found_path = false;
     for ( int neigh_idx = 0; neigh_idx < n_neighs; neigh_idx++ ) {
       if ( neigh_keys[neigh_idx] == target_key ) {
