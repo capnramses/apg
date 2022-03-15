@@ -918,29 +918,29 @@ typedef struct apg_gbfs_node_t {
   int h;          // Distance to goal.
 } apg_gbfs_node_t;
 
-// Called whenever an item is _inserted_ into the queue - with biggest h towards the start (reverse order).
-static int _apg_gbfs_sort_queue_comp_cb( const void* a_ptr, const void* b_ptr ) {
-  apg_gbfs_node_t a_node = *(apg_gbfs_node_t*)a_ptr;
-  apg_gbfs_node_t b_node = *(apg_gbfs_node_t*)b_ptr;
-  return b_node.h - a_node.h;
-}
-
-// Called whenever an item is _inserted_ into the visited set - with smallest parent_key towards the start (correct order for bsearch).
-static int _apg_gbfs_sort_vset_comp_cb( const void* a_ptr, const void* b_ptr ) { return *(int*)a_ptr - *(int*)b_ptr; }
-
-// Called whenever we check if an item has been visited already. should return -ve if key < element.
-static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
-
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
   uint64_t* path_n, uint64_t max_path_steps ) {
-  apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX];           // ~96kB. Descending-order sorted by h O(n log n) to avoid the need to search the queue.
+  apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX];           // ~96kB. Can be descending-order sorted by h O(n log n) to avoid the need to search the queue.
   apg_gbfs_node_t evaluated_nodes[APG_GBFS_ARRAY_MAX]; // ~96kB. Used to recreate path on success. Only includes nodes that had childen added to the queue.
-  int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Sorted in ascending order by key O(n log n) to allow binary search O(log n).
+  int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Can be sorted in ascending order by key O(n log n) to allow binary search O(log n).
   int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
   visited_set_keys[0] = start_key;                                                                                 // Mark start as visited
   queue[0]            = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
-    apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
+    // apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
+
+    // Brute-force blasting through the array was much faster than using a pre-sorted list.
+    int min_h = -1;
+    int min_i = -1;
+    for ( int i = 0; i < n_queue; i++ ) {
+      if ( queue[i].h < min_h || i == 0 ) {
+        min_h = queue[i].h;
+        min_i = i;
+      }
+    }
+    apg_gbfs_node_t curr = queue[min_i];
+    queue[min_i]         = queue[--n_queue];
+
     int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
     int n_neighs = neighs_cb_ptr( curr.our_key, neigh_keys );
     if ( n_neighs > APG_GBFS_NEIGHBOURS_MAX ) { return false; }
@@ -950,13 +950,25 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
         found_path = neigh_added = true; // Resolve path including the final item's key. Break here and flag so that we add the final node.
         break;
       }
-      if ( bsearch( &neigh_keys[neigh_idx], visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+
+      // Too slow - brute force was faster.
+      // if ( bsearch( &neigh_keys[neigh_idx], visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+      bool found = false;
+      for ( int i = 0; i < n_visited_set; i++ ) {
+        if ( visited_set_keys[i] == neigh_keys[neigh_idx] ) {
+          found = true;
+          break;
+        }
+      }
+      if ( found ) { continue; }
+
       if ( n_visited_set >= 1024 || n_queue >= 1024 ) { return false; }
       visited_set_keys[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
       // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
       queue[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
-      qsort( visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );
-      qsort( queue, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb );
+      // Too slow to do every iteration - blasting through lists was faster:
+      // qsort( visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );
+      // qsort( queue, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb );
       neigh_added = true;
     } // endfor neighbours
     if ( neigh_added ) {
