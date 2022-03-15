@@ -164,16 +164,16 @@ int main( int argc, char** argv ) {
   bool success = false;
 
   // for 128px version, at end (queue may be bigger at run-time): stats: n_evaluated_nodes = 2351, n_visited_set = 3346, n_queue = 306
-  size_t visted_set_max                = 1024 * 1024;
+  int visted_set_max                = 128 * 128;
   int* visited_set_ptr                 = malloc( visted_set_max * sizeof( int ) ); // 32MB
-  size_t evaluated_nodes_max           = 1024 * 1024;
+  int evaluated_nodes_max           = 128 * 128;
   apg_gbfs_node_t* evaluated_nodes_ptr = malloc( evaluated_nodes_max * sizeof( apg_gbfs_node_t ) ); //
-  int queue_max                        = 1024 * 1024;
+  int queue_max                        = 512; // In the 128x128 image it is:" max queue = 294."
   apg_gbfs_node_t* queue_ptr           = malloc( queue_max * sizeof( apg_gbfs_node_t ) );
-  // the above is ~30MB
+  // the above is 262kB
   printf( "total heap aux memory: %lu\n", visted_set_max * sizeof( int ) + evaluated_nodes_max * sizeof( apg_gbfs_node_t ) + queue_max * sizeof( apg_gbfs_node_t ) );
 
-#define N_RUNS 1000
+#define N_RUNS 100
   apg_time_init();
   {
     printf( "Greedy BFS #1 (basic array iteration from apg.h):\n" );
