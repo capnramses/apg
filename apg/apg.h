@@ -325,6 +325,13 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
+/// Aux. memory retained to represent a 'vertex' in the search graph.
+typedef struct apg_gbfs_node_t {
+  int parent_idx; // Index of parent in the evaluated_nodes list.
+  int our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
+  int h;          // Distance to goal.
+} apg_gbfs_node_t;
+
 /** Greedy best-first search.
  * This function was designed so that no heap memory is allocated. It has some stack memory limits but that's usually fine for real-time applications.
  * It will return false if these limits are reached for big mazes. It could be modified to use or realloc() heap memory to solve for these cases.
@@ -343,7 +350,8 @@ GREEDY BEST-FIRST SEARCH
  * and avoid syscalls for repeated searches that can reuse any allocated memory).
  */
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
-  uint64_t* path_n, uint64_t max_path_steps );
+  uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
+  apg_gbfs_node_t* queue_ptr, int queue_max );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -911,36 +919,26 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
-#define APG_GBFS_ARRAY_MAX 1024
 #define APG_GBFS_NEIGHBOURS_MAX 6
 
-// Aux. memory retained to represent a 'vertex' in the search graph.
-typedef struct apg_gbfs_node_t {
-  int parent_idx; // Index of parent in the evaluated_nodes list.
-  int our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
-  int h;          // Distance to goal.
-} apg_gbfs_node_t;
-
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
-  uint64_t* path_n, uint64_t max_path_steps ) {
-  apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX];           // ~96kB. Can be descending-order sorted by h O(n log n) to avoid the need to search the queue.
-  apg_gbfs_node_t evaluated_nodes[APG_GBFS_ARRAY_MAX]; // ~96kB. Used to recreate path on success. Only includes nodes that had childen added to the queue.
-  int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Can be sorted in ascending order by key O(n log n) to allow binary search O(log n).
+  uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
+  apg_gbfs_node_t* queue_ptr, int queue_max ) {
   int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
-  visited_set_keys[0] = start_key;                                                                                 // Mark start as visited
-  queue[0]            = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+  visited_set_ptr[0] = start_key;                                                                                 // Mark start as visited
+  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     // Brute-force blasting through the array was much faster than using a pre-sorted list here.
-    int min_h = queue[0].h;
+    int min_h = queue_ptr[0].h;
     int min_i = 0;
     for ( int i = 1; i < n_queue; i++ ) {
-      if ( queue[i].h < min_h ) {
-        min_h = queue[i].h;
+      if ( queue_ptr[i].h < min_h ) {
+        min_h = queue_ptr[i].h;
         min_i = i;
       }
     }
-    apg_gbfs_node_t curr = queue[min_i];
-    queue[min_i]         = queue[--n_queue];
+    apg_gbfs_node_t curr = queue_ptr[min_i];
+    queue_ptr[min_i]     = queue_ptr[--n_queue];
 
     int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
     int n_neighs = neighs_cb_ptr( curr.our_key, neigh_keys );
@@ -956,25 +954,22 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
       // if ( bsearch( &neigh_keys[neigh_idx], visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
       bool found = false;
       for ( int i = 0; i < n_visited_set; i++ ) {
-        if ( visited_set_keys[i] == neigh_keys[neigh_idx] ) {
+        if ( visited_set_ptr[i] == neigh_keys[neigh_idx] ) {
           found = true;
           break;
         }
       }
       if ( found ) { continue; }
 
-      if ( n_visited_set >= 1024 || n_queue >= 1024 ) { return false; }
-      visited_set_keys[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
+      if ( n_visited_set >= visited_set_max || n_queue >= queue_max ) { return false; }
+      visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
       // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
-      queue[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
-      // Too slow to do every iteration - blasting through lists was faster:
-      // qsort( visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );
-      // qsort( queue, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb );
-      neigh_added = true;
+      queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+      neigh_added          = true;
     } // endfor neighbours
     if ( neigh_added ) {
-      if ( n_evaluated_nodes >= 1024 ) { return false; }
-      evaluated_nodes[n_evaluated_nodes++] = curr;
+      if ( n_evaluated_nodes >= evaluated_nodes_max ) { return false; }
+      evaluated_nodes_ptr[n_evaluated_nodes++] = curr;
     }
     if ( found_path ) {
       uint64_t tmp_path_n            = 0;
@@ -982,7 +977,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
       reverse_path_ptr[tmp_path_n++] = target_key;
       for ( int i = 0; i < n_evaluated_nodes; i++ ) {         // Some sort of timeout in case of logic error.
         if ( tmp_path_n >= max_path_steps ) { return false; } // Maxed out path length.
-        apg_gbfs_node_t path_tmp       = evaluated_nodes[parent_eval_idx];
+        apg_gbfs_node_t path_tmp       = evaluated_nodes_ptr[parent_eval_idx];
         reverse_path_ptr[tmp_path_n++] = path_tmp.our_key;
         parent_eval_idx                = path_tmp.parent_idx;
         if ( path_tmp.parent_idx == -1 ) {
