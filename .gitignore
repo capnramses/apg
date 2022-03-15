@@ -58,3 +58,4 @@ apg_maths/tests/tmp/
 apg_mod/*.raw
 apg_mod/*.mp3
 *Tutorial.txt
+apg/tests/out_path.png
