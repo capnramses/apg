@@ -1,6 +1,8 @@
 /*
 An amortised comparison of search algorithms finding a path through a maze drawn into an image, for easy visualisation.
 by Anton Gerdelan
+
+gcc algo_comp.c -I ../ -I ../../third_party/stb/ -lm -Wall -Wextra -pedantic
 */
 #define APG_NO_BACKTRACES
 #define APG_IMPLEMENTATION
@@ -69,10 +71,24 @@ int main( int argc, char** argv ) {
     return 1;
   }
   printf( "Loaded image %s\n", argv[1] );
+  bool success = false;
 
-  int start_pixel  = 0;
-  int target_pixel = w * h - 1; // NOTE: not the mem addr: * n_chans to get that.
-  bool success     = apg_gbfs( start_pixel, target_pixel, _h_cb_ptr, _neighs_cb_ptr, reverse_path, &reverse_path_n, MAZE_PATH_MAX );
+  apg_time_init();
+
+  {
+    printf( "Greedy BFS:\n" );
+    double cumulative_time = 0.0;
+    for ( int i = 0; i < 1000; i++ ) {
+      double start_time = apg_time_s();
+      int start_pixel   = 0;
+      int target_pixel  = w * h - 1; // NOTE: not the mem addr: * n_chans to get that.
+      success           = apg_gbfs( start_pixel, target_pixel, _h_cb_ptr, _neighs_cb_ptr, reverse_path, &reverse_path_n, MAZE_PATH_MAX );
+      double end_time   = apg_time_s();
+      double elapsed    = end_time - start_time;
+      cumulative_time += elapsed;
+    }
+    printf( "Average time taken = %lfms (over 1000 runs)\n", ( cumulative_time * 1000 ) / 1000 );
+  }
   if ( success ) {
     printf( "Path found.\n" );
     uint8_t* out_img_ptr = calloc( w * h * 4, 1 );
