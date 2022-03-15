@@ -53,9 +53,9 @@ static int _neighs_cb_ptr( int key, int* neighs ) {
   return n_neighs;
 }
 
-#define MAZE_PATH_MAX APG_MEGABYTES( 256 )
+#define MAZE_PATH_MAX 2048
 static int reverse_path[MAZE_PATH_MAX];
-static uint64_t reverse_path_n;
+static int reverse_path_n;
 
 ///////////////////////////////////////////////////////////
 
@@ -73,9 +73,8 @@ static int _apg_gbfs_sort_vset_comp_cb( const void* a_ptr, const void* b_ptr ) {
 static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
 
 // A 'clever' version using sorting and searching algorithms to replace linear arrays.
-bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
-  uint64_t* path_n, uint64_t max_path_steps, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max,
-  apg_gbfs_node_t* queue_ptr, int queue_max ) {
+bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
+  int max_path_steps, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, apg_gbfs_node_t* queue_ptr, int queue_max ) {
   // apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX]; // ~96kB. Descending-order sorted by h O(n log n) to avoid the need to search the queue.
   //  apg_gbfs_node_t evaluated_nodes[APG_GBFS_ARRAY_MAX]; // ~96kB. Used to recreate path on success. Only includes nodes that had childen added to the queue.
   //  int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Sorted in ascending order by key O(n log n) to allow binary search O(log n).
@@ -122,7 +121,7 @@ bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int
       evaluated_nodes_ptr[n_evaluated_nodes++] = curr;
     }
     if ( found_path ) {
-      uint64_t tmp_path_n            = 0;
+      int tmp_path_n                 = 0;
       int parent_eval_idx            = n_evaluated_nodes - 1;
       reverse_path_ptr[tmp_path_n++] = target_key;
       for ( int i = 0; i < n_evaluated_nodes; i++ ) { // Some sort of timeout in case of logic error.
@@ -164,11 +163,11 @@ int main( int argc, char** argv ) {
   bool success = false;
 
   // for 128px version, at end (queue may be bigger at run-time): stats: n_evaluated_nodes = 2351, n_visited_set = 3346, n_queue = 306
-  int visted_set_max                = 128 * 128;
+  int visted_set_max                   = 128 * 128;
   int* visited_set_ptr                 = malloc( visted_set_max * sizeof( int ) ); // 32MB
-  int evaluated_nodes_max           = 128 * 128;
+  int evaluated_nodes_max              = 128 * 128;
   apg_gbfs_node_t* evaluated_nodes_ptr = malloc( evaluated_nodes_max * sizeof( apg_gbfs_node_t ) ); //
-  int queue_max                        = 512; // In the 128x128 image it is:" max queue = 294."
+  int queue_max                        = 512;                                                       // In the 128x128 image it is:" max queue = 294."
   apg_gbfs_node_t* queue_ptr           = malloc( queue_max * sizeof( apg_gbfs_node_t ) );
   // the above is 262kB
   printf( "total heap aux memory: %lu\n", visted_set_max * sizeof( int ) + evaluated_nodes_max * sizeof( apg_gbfs_node_t ) + queue_max * sizeof( apg_gbfs_node_t ) );
@@ -229,7 +228,7 @@ int main( int argc, char** argv ) {
       return 1;
     }
 
-    for ( uint64_t i = 0; i < reverse_path_n; i++ ) {
+    for ( int i = 0; i < reverse_path_n; i++ ) {
       int key                  = reverse_path[i]; // pixel index. multiply by 4 for byte.
       out_img_ptr[key * 4 + 0] = 0xFF;            // RED channel.
       out_img_ptr[key * 4 + 3] = 0xFF;            // ALPHA channel.

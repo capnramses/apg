@@ -359,9 +359,8 @@ typedef struct apg_gbfs_node_t {
  * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This can bigger searches than using small stack arrays,
  * and can avoid syscalls. Repeated searches can reuse any allocated memory.
  */
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
-  uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
-  apg_gbfs_node_t* queue_ptr, int queue_max );
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
+  int max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* queue_ptr, int queue_max );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -929,9 +928,8 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
-  uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
-  apg_gbfs_node_t* queue_ptr, int queue_max ) {
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
+  int max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* queue_ptr, int queue_max ) {
   int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
   visited_set_ptr[0] = start_key;                                                                                 // Mark start as visited
   queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
@@ -979,7 +977,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
       evaluated_nodes_ptr[n_evaluated_nodes++] = curr;
     }
     if ( found_path ) {
-      uint64_t tmp_path_n            = 0;
+      int tmp_path_n                 = 0;
       int parent_eval_idx            = n_evaluated_nodes - 1;
       reverse_path_ptr[tmp_path_n++] = target_key;
       for ( int i = 0; i < n_evaluated_nodes; i++ ) {         // Some sort of timeout in case of logic error.
