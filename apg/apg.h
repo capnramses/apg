@@ -325,6 +325,9 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
+/// If a node can have more than 6 neighbours change this value to set the size of the array of neighbour keys.
+#define APG_GBFS_NEIGHBOURS_MAX 6
+
 /// Aux. memory retained to represent a 'vertex' in the search graph.
 typedef struct apg_gbfs_node_t {
   int parent_idx; // Index of parent in the evaluated_nodes list.
@@ -336,7 +339,7 @@ typedef struct apg_gbfs_node_t {
  * This function was designed so that no heap memory is allocated. It has some stack memory limits but that's usually fine for real-time applications.
  * It will return false if these limits are reached for big mazes. It could be modified to use or realloc() heap memory to solve for these cases.
  * I usually use an index or a handles as unique O(1) look-up for graph nodes/voxels/etc. But these could also have been pointers/addresses.
- * 
+ *
  * @param start_key,target_key  The user provides initial 2 node/vertex keys, expressed as integers
  * @param h_cb_ptr()            User-defined function to return a distance heuristic, h, for a key.
  * @param neighs_cb_ptr()       User-defined function to pass an array of up to 6 (for now) neighbours' keys.
@@ -926,8 +929,6 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
-#define APG_GBFS_NEIGHBOURS_MAX 6
-
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
   uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
   apg_gbfs_node_t* queue_ptr, int queue_max ) {
@@ -957,8 +958,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
         break;
       }
 
-      // Too slow - brute force was faster.
-      // if ( bsearch( &neigh_keys[neigh_idx], visited_set_keys, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+      // NB Brute force was faster than a binary search on a quick-sorted array here.
       bool found = false;
       for ( int i = 0; i < n_visited_set; i++ ) {
         if ( visited_set_ptr[i] == neigh_keys[neigh_idx] ) {
