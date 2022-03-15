@@ -327,6 +327,7 @@ GREEDY BEST-FIRST SEARCH
 
 /** Greedy best-first search.
  * This function was designed so that no heap memory is allocated. It has some stack memory limits but that's usually fine for real-time applications.
+ * It will return false if these limits are reached for big mazes. It could be modified to use or realloc() heap memory to solve for these cases.
  * I usually use an index or a handles as unique O(1) look-up for graph nodes/voxels/etc. But these could also have been pointers/addresses.
  * @param start_key,target_key  The user provides initial 2 node/vertex keys, expressed as integers
  * @param h_cb_ptr()            User-defined function to return a distance heuristic, h, for a key.
@@ -338,8 +339,8 @@ GREEDY BEST-FIRST SEARCH
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
  */
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
-  int max_path_steps );
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
+  uint64_t* path_n, uint64_t max_path_steps );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -930,8 +931,8 @@ static int _apg_gbfs_sort_vset_comp_cb( const void* a_ptr, const void* b_ptr ) {
 // Called whenever we check if an item has been visited already. should return -ve if key < element.
 static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
 
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
-  int max_path_steps ) {
+bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
+  uint64_t* path_n, uint64_t max_path_steps ) {
   apg_gbfs_node_t queue[APG_GBFS_ARRAY_MAX];           // ~96kB. Descending-order sorted by h O(n log n) to avoid the need to search the queue.
   apg_gbfs_node_t evaluated_nodes[APG_GBFS_ARRAY_MAX]; // ~96kB. Used to recreate path on success. Only includes nodes that had childen added to the queue.
   int visited_set_keys[APG_GBFS_ARRAY_MAX];            // ~32kB. Sorted in ascending order by key O(n log n) to allow binary search O(log n).
@@ -941,7 +942,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
   while ( n_queue > 0 ) {
     apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
     int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
-    int n_neighs     = neighs_cb_ptr( curr.our_key, neigh_keys );
+    int n_neighs = neighs_cb_ptr( curr.our_key, neigh_keys );
     if ( n_neighs > APG_GBFS_NEIGHBOURS_MAX ) { return false; }
     bool neigh_added = false, found_path = false;
     for ( int neigh_idx = 0; neigh_idx < n_neighs; neigh_idx++ ) {
@@ -963,7 +964,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
       evaluated_nodes[n_evaluated_nodes++] = curr;
     }
     if ( found_path ) {
-      int tmp_path_n                 = 0;
+      uint64_t tmp_path_n            = 0;
       int parent_eval_idx            = n_evaluated_nodes - 1;
       reverse_path_ptr[tmp_path_n++] = target_key;
       for ( int i = 0; i < n_evaluated_nodes; i++ ) {         // Some sort of timeout in case of logic error.
