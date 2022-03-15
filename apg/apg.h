@@ -336,6 +336,7 @@ typedef struct apg_gbfs_node_t {
  * This function was designed so that no heap memory is allocated. It has some stack memory limits but that's usually fine for real-time applications.
  * It will return false if these limits are reached for big mazes. It could be modified to use or realloc() heap memory to solve for these cases.
  * I usually use an index or a handles as unique O(1) look-up for graph nodes/voxels/etc. But these could also have been pointers/addresses.
+ * 
  * @param start_key,target_key  The user provides initial 2 node/vertex keys, expressed as integers
  * @param h_cb_ptr()            User-defined function to return a distance heuristic, h, for a key.
  * @param neighs_cb_ptr()       User-defined function to pass an array of up to 6 (for now) neighbours' keys.
@@ -343,11 +344,17 @@ typedef struct apg_gbfs_node_t {
  * @param reverse_path_ptr      Pointer to a user-created array of size `max_path_steps`.
  *                              On success the function will write the reversed path of keys into this array.
  * @param path_n                The number of steps in reverse_path_ptr is written to the integer at address `path_n`.
+ * @param evaluated_nodes_ptr   User-allocated array of working memory used. Size in bytes is sizeof(apg_gbfs_node_t) * evaluated_nodes_max.
+ * @param evaluated_nodes_max   Number of apg_gbfs_node_t space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
+ * @param visited_set_ptr       User-allocated array of working memory used. Size in bytes is sizeof(int) * visited_set_max.
+ * @param visited_set_max       Number of int space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
+ * @param queue_ptr             User-allocated array of working memory used. Size in bytes is sizeof(apg_gbfs_node_t) * queue_max.
+ * @param queue_max             Number of apg_gbfs_node_t space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
  *
- * @todo Let the user supply the working sets (queue and visited set) with sizes (doesn't necessarily sacrifice fast stack memory, and can solve bigger searches
- * and avoid syscalls for repeated searches that can reuse any allocated memory).
+ * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This can bigger searches than using small stack arrays,
+ * and can avoid syscalls. Repeated searches can reuse any allocated memory.
  */
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
   uint64_t* path_n, uint64_t max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max,
