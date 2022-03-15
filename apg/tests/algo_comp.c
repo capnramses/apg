@@ -181,7 +181,10 @@ int main( int argc, char** argv ) {
     printf( "TODO Greedy BFS #3 (using hash table from apg.h for visited set and queue):\n" );
   }
   {
-    // TODO!
+    /*
+     TODO Let the user supply the working sets (queue and visited set) with sizes (doesn't necessarily sacrifice fast stack memory, and can solve bigger searches
+    * and avoid syscalls for repeated searches that can reuse any allocated memory
+    */
     printf( "TODO Greedy BFS #4 (with dynamic memory to allow for BIG maze search completion):\n" );
   }
   if ( success ) {

@@ -338,6 +338,9 @@ GREEDY BEST-FIRST SEARCH
  * @param path_n                The number of steps in reverse_path_ptr is written to the integer at address `path_n`.
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
+ *
+ * @todo Let the user supply the working sets (queue and visited set) with sizes (doesn't necessarily sacrifice fast stack memory, and can solve bigger searches
+ * and avoid syscalls for repeated searches that can reuse any allocated memory).
  */
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr,
   uint64_t* path_n, uint64_t max_path_steps );
@@ -927,13 +930,11 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
   visited_set_keys[0] = start_key;                                                                                 // Mark start as visited
   queue[0]            = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
-    // apg_gbfs_node_t curr = queue[--n_queue]; // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
-
-    // Brute-force blasting through the array was much faster than using a pre-sorted list.
-    int min_h = -1;
-    int min_i = -1;
-    for ( int i = 0; i < n_queue; i++ ) {
-      if ( queue[i].h < min_h || i == 0 ) {
+    // Brute-force blasting through the array was much faster than using a pre-sorted list here.
+    int min_h = queue[0].h;
+    int min_i = 0;
+    for ( int i = 1; i < n_queue; i++ ) {
+      if ( queue[i].h < min_h ) {
         min_h = queue[i].h;
         min_i = i;
       }
