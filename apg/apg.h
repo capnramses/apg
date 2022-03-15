@@ -348,11 +348,11 @@ typedef struct apg_gbfs_node_t {
  *                              On success the function will write the reversed path of keys into this array.
  * @param path_n                The number of steps in reverse_path_ptr is written to the integer at address `path_n`.
  * @param evaluated_nodes_ptr   User-allocated array of working memory used. Size in bytes is sizeof(apg_gbfs_node_t) * evaluated_nodes_max.
- * @param evaluated_nodes_max   Number of apg_gbfs_node_t space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
+ * @param evaluated_nodes_max   Count of `apg_gbfs_node_t`s allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
  * @param visited_set_ptr       User-allocated array of working memory used. Size in bytes is sizeof(int) * visited_set_max.
- * @param visited_set_max       Number of int space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
+ * @param visited_set_max       Count of `int`s allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
  * @param queue_ptr             User-allocated array of working memory used. Size in bytes is sizeof(apg_gbfs_node_t) * queue_max.
- * @param queue_max             Number of apg_gbfs_node_t space allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
+ * @param queue_max             Count of `apg_gbfs_node_t`s allocated to evaluated_nodes_ptr. Worst case - bounds of search domain.
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
  *
