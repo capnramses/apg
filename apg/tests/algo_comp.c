@@ -2,7 +2,12 @@
 An amortised comparison of search algorithms finding a path through a maze drawn into an image, for easy visualisation.
 by Anton Gerdelan
 
+COMPILE:
 gcc algo_comp.c -I ../ -I ../../third_party/stb/ -lm -Wall -Wextra -pedantic
+
+RUN: e.g.
+./a.out maze_32.png ( or another input image ).
+This writes the output path as out_path.png which can be overlaid on the input image.
 */
 #define APG_NO_BACKTRACES
 #define APG_IMPLEMENTATION
@@ -19,6 +24,9 @@ gcc algo_comp.c -I ../ -I ../../third_party/stb/ -lm -Wall -Wextra -pedantic
 // maze image and dims
 static uint8_t* img_ptr;
 static int w, h, n_chans;
+
+static bool _use_qsort  = false;
+static bool _usebsearch = false;
 
 // get distance heuristic for a given node/key/pixel
 static int _h_cb_ptr( int key ) {
@@ -96,8 +104,19 @@ bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int
         found_path = neigh_added = true; // Resolve path including the final item's key. Break here and flag so that we add the final node.
         break;
       }
-      if ( bsearch( &neigh_keys[neigh_idx], visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
 
+      if ( _usebsearch ) {
+        if ( bsearch( &neigh_keys[neigh_idx], visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+      } else {
+        bool found = false;
+        for ( int i = 0; i < n_visited_set; i++ ) {
+          if ( visited_set_ptr[i] == neigh_keys[neigh_idx] ) {
+            found = true;
+            break;
+          }
+        }
+        if ( found ) { continue; }
+      }
       if ( n_visited_set >= visited_set_max ) {
         printf( "n_visited_set max \n" );
         return false;
@@ -106,11 +125,36 @@ bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int
         printf( " n_queue max\n" );
         return false;
       }
-      visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
       // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
-      queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
-      qsort( visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );
-      qsort( queue_ptr, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb );
+      if ( _use_qsort ) {
+        visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
+        queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        qsort( visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );  // smallest first
+        qsort( queue_ptr, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb ); // biggest towards start (reverse order) by .h value.
+      } else {
+        // can probably do better than qsort's worst case O(n^2) with our knowledge of the data -> O(n) with a memcpy
+        visited_set_ptr[n_visited_set] = neigh_keys[neigh_idx]; // avoids if (comparison not made) check
+        for ( int i = 0; i < n_visited_set; i++ ) {
+          if ( neigh_keys[neigh_idx] < visited_set_ptr[i] ) {
+            // src and dst overlap so using memmove instead of memcpy
+            memmove( &visited_set_ptr[i + 1], &visited_set_ptr[i], ( n_visited_set - i ) * sizeof( int ) );
+            visited_set_ptr[i] = neigh_keys[neigh_idx];
+            break;
+          }
+        } // endfor
+        n_visited_set++;
+
+        int our_h          = h_cb_ptr( neigh_keys[neigh_idx] );
+        queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        for ( int i = 0; i < n_queue; i++ ) {
+          if ( our_h > queue_ptr[i].h ) {
+            memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
+            queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+            break;
+          }
+        } // endfor
+        n_queue++;
+      } // end else
       neigh_added = true;
     } // endfor neighbours
     if ( neigh_added ) {
@@ -191,7 +235,10 @@ int main( int argc, char** argv ) {
   }
 
   {
-    printf( "Greedy BFS #2 (using binary search & working array sorting):\n" );
+    printf( "Greedy BFS #2 (using binary search & quicksort working array sorting):\n" );
+    _use_qsort  = true;
+    _usebsearch = true;
+
     double cumulative_time = 0.0;
     for ( int i = 0; i < N_RUNS; i++ ) {
       double start_time = apg_time_s();
@@ -206,20 +253,53 @@ int main( int argc, char** argv ) {
     printf( "Average time taken = %lfms (over %i runs)\n", ( cumulative_time * 1000 ) / N_RUNS, N_RUNS );
   }
 
+  {
+    printf( "Greedy BFS #3 (using binary search & custom working array sorting):\n" );
+
+    _use_qsort  = false;
+    _usebsearch = true;
+
+    double cumulative_time = 0.0;
+    for ( int i = 0; i < N_RUNS; i++ ) {
+      double start_time = apg_time_s();
+      int start_pixel   = 0;
+      int target_pixel  = w * h - 1; // NOTE: not the mem addr: * n_chans to get that.
+      success = apg_gbfs2( start_pixel, target_pixel, _h_cb_ptr, _neighs_cb_ptr, reverse_path, &reverse_path_n, MAZE_PATH_MAX, visited_set_ptr, visted_set_max,
+        evaluated_nodes_ptr, evaluated_nodes_max, queue_ptr, queue_max );
+      double end_time = apg_time_s();
+      double elapsed  = end_time - start_time;
+      cumulative_time += elapsed;
+    }
+    printf( "Average time taken = %lfms (over %i runs)\n", ( cumulative_time * 1000 ) / N_RUNS, N_RUNS );
+  }
+
+  {
+    printf( "Greedy BFS #4 (using linear search & custom working array sorting):\n" );
+
+    _use_qsort  = false;
+    _usebsearch = false;
+
+    double cumulative_time = 0.0;
+    for ( int i = 0; i < N_RUNS; i++ ) {
+      double start_time = apg_time_s();
+      int start_pixel   = 0;
+      int target_pixel  = w * h - 1; // NOTE: not the mem addr: * n_chans to get that.
+      success = apg_gbfs2( start_pixel, target_pixel, _h_cb_ptr, _neighs_cb_ptr, reverse_path, &reverse_path_n, MAZE_PATH_MAX, visited_set_ptr, visted_set_max,
+        evaluated_nodes_ptr, evaluated_nodes_max, queue_ptr, queue_max );
+      double end_time = apg_time_s();
+      double elapsed  = end_time - start_time;
+      cumulative_time += elapsed;
+    }
+    printf( "Average time taken = %lfms (over %i runs)\n", ( cumulative_time * 1000 ) / N_RUNS, N_RUNS );
+  }
+
+  printf( " - Custom array sorting cost = #4 - #1\n" );
+  printf( " - Binary search saving      = #4 - #3\n" );
+  printf( " - Quicksort cost            = #2 - #3\n" );
+
   free( visited_set_ptr );
   free( evaluated_nodes_ptr );
 
-  {
-    // TODO!
-    printf( "TODO Greedy BFS #3 (using hash table from apg.h for visited set and queue):\n" );
-  }
-  {
-    /*
-     TODO Let the user supply the working sets (queue and visited set) with sizes (doesn't necessarily sacrifice fast stack memory, and can solve bigger searches
-    * and avoid syscalls for repeated searches that can reuse any allocated memory
-    */
-    printf( "TODO Greedy BFS #4 (with dynamic memory to allow for BIG maze search completion):\n" );
-  }
   if ( success ) {
     printf( "Path found.\n" );
     uint8_t* out_img_ptr = calloc( w * h * 4, 1 );
