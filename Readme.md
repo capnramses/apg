@@ -73,7 +73,7 @@ SECOND LICENCE OPTION
 ## Dependencies Used in Example Programs
 
 Please note that some optional test and demonstration programs contained in this repository make use of third-party libraries with their own licences,
-and it is the users responsibility to also meet these requirements if you use or reproduce these works.
+and it is the user's responsibility to also meet these requirements if you use or reproduce these works.
 
 ### PortAudio
 
