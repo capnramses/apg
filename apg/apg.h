@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.7  - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle
   1.6  - 13 Mar 2022. Greedy Best-First Search first implementation.
   1.5  - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
   1.4  - 12 Mar 2022. Hash table functions.
@@ -928,23 +929,17 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes ) {
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
+// Called whenever we check if an item has been visited already. should return -ve if key < element.
+static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
+
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
   int max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* queue_ptr, int queue_max ) {
   int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
   visited_set_ptr[0] = start_key;                                                                                 // Mark start as visited
   queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
-    // Brute-force blasting through the array was much faster than using a pre-sorted list here.
-    int min_h = queue_ptr[0].h;
-    int min_i = 0;
-    for ( int i = 1; i < n_queue; i++ ) {
-      if ( queue_ptr[i].h < min_h ) {
-        min_h = queue_ptr[i].h;
-        min_i = i;
-      }
-    }
-    apg_gbfs_node_t curr = queue_ptr[min_i];
-    queue_ptr[min_i]     = queue_ptr[--n_queue];
+    // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
+    apg_gbfs_node_t curr = queue_ptr[--n_queue];
 
     int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
     int n_neighs = neighs_cb_ptr( curr.our_key, neigh_keys );
@@ -956,21 +951,34 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
         break;
       }
 
-      // NB Brute force was faster than a binary search on a quick-sorted array here.
-      bool found = false;
-      for ( int i = 0; i < n_visited_set; i++ ) {
-        if ( visited_set_ptr[i] == neigh_keys[neigh_idx] ) {
-          found = true;
-          break;
-        }
-      }
-      if ( found ) { continue; }
+      if ( bsearch( &neigh_keys[neigh_idx], visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
 
       if ( n_visited_set >= visited_set_max || n_queue >= queue_max ) { return false; }
-      visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
-      // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
-      queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
-      neigh_added          = true;
+      { // Custom sort
+        // can probably do better than qsort's worst case O(n^2) with our knowledge of the data -> O(n) with a memcpy
+        visited_set_ptr[n_visited_set] = neigh_keys[neigh_idx]; // avoids if (comparison not made) check
+        for ( int i = 0; i < n_visited_set; i++ ) {
+          if ( neigh_keys[neigh_idx] < visited_set_ptr[i] ) {
+            // src and dst overlap so using memmove instead of memcpy
+            memmove( &visited_set_ptr[i + 1], &visited_set_ptr[i], ( n_visited_set - i ) * sizeof( int ) );
+            visited_set_ptr[i] = neigh_keys[neigh_idx];
+            break;
+          }
+        } // endfor
+        n_visited_set++;
+
+        int our_h          = h_cb_ptr( neigh_keys[neigh_idx] );
+        queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        for ( int i = 0; i < n_queue; i++ ) {
+          if ( our_h > queue_ptr[i].h ) {
+            memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
+            queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+            break;
+          }
+        } // endfor
+        n_queue++;
+      } // endblock custom sort
+      neigh_added = true;
     } // endfor neighbours
     if ( neigh_added ) {
       if ( n_evaluated_nodes >= evaluated_nodes_max ) { return false; }

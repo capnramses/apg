@@ -52,7 +52,7 @@ int main() {
   int reversed_path[2048], path_n = 0;
   apg_time_init();
   double cumulative_time = 0.0;
-  for ( int i = 0; i < N; i++ ) {
+  for ( int runi = 0; runi < N; runi++ ) {
     double start   = apg_time_s();
     bool ret       = apg_gbfs( 0, 5, _h_cb, _get_neighbours_cb, reversed_path, &path_n, 2048, eval_ptr, 512, visited_ptr, 512, queue_ptr, 128 );
     double elapsed = apg_time_s() - start;
