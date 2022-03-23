@@ -357,7 +357,7 @@ typedef struct apg_gbfs_node_t {
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
  *
- * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This can bigger searches than using small stack arrays,
+ * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This allows bigger searches than using small stack arrays,
  * and can avoid syscalls. Repeated searches can reuse any allocated memory.
  */
 bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
