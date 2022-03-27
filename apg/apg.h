@@ -5,7 +5,8 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
-  1.7  - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle
+  1.8  - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
+  1.7  - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
   1.6  - 13 Mar 2022. Greedy Best-First Search first implementation.
   1.5  - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
   1.4  - 12 Mar 2022. Hash table functions.
@@ -331,9 +332,9 @@ GREEDY BEST-FIRST SEARCH
 
 /// Aux. memory retained to represent a 'vertex' in the search graph.
 typedef struct apg_gbfs_node_t {
-  int parent_idx; // Index of parent in the evaluated_nodes list.
-  int our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
-  int h;          // Distance to goal.
+  int64_t parent_idx; // Index of parent in the evaluated_nodes list.
+  int64_t our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
+  int64_t h;          // Distance to goal.
 } apg_gbfs_node_t;
 
 /** Greedy best-first search.
@@ -360,8 +361,9 @@ typedef struct apg_gbfs_node_t {
  * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This allows bigger searches than using small stack arrays,
  * and can avoid syscalls. Repeated searches can reuse any allocated memory.
  */
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
-  int max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* queue_ptr, int queue_max );
+bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int64_t key, int64_t target_key ),
+  int64_t ( *neighs_cb_ptr )( int64_t key, int64_t target_key, int64_t* neighs ), int64_t* reverse_path_ptr, int64_t* path_n, int64_t max_path_steps,
+  apg_gbfs_node_t* evaluated_nodes_ptr, int64_t evaluated_nodes_max, int64_t* visited_set_ptr, int64_t visited_set_max, apg_gbfs_node_t* queue_ptr, int64_t queue_max );
 
 /*=================================================================================================
 ------------------------------------------IMPLEMENTATION------------------------------------------
@@ -405,6 +407,7 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
 // not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define strdup _strdup
 #endif
 
 /*=================================================================================================
@@ -930,46 +933,47 @@ GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
 // Called whenever we check if an item has been visited already. should return -ve if key < element.
-static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int*)key_ptr - *(int*)element_ptr; }
+static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int64_t*)key_ptr - *(int64_t*)element_ptr; }
 
-bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
-  int max_path_steps, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* queue_ptr, int queue_max ) {
-  int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
-  visited_set_ptr[0] = start_key;                                                                                 // Mark start as visited
-  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int64_t key, int64_t target_key ),
+  int64_t ( *neighs_cb_ptr )( int64_t key, int64_t target_key, int64_t* neighs ), int64_t* reverse_path_ptr, int64_t* path_n, int64_t max_path_steps,
+  apg_gbfs_node_t* evaluated_nodes_ptr, int64_t evaluated_nodes_max, int64_t* visited_set_ptr, int64_t visited_set_max, apg_gbfs_node_t* queue_ptr, int64_t queue_max ) {
+  int64_t n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
+  visited_set_ptr[0] = start_key;                                                                                             // Mark start as visited
+  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key, target_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
     apg_gbfs_node_t curr = queue_ptr[--n_queue];
 
-    int neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
-    int n_neighs = neighs_cb_ptr( curr.our_key, neigh_keys );
+    int64_t neigh_keys[APG_GBFS_NEIGHBOURS_MAX];
+    int64_t n_neighs = neighs_cb_ptr( curr.our_key, target_key, neigh_keys );
     if ( n_neighs > APG_GBFS_NEIGHBOURS_MAX ) { return false; }
     bool neigh_added = false, found_path = false;
-    for ( int neigh_idx = 0; neigh_idx < n_neighs; neigh_idx++ ) {
+    for ( int64_t neigh_idx = 0; neigh_idx < n_neighs; neigh_idx++ ) {
       if ( neigh_keys[neigh_idx] == target_key ) {
         found_path = neigh_added = true; // Resolve path including the final item's key. Break here and flag so that we add the final node.
         break;
       }
 
-      if ( bsearch( &neigh_keys[neigh_idx], visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
+      if ( bsearch( &neigh_keys[neigh_idx], visited_set_ptr, n_visited_set, sizeof( int64_t ), _apg_gbfs_search_vset_comp_cb ) != NULL ) { continue; }
 
       if ( n_visited_set >= visited_set_max || n_queue >= queue_max ) { return false; }
       { // Custom sort
         // can probably do better than qsort's worst case O(n^2) with our knowledge of the data -> O(n) with a memcpy
         visited_set_ptr[n_visited_set] = neigh_keys[neigh_idx]; // avoids if (comparison not made) check
-        for ( int i = 0; i < n_visited_set; i++ ) {
+        for ( int64_t i = 0; i < n_visited_set; i++ ) {
           if ( neigh_keys[neigh_idx] < visited_set_ptr[i] ) {
             // src and dst overlap so using memmove instead of memcpy
-            memmove( &visited_set_ptr[i + 1], &visited_set_ptr[i], ( n_visited_set - i ) * sizeof( int ) );
+            memmove( &visited_set_ptr[i + 1], &visited_set_ptr[i], ( n_visited_set - i ) * sizeof( int64_t ) );
             visited_set_ptr[i] = neigh_keys[neigh_idx];
             break;
           }
         } // endfor
         n_visited_set++;
 
-        int our_h          = h_cb_ptr( neigh_keys[neigh_idx] );
+        int64_t our_h      = h_cb_ptr( neigh_keys[neigh_idx], target_key );
         queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
-        for ( int i = 0; i < n_queue; i++ ) {
+        for ( int64_t i = 0; i < n_queue; i++ ) {
           if ( our_h > queue_ptr[i].h ) {
             memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
             queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
@@ -985,10 +989,10 @@ bool apg_gbfs( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int 
       evaluated_nodes_ptr[n_evaluated_nodes++] = curr;
     }
     if ( found_path ) {
-      int tmp_path_n                 = 0;
-      int parent_eval_idx            = n_evaluated_nodes - 1;
+      int64_t tmp_path_n             = 0;
+      int64_t parent_eval_idx        = n_evaluated_nodes - 1;
       reverse_path_ptr[tmp_path_n++] = target_key;
-      for ( int i = 0; i < n_evaluated_nodes; i++ ) {         // Some sort of timeout in case of logic error.
+      for ( int64_t i = 0; i < n_evaluated_nodes; i++ ) {     // Some sort of timeout in case of logic error.
         if ( tmp_path_n >= max_path_steps ) { return false; } // Maxed out path length.
         apg_gbfs_node_t path_tmp       = evaluated_nodes_ptr[parent_eval_idx];
         reverse_path_ptr[tmp_path_n++] = path_tmp.our_key;
