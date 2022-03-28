@@ -5,15 +5,16 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
-  1.8  - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
-  1.7  - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
-  1.6  - 13 Mar 2022. Greedy Best-First Search first implementation.
-  1.5  - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
-  1.4  - 12 Mar 2022. Hash table functions.
-  1.3  - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
-  1.2  - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
-  1.1  -  4 May 2020. Added custom rand() functions.
-  1.0  -  8 May 2015. First version by Anton Gerdelan.
+  1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
+  1.8   - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
+  1.7   - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
+  1.6   - 13 Mar 2022. Greedy Best-First Search first implementation.
+  1.5   - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
+  1.4   - 12 Mar 2022. Hash table functions.
+  1.3   - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
+  1.2   - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
+  1.1   -  4 May 2020. Added custom rand() functions.
+  1.0   -  8 May 2015. First version by Anton Gerdelan.
 
 Usage Instructions
 -----------------------------
@@ -933,7 +934,7 @@ GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
 // Called whenever we check if an item has been visited already. should return -ve if key < element.
-static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return *(int64_t*)key_ptr - *(int64_t*)element_ptr; }
+static int _apg_gbfs_search_vset_comp_cb( const void* key_ptr, const void* element_ptr ) { return (int)( *(int64_t*)key_ptr - *(int64_t*)element_ptr ); }
 
 bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int64_t key, int64_t target_key ),
   int64_t ( *neighs_cb_ptr )( int64_t key, int64_t target_key, int64_t* neighs ), int64_t* reverse_path_ptr, int64_t* path_n, int64_t max_path_steps,
