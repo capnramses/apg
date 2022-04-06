@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
 History:
+v0.16  06 Apr 2022 - Added mul_vec2_f().
 v0.15  02 Feb 2022 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
 v0.14  18 Jan 2022 - Added a couple of vec2 functions.
 v0.13   8 Jul 2021 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
@@ -127,10 +128,13 @@ vec3 add_vec3_f( vec3 a, float b );
 vec3 add_vec3_vec3( vec3 a, vec3 b );
 
 vec2 sub_vec2_vec2( vec2 a, vec2 b );
+vec2 sub_vec2_f( vec2 v, float f );
 vec3 sub_vec3_f( vec3 a, float b );
 vec3 sub_vec3_vec3( vec3 a, vec3 b );
 
-vec3 mul_vec3_f( vec3 a, float b );
+vec2 mul_vec2_f( vec2 v, float f );
+vec2 mul_vec2_vec2( vec2 a, vec2 b );
+vec3 mul_vec3_f( vec3 v, float f );
 vec3 mul_vec3_vec3( vec3 a, vec3 b );
 
 vec3 div_vec3_f( vec3 a, float b );

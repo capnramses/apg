@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.15
+Version: 0.16
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -51,11 +51,17 @@ vec3 add_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x + b.x, .y = a.y
 
 vec2 sub_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x - b.x, .y = a.y - b.y }; }
 
+vec2 sub_vec2_f( vec2 v, float f ) { return ( vec2 ){ .x = v.x - f, .y = v.y - f }; }
+
 vec3 sub_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x - b, .y = a.y - b, .z = a.z - b }; }
 
 vec3 sub_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z }; }
 
-vec3 mul_vec3_f( vec3 a, float b ) { return ( vec3 ){ .x = a.x * b, .y = a.y * b, .z = a.z * b }; }
+vec2 mul_vec2_f( vec2 v, float f ) { return ( vec2 ){ .x = v.x * f, .y = v.y * f }; }
+
+vec2 mul_vec2_vec2( vec2 a, vec2 b ) { return ( vec2 ){ .x = a.x * b.x, .y = a.y * b.y }; }
+
+vec3 mul_vec3_f( vec3 v, float f ) { return ( vec3 ){ .x = v.x * f, .y = v.y * f, .z = v.z * f }; }
 
 vec3 mul_vec3_vec3( vec3 a, vec3 b ) { return ( vec3 ){ .x = a.x * b.x, .y = a.y * b.y, .z = a.z * b.z }; }
 
@@ -143,18 +149,14 @@ vec4 mul_mat4_vec4( mat4 m, vec4 v ) {
 
 float det_mat4( mat4 mm ) {
   // #-format off
-  return mm.m[12] * mm.m[9]  * mm.m[6]  * mm.m[3]  - mm.m[8]  * mm.m[13] * mm.m[6]  * mm.m[3]  -
-         mm.m[12] * mm.m[5]  * mm.m[10] * mm.m[3]  + mm.m[4]  * mm.m[13] * mm.m[10] * mm.m[3]  +
-         mm.m[8]  * mm.m[5]  * mm.m[14] * mm.m[3]  - mm.m[4]  * mm.m[9]  * mm.m[14] * mm.m[3]  -
-         mm.m[12] * mm.m[9]  * mm.m[2]  * mm.m[7]  + mm.m[8]  * mm.m[13] * mm.m[2]  * mm.m[7]  +
-         mm.m[12] * mm.m[1]  * mm.m[10] * mm.m[7]  - mm.m[0]  * mm.m[13] * mm.m[10] * mm.m[7]  -
-         mm.m[8]  * mm.m[1]  * mm.m[14] * mm.m[7]  + mm.m[0]  * mm.m[9]  * mm.m[14] * mm.m[7]  +
-         mm.m[12] * mm.m[5]  * mm.m[2]  * mm.m[11] - mm.m[4]  * mm.m[13] * mm.m[2]  * mm.m[11] -
-         mm.m[12] * mm.m[1]  * mm.m[6]  * mm.m[11] + mm.m[0]  * mm.m[13] * mm.m[6]  * mm.m[11] +
-         mm.m[4]  * mm.m[1]  * mm.m[14] * mm.m[11] - mm.m[0]  * mm.m[5]  * mm.m[14] * mm.m[11] -
-         mm.m[8]  * mm.m[5]  * mm.m[2]  * mm.m[15] + mm.m[4]  * mm.m[9]  * mm.m[2]  * mm.m[15] +
-         mm.m[8]  * mm.m[1]  * mm.m[6]  * mm.m[15] - mm.m[0]  * mm.m[9]  * mm.m[6]  * mm.m[15] -
-         mm.m[4]  * mm.m[1]  * mm.m[10] * mm.m[15] + mm.m[0]  * mm.m[5]  * mm.m[10] * mm.m[15];
+  return mm.m[12] * mm.m[9] * mm.m[6] * mm.m[3] - mm.m[8] * mm.m[13] * mm.m[6] * mm.m[3] - mm.m[12] * mm.m[5] * mm.m[10] * mm.m[3] +
+         mm.m[4] * mm.m[13] * mm.m[10] * mm.m[3] + mm.m[8] * mm.m[5] * mm.m[14] * mm.m[3] - mm.m[4] * mm.m[9] * mm.m[14] * mm.m[3] -
+         mm.m[12] * mm.m[9] * mm.m[2] * mm.m[7] + mm.m[8] * mm.m[13] * mm.m[2] * mm.m[7] + mm.m[12] * mm.m[1] * mm.m[10] * mm.m[7] -
+         mm.m[0] * mm.m[13] * mm.m[10] * mm.m[7] - mm.m[8] * mm.m[1] * mm.m[14] * mm.m[7] + mm.m[0] * mm.m[9] * mm.m[14] * mm.m[7] +
+         mm.m[12] * mm.m[5] * mm.m[2] * mm.m[11] - mm.m[4] * mm.m[13] * mm.m[2] * mm.m[11] - mm.m[12] * mm.m[1] * mm.m[6] * mm.m[11] +
+         mm.m[0] * mm.m[13] * mm.m[6] * mm.m[11] + mm.m[4] * mm.m[1] * mm.m[14] * mm.m[11] - mm.m[0] * mm.m[5] * mm.m[14] * mm.m[11] -
+         mm.m[8] * mm.m[5] * mm.m[2] * mm.m[15] + mm.m[4] * mm.m[9] * mm.m[2] * mm.m[15] + mm.m[8] * mm.m[1] * mm.m[6] * mm.m[15] -
+         mm.m[0] * mm.m[9] * mm.m[6] * mm.m[15] - mm.m[4] * mm.m[1] * mm.m[10] * mm.m[15] + mm.m[0] * mm.m[5] * mm.m[10] * mm.m[15];
   // clang-format on
 }
 
