@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.0.5
+/* apg_pixfont - C Pixel Font Utility v0.1.0
 LICENCE: see bottom of this file
 ==============================================================
 Authors and Contributors:
@@ -49,12 +49,13 @@ Technical Details:
 
 TODO:
 ==============================================================
-- Support more glyphs
+- Support more glyphs - e.g. French { ç â à }
 
 History:
 ==============================================================
-0.0.5 - 2022 Apr 17 - Reduced text space required for hard-coded image array.
-0.0.4 - 2022 Jan 05 - Removed vflip again, to simplify code in several places.
+0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
+0.0.5 - 2021 Jan 31 - apg_pixfont_image_size_for_str() always returns even dimensions, padding a pixel if required. Helps image alignment.
+0.0.4 - 2021 Jan 05 - Removed vflip again, to simplify code in several places.
 0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
 0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
 0.0.1 - 2019 Aug 9 - Split into stand-alone library code.
