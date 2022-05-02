@@ -22,7 +22,7 @@ int main( int argc, char** argv ) {
     uint8_t p_idx = mod.orders_ptr[o_idx];
     printf( "o%i/%i --p%i--\n", o_idx, mod.n_orders, p_idx );
     for ( int r_idx = 0; r_idx < APG_MOD_N_PATTERN_ROWS; r_idx++ ) {
-      printf( "r%i] ", r_idx );
+      printf( "r%2i] ", r_idx );
       for ( int c_idx = 0; c_idx < mod.n_chans; c_idx++ ) {
         apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
         if ( apg_mod_fetch_note( &mod, p_idx, r_idx, c_idx, &note ) ) {
@@ -30,7 +30,7 @@ int main( int argc, char** argv ) {
           char tmp[4];
           strcpy( tmp, "..." );
           if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
-          printf( "%s %i %i %i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
+          printf( "%s %2i %2i %2i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
         }
       }
       printf( "\n" );
