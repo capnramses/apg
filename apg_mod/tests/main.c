@@ -37,6 +37,12 @@ int main( int argc, char** argv ) {
     }
   }
 
+  // Write samples to .raw files.
+  for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
+    bool ret = apg_mod_dump_raw_sample_file( &mod, i );
+    if ( !ret ) { printf( "could write sample %i\n" ); }
+  }
+
   if ( !apg_mod_free( &mod ) ) {
     fprintf( stderr, "ERROR: could not free mod\n" );
     return 1;

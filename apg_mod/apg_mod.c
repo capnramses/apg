@@ -224,6 +224,7 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
       fprintf( stderr, "Sample is outside range of file memory - looks like a corrupted file or wrong format.\n" );
       return false;
     }
+    // Deprecated - by dump sample function. Keeping here for now for reference in case i messed up a pointer or sthng.
 #ifdef DUMP_RAW_SAMPLES
     if ( mod_ptr->sample_sz_bytes[i] != 0 ) {
       if ( offset + mod_ptr->sample_sz_bytes[i] > record.sz ) {
@@ -271,6 +272,20 @@ bool apg_mod_read_file( const char* filename, apg_mod_t* mod_ptr ) {
   }
 #endif
 
+  return true;
+}
+
+bool apg_mod_dump_raw_sample_file( const apg_mod_t* mod_ptr, uint16_t sample_idx ) {
+  if ( !mod_ptr || sample_idx >= APG_MOD_N_SAMPLES ) { return false; }
+  if ( 0 == mod_ptr->sample_sz_bytes[sample_idx] ) { return false; }
+  char tmp[64];
+  sprintf( tmp, "sample%02i.raw", sample_idx );
+  FILE* of_ptr = fopen( tmp, "wb" );
+  if ( !of_ptr ) { return false; }
+  int n = fwrite( mod_ptr->sample_data_ptrs[sample_idx], mod_ptr->sample_sz_bytes[sample_idx], 1, of_ptr );
+  if ( 1 != n ) { return false; }
+  fclose( of_ptr );
+  printf( "Wrote %s, size %u.\n", tmp, mod_ptr->sample_sz_bytes[sample_idx] );
   return true;
 }
 
