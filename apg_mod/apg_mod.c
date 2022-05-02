@@ -2,7 +2,7 @@
 apg_mod - description to go here
 Anton Gerdelan <antonofnote at gmail>
 C99
-Version 0.0
+Version 0.1
 Licence: see header.
 \*****************************************************************************/
 
