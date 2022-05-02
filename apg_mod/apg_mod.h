@@ -229,13 +229,6 @@ static const char* _note_names[] = {
  */
 APG_MOD_EXPORT int apg_mod_find_period_table_idx( uint16_t period_value_12b );
 
-/** Writes out a sample to a .raw file in the style sample%02i.raw.
- * @param mod_ptr    Previously loaded module memory to read from.
- * @param sample_idx Between 0 and APG_MOD_N_SAMPLES.
- * @return           If the sample_idx was not associated with valid sample memory, or the file could not be written then the function returns false.
- */
-APG_MOD_EXPORT bool apg_mod_dump_raw_sample_file( const apg_mod_t* mod_ptr, uint16_t sample_idx );
-
 APG_MOD_EXPORT bool apg_mod_free( apg_mod_t* mod_ptr );
 
 // APG_MOD_EXPORT bool apg_mod_write_file( const char* filename );
