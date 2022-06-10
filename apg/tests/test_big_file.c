@@ -21,7 +21,7 @@ int main() {
 
   double end = apg_time_s() - start;
 
-  printf( "File size as long int is % li\n     size as size_t is\t  %zu\nSize of long is\t\t  %zu\nSize of off_t is\t  %zu\n", record.sz, record.sz,
+  printf( "File size as long int is % li\n     size as size_t is\t  %zu\nSize of long is\t\t  %zu\nSize of off_t is\t  %zu\n", (long int)record.sz, record.sz,
     sizeof( long ), sizeof( off_t ) );
   printf( "File read of size         %zu was successful.\n", record.sz );
   

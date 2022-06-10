@@ -6,10 +6,10 @@
 #include <string.h>
 
 typedef struct node_t {
-  int key;
-  int h;
-  int neighbours[4];
-  int n_neighbours;
+  int64_t key;
+  int64_t h;
+  int64_t neighbours[4];
+  int64_t n_neighbours;
 } node_t;
 
 // TODO(anton) generate a muuuuch larger set to test timing from top-left to bottom-right...somehow. maybe from an image where black pixels = no neighbour?
@@ -23,7 +23,8 @@ node_t nodes[6] = {
   { .key = 5, .h = 0, .neighbours = { 4 }, .n_neighbours = 1 }             //
 };
 
-static int _h_cb( int key ) {
+static int64_t _h_cb( int64_t key, int64_t target_key ) {
+  (void)target_key;
   for ( int i = 0; i < 6; i++ ) {
     if ( key == nodes[i].key ) { return nodes[i].h; }
   }
@@ -31,10 +32,11 @@ static int _h_cb( int key ) {
   return -1;
 }
 
-static int _get_neighbours_cb( int key, int* neighs ) {
+static int64_t _get_neighbours_cb( int64_t key, int64_t target_key, int64_t* neighs ) {
+  (void)target_key;
   for ( int i = 0; i < 6; i++ ) {
     if ( key == nodes[i].key ) {
-      memcpy( neighs, nodes[i].neighbours, sizeof( int ) * nodes[i].n_neighbours );
+      memcpy( neighs, nodes[i].neighbours, sizeof( int64_t ) * nodes[i].n_neighbours );
       return nodes[i].n_neighbours;
     }
   }
@@ -45,21 +47,21 @@ static int _get_neighbours_cb( int key, int* neighs ) {
 #define N 1024
 
 apg_gbfs_node_t eval_ptr[512];
-int visited_ptr[512];
+int64_t visited_ptr[512];
 apg_gbfs_node_t queue_ptr[128];
 
 int main() {
-  int reversed_path[2048], path_n = 0;
+  int64_t reversed_path[2048], path_n = 0;
   apg_time_init();
   double cumulative_time = 0.0;
   for ( int runi = 0; runi < N; runi++ ) {
     double start   = apg_time_s();
-    bool ret       = apg_gbfs( 0, 5, _h_cb, _get_neighbours_cb, reversed_path, &path_n, 2048, eval_ptr, 512, visited_ptr, 512, queue_ptr, 128 );
+    bool ret       = apg_gbfs( 0, 5, _h_cb, _get_neighbours_cb, reversed_path, &path_n, 2048LL, eval_ptr, 512LL, visited_ptr, 512LL, queue_ptr, 128LL );
     double elapsed = apg_time_s() - start;
     cumulative_time += elapsed;
     if ( ret ) {
-      printf( "FOUND PATH from keys 0 to 5 with %i steps.\n", path_n );
-      for ( int i = path_n - 1, j = 0; i >= 0; i--, j++ ) { printf( "%i) key: %i\n", j, reversed_path[i] ); }
+      printf( "FOUND PATH from keys 0 to 5 with %lli steps.\n", path_n );
+      for ( int64_t i = path_n - 1, j = 0; i >= 0; i--, j++ ) { printf( "%lli) key: %lli\n", j, reversed_path[i] ); }
     } else {
       printf( "NO PATH FOUND!\n" );
     }

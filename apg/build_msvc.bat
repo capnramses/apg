@@ -27,4 +27,18 @@ set LINKER_FLAGS=/out:greedy_test.exe
 set SRC=..\tests\greedy_test.c
 cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
 
+REM ==============================================================
+REM MAKE BIG FILE
+REM ==============================================================
+set LINKER_FLAGS=/out:make_big_file.exe
+set SRC=..\tests\make_big_file.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
+
+REM ==============================================================
+REM BIG FILE TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:bigfile_test.exe
+set SRC=..\tests\test_big_file.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
+
 pause
