@@ -175,9 +175,10 @@ int64_t apg_file_size( const char* filename );
 bool apg_read_entire_file( const char* filename, apg_file_t* record );
 
 /** Loads file_name's contents into a byte array and always ends with a NULL terminator.
+ * @param max_len Maximum bytes available to write into str_ptr.
  * @return false on any error, and if the file size + 1 exceeds max_len bytes.
  */
-bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
+bool apg_file_to_str( const char* file_name, int64_t max_len, char* str_ptr );
 
 /*=================================================================================================
 LOG FILES
@@ -571,8 +572,8 @@ _apg_read_entire_file_fail:
   return false;
 }
 
-bool apg_file_to_str( const char* filename, size_t max_len, char* str ) {
-  if ( !filename || 0 == max_len || !str ) { return false; }
+bool apg_file_to_str( const char* filename, int64_t max_len, char* str_ptr ) {
+  if ( !filename || 0 == max_len || !str_ptr ) { return false; }
 
   int64_t file_sz = apg_file_size( filename );
   if ( file_sz < 0 ) { return false; }
@@ -580,9 +581,9 @@ bool apg_file_to_str( const char* filename, size_t max_len, char* str ) {
 
   FILE* fp = fopen( filename, "rb" );
   if ( !fp ) { return false; }
-  size_t nr = fread( str, (size_t)file_sz, 1, fp );
+  size_t nr = fread( str_ptr, (size_t)file_sz, 1, fp );
   fclose( fp );
-  str[file_sz] = '\0';
+  str_ptr[file_sz] = '\0';
   if ( 1 != nr ) { return false; }
   return true;
 }
