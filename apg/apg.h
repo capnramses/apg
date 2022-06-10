@@ -141,27 +141,42 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 /*=================================================================================================
 FILES
 =================================================================================================*/
-// These definitions allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware.
+// These defines allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware.
+// TODO(Anton) Test in MSVC
+#ifdef _MSC_VER // This means "if MSVC" because we prefer POSIX stuff on MINGW.
+#define apg_fseek _fseeki64
+#define apg_ftell _ftelli64
+#define apg_stat _stat64
+#define apg_stat_t __stat64
+#else
 #define apg_fseek fseeko
 #define apg_ftell ftello
+#define apg_stat stat
+#define apg_stat_t stat
+#endif
 
-/* convenience struct and file->memory function */
+/** Represents memory loaded from a file. */
 typedef struct apg_file_t {
   void* data_ptr;
-  size_t sz;
+  size_t sz; // Size of memory pointed to by data_ptr in bytes.
 } apg_file_t;
 
-/*
-RETURNS
-- true on success. record->data is allocated memory and must be freed by the caller.
-- false on any error. Any allocated memory is freed if false is returned
-*/
+/** @return size in bytes of file given by filename, or -1 on error. Supports large (multi-GB) files. */
+int64_t apg_file_size( const char* filename );
+
+/** Reads an entire file into memory, unaltered. Supports large (multi-GB) files.
+ *
+ * @return
+ *   true on success. In this case record->data is allocated memory and must be freed by the caller.
+ *   false on any error. Any allocated memory is freed if false is returned.
+ *
+ * @warning If you are also writing very large files, be aware some platforms (Windows) will stall if fwrite()s are not split into <=2GB chunks.
+ */
 bool apg_read_entire_file( const char* filename, apg_file_t* record );
 
-/* Loads file_name's contents into a byte array and always ends with a NULL terminator.
-Calls apg_read_entire_file, which allocates memory - fills existing buffer up to length max_len.
-RETURNS false on error
-*/
+/** Loads file_name's contents into a byte array and always ends with a NULL terminator.
+ * @return false on any error, and if the file size + 1 exceeds max_len bytes.
+ */
 bool apg_file_to_str( const char* file_name, size_t max_len, char* str );
 
 /*=================================================================================================
@@ -517,23 +532,33 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 /*=================================================================================================
 FILES IMPLEMENTATION
 =================================================================================================*/
+int64_t apg_file_size( const char* filename ) {
+  struct apg_stat_t buff;
+  if ( !filename ) { return -1; }
+  int res = apg_stat( filename, &buff );
+  if ( res < 0 ) { return -1; }
+  int64_t sz = (int64_t)buff.st_size;
+  return sz;
+}
+
 bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
   FILE* f_ptr   = NULL;
   void* mem_ptr = NULL;
-  off_t sz      = 0;
+  int64_t sz    = 0;
 
   if ( !filename || !record ) { goto _apg_read_entire_file_fail; }
-  f_ptr = fopen( filename, "rb" );
-  if ( !f_ptr ) { goto _apg_read_entire_file_fail; }
-  if ( 0 != apg_fseek( f_ptr, 0LL, SEEK_END ) ) { goto _apg_read_entire_file_fail; }
-  sz = apg_ftell( f_ptr );
+
+  sz = apg_file_size( filename );
   if ( sz < 0 ) { goto _apg_read_entire_file_fail; }
+
   mem_ptr = malloc( (size_t)sz );
   if ( !mem_ptr ) { goto _apg_read_entire_file_fail; }
-  rewind( f_ptr );
+
+  f_ptr = fopen( filename, "rb" );
+  if ( !f_ptr ) { goto _apg_read_entire_file_fail; }
   size_t nr = fread( mem_ptr, (size_t)sz, 1, f_ptr );
-  fclose( f_ptr );
   if ( 1 != nr ) { goto _apg_read_entire_file_fail; }
+  fclose( f_ptr );
 
   record->sz       = (size_t)sz;
   record->data_ptr = mem_ptr;
@@ -549,15 +574,15 @@ _apg_read_entire_file_fail:
 bool apg_file_to_str( const char* filename, size_t max_len, char* str ) {
   if ( !filename || 0 == max_len || !str ) { return false; }
 
+  int64_t file_sz = apg_file_size( filename );
+  if ( file_sz < 0 ) { return false; }
+  if ( file_sz >= max_len - 1 ) { return false; }
+
   FILE* fp = fopen( filename, "rb" );
   if ( !fp ) { return false; }
-  fseek( fp, 0L, SEEK_END );
-  size_t file_sz = (size_t)ftell( fp );
-  size_t read_sz = file_sz > ( max_len - 1 ) ? ( max_len - 1 ) : file_sz;
-  rewind( fp );
-  size_t nr = fread( str, read_sz, 1, fp );
+  size_t nr = fread( str, (size_t)file_sz, 1, fp );
   fclose( fp );
-  str[read_sz] = '\0';
+  str[file_sz] = '\0';
   if ( 1 != nr ) { return false; }
   return true;
 }
