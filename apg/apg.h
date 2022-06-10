@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.9   - 10 Jun 2022. Large file support in file I/O.
   1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
   1.8   - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
   1.7   - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
@@ -142,7 +143,6 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 FILES
 =================================================================================================*/
 // These defines allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware.
-// TODO(Anton) Test in MSVC
 #ifdef _MSC_VER // This means "if MSVC" because we prefer POSIX stuff on MINGW.
 #define apg_fseek _fseeki64
 #define apg_ftell _ftelli64
