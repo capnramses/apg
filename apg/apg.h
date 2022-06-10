@@ -39,9 +39,10 @@ ToDo
 #define _APG_H_
 
 #include <stdbool.h>
-#include <stddef.h>/* size_t */
-#include <stdint.h>/* types */
-#include <stdio.h> /* FILE* */
+#include <stddef.h>   /* size_t */
+#include <stdint.h>   /* types */
+#include <stdio.h>    /* FILE* */
+#include <sys/stat.h> /* File sizes and details. */
 
 /*=================================================================================================
 COMPILER HELPERS
@@ -141,7 +142,7 @@ FILES
 =================================================================================================*/
 /* convenience struct and file->memory function */
 typedef struct apg_file_t {
-  void* data;
+  void* data_ptr;
   size_t sz;
 } apg_file_t;
 
@@ -512,25 +513,33 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 FILES IMPLEMENTATION
 =================================================================================================*/
 bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
-  if ( !filename || !record ) { return false; }
+  FILE* f_ptr   = NULL;
+  void* mem_ptr = NULL;
+  long sz       = 0;
 
-  FILE* fp = fopen( filename, "rb" );
-  if ( !fp ) { return false; }
-  fseek( fp, 0L, SEEK_END );
-  record->sz   = (size_t)ftell( fp );
-  record->data = malloc( record->sz );
-  if ( !record->data ) {
-    fclose( fp );
-    return false;
-  }
-  rewind( fp );
-  size_t nr = fread( record->data, record->sz, 1, fp );
-  fclose( fp );
-  if ( 1 != nr ) {
-    free( record->data );
-    return false;
-  }
+  if ( !filename || !record ) { goto _apg_read_entire_file_fail; }
+  f_ptr = fopen( filename, "rb" );
+  if ( !f_ptr ) { goto _apg_read_entire_file_fail; }
+  if ( 0 != fseek( f_ptr, 0L, SEEK_END ) ) { goto _apg_read_entire_file_fail; }
+  sz = ftell( f_ptr );
+	printf("file size as long int is %li\nsize as size_t is %zu\nsize of long is %zu\n", sz, sz, sizeof(long) );
+  if ( sz < 0 ) { goto _apg_read_entire_file_fail; }
+  mem_ptr = malloc( (size_t)sz );
+  if ( !mem_ptr ) { goto _apg_read_entire_file_fail; }
+  rewind( f_ptr );
+  size_t nr = fread( mem_ptr, (size_t)sz, 1, f_ptr );
+  fclose( f_ptr );
+  if ( 1 != nr ) { goto _apg_read_entire_file_fail; }
+
+  record->sz       = (size_t)sz;
+  record->data_ptr = mem_ptr;
+
   return true;
+
+_apg_read_entire_file_fail:
+  if ( !f_ptr ) { fclose( f_ptr ); }
+  if ( mem_ptr ) { free( mem_ptr ); }
+  return false;
 }
 
 bool apg_file_to_str( const char* filename, size_t max_len, char* str ) {

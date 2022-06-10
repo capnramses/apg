@@ -26,6 +26,7 @@ a.out
 *.mod
 *.s3m
 *.xm
+*.dat
 apg_bmp/test_read_bmp
 apg_bmp/test_write_bmp
 apg_bmp/tests_fuzzing/fuzz_24bpp
