@@ -38,6 +38,7 @@ ToDo
 #ifndef _APG_H_
 #define _APG_H_
 
+#define _FILE_OFFSET_BITS 64 /* Required for ftello on e.g. MinGW to use 8 bytes instead of 4. This can also be defined in a compile string/build file. */
 #include <stdbool.h>
 #include <stddef.h>   /* size_t */
 #include <stdint.h>   /* types */
@@ -140,6 +141,10 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 /*=================================================================================================
 FILES
 =================================================================================================*/
+// These definitions allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware.
+#define apg_fseek fseeko
+#define apg_ftell ftello
+
 /* convenience struct and file->memory function */
 typedef struct apg_file_t {
   void* data_ptr;
@@ -515,14 +520,13 @@ FILES IMPLEMENTATION
 bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
   FILE* f_ptr   = NULL;
   void* mem_ptr = NULL;
-  long sz       = 0;
+  off_t sz      = 0;
 
   if ( !filename || !record ) { goto _apg_read_entire_file_fail; }
   f_ptr = fopen( filename, "rb" );
   if ( !f_ptr ) { goto _apg_read_entire_file_fail; }
-  if ( 0 != fseek( f_ptr, 0L, SEEK_END ) ) { goto _apg_read_entire_file_fail; }
-  sz = ftell( f_ptr );
-	printf("file size as long int is %li\nsize as size_t is %zu\nsize of long is %zu\n", sz, sz, sizeof(long) );
+  if ( 0 != apg_fseek( f_ptr, 0LL, SEEK_END ) ) { goto _apg_read_entire_file_fail; }
+  sz = apg_ftell( f_ptr );
   if ( sz < 0 ) { goto _apg_read_entire_file_fail; }
   mem_ptr = malloc( (size_t)sz );
   if ( !mem_ptr ) { goto _apg_read_entire_file_fail; }
