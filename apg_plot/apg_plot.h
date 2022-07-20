@@ -1,5 +1,5 @@
 /* ===============================================================================================
-apg_line_chart
+apg_plot
 Mini-library for creating quick bitmaps with line plots of a 2D data series.
 Author:   Anton Gerdelan  <antonofnote at gmail>  @capnramses
 URL:      https://github.com/capnramses/apg
@@ -7,12 +7,12 @@ Licence:  See bottom of file.
 Language: C99.
 ==================================================================================================
 Compilation Instructions:
- * Drop apg_line_chart.h and .c into your C or C++ project source files.
+ * Drop apg_plot.h and .c into your C or C++ project source files.
  * Make sure that your build system or compiler compiles the .c file as C, not as C++.
 
 API Instructions:
- * Call apg_line_chart_init() somewhere in your code to create a new chart of given dimensions.
- * To plot a data series as points call apg_line_chart_plot_points(), providing your array of xy
+ * Call apg_plot_init() somewhere in your code to create a new chart of given dimensions.
+ * To plot a data series as points call apg_plot_plot_points(), providing your array of xy
    data.
  * This library assumes your data memory layout is a 1D or 2D array in the memory order:
     x-value,y-value,x-value,y-value... for n data points.
@@ -20,7 +20,7 @@ API Instructions:
 Test/Example Instructions:
  * To compile the example, assuming you have the whole apg repository, or otherwise have
    stb_image_write.h:
-    gcc apg_line_chart.c -D_APG_LINE_CHART_UNIT_TEST -I ../third_party/stb/ -lm
+    gcc apg_plot.c -D_APG_PLOT_UNIT_TEST -I ../third_party/stb/ -lm
 ==================================================================================================
 TODO:
  * An 'advance chart' option for ring buffer scrolling charts to memcpy() rather than redraw the
@@ -32,11 +32,19 @@ TODO:
  * Maybe add tics to axes. Possibly also an optional apg_pixel_font text or so.
 ==================================================================================================
 History:
+  0.2     - 20 JUL 2022 - Export symbols and renamed to apg_plot because its shorter and cooler.
   0.1     - 20 JUL 2022 - First version in apg libraries. Pulled from hobby project and tidied up.
 ==================================================================================================
 */
 
 #pragma once
+
+#ifdef _WIN32
+/** Explicit symbol export for building .dll files with MSVC so it generates a corresponding .lib file. */
+#define APG_PLOT_EXPORT __declspec( dllexport )
+#else
+#define APG_PLOT_EXPORT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,36 +53,36 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct apg_line_chart_params_t {
+typedef struct apg_plot_params_t {
   int w, h;                         // Pixels dimensions.
   float min_x, max_x, min_y, max_y; // Chart data value bounds on each axis.
-} apg_line_chart_params_t;
+} apg_plot_params_t;
 
-typedef struct apg_line_chart_t {
+typedef struct apg_plot_t {
   uint8_t* rgb_ptr; // Pixels.
-  apg_line_chart_params_t params;
-} apg_line_chart_t;
+  apg_plot_params_t params;
+} apg_plot_t;
 
-apg_line_chart_t apg_line_chart_init( apg_line_chart_params_t chart_params );
+APG_PLOT_EXPORT apg_plot_t apg_plot_init( apg_plot_params_t chart_params );
 
-bool apg_line_chart_free( apg_line_chart_t* chart_ptr );
+APG_PLOT_EXPORT bool apg_plot_free( apg_plot_t* chart_ptr );
 
-bool apg_line_chart_clear( apg_line_chart_t* chart_ptr );
+APG_PLOT_EXPORT bool apg_plot_clear( apg_plot_t* chart_ptr );
 
-bool apg_line_chart_plot_lines( apg_line_chart_t* chart_ptr, float* xy_ptr, int n );
+APG_PLOT_EXPORT bool apg_plot_plot_lines( apg_plot_t* chart_ptr, float* xy_ptr, int n );
 
-bool apg_line_chart_plot_points( apg_line_chart_t* chart_ptr, float* xy_ptr, int n );
+APG_PLOT_EXPORT bool apg_plot_plot_points( apg_plot_t* chart_ptr, float* xy_ptr, int n );
 
-bool apg_line_chart_x_axis_draw( apg_line_chart_t* chart_ptr, float y_value );
+APG_PLOT_EXPORT bool apg_plot_x_axis_draw( apg_plot_t* chart_ptr, float y_value );
 
-bool apg_line_chart_y_axis_draw( apg_line_chart_t* chart_ptr, float x_value );
+APG_PLOT_EXPORT bool apg_plot_y_axis_draw( apg_plot_t* chart_ptr, float x_value );
 
 // These values are global, rather than remembered by a particular chart, and apply to all chart drawing operations.
-void apg_line_chart_set_background_colour( uint8_t greyscale_value );
-void apg_line_chart_set_line_colour( uint8_t r, uint8_t g, uint8_t b );
-void apg_line_chart_set_plot_colour( uint8_t r, uint8_t g, uint8_t b );
-void apg_line_chart_set_x_axis_colour( uint8_t r, uint8_t g, uint8_t b );
-void apg_line_chart_set_y_axis_colour( uint8_t r, uint8_t g, uint8_t b );
+APG_PLOT_EXPORT void apg_plot_background_colour( uint8_t greyscale_value );
+APG_PLOT_EXPORT void apg_plot_line_colour( uint8_t r, uint8_t g, uint8_t b );
+APG_PLOT_EXPORT void apg_plot_plot_colour( uint8_t r, uint8_t g, uint8_t b );
+APG_PLOT_EXPORT void apg_plot_x_axis_colour( uint8_t r, uint8_t g, uint8_t b );
+APG_PLOT_EXPORT void apg_plot_y_axis_colour( uint8_t r, uint8_t g, uint8_t b );
 
 #ifdef __cplusplus
 }
