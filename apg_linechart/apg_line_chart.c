@@ -1,3 +1,14 @@
+/* ===============================================================================================
+apg_line_chart
+Mini-library for drawing bitmaps with line plots.
+Author:   Anton Gerdelan  <antonofnote at gmail>  @capnramses
+URL:      https://github.com/capnramses/apg
+Licence:  See bottom of corresponding header file.
+Language: C99.
+Version:  0.1
+==================================================================================================
+*/
+
 #ifdef _APG_LINE_CHART_UNIT_TEST
 #define APG_TGA_IMPLEMENTATION
 #include "apg_tga.h"
@@ -10,8 +21,11 @@
 
 #define _PI 3.14159265358979323846f
 #define _2PI ( _PI * 2.0f )
+#define _IMG_N_CHNS 3 // Number of colour channels per pixel.
 
-#define _IMG_N_CHNS 3
+static uint8_t _line_colour[_IMG_N_CHNS]   = { 0xFF, 0xFF, 0xFF };
+static uint8_t _x_axis_colour[_IMG_N_CHNS] = { 0x00, 0xFF, 0xFF };
+static uint8_t _y_axis_colour[_IMG_N_CHNS] = { 0xFF, 0xFF, 0x00 };
 
 int _apg_line_chart_get_pixel_idx( apg_line_chart_t* chart_ptr, float x, float y ) {
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return -1; }
@@ -19,24 +33,19 @@ int _apg_line_chart_get_pixel_idx( apg_line_chart_t* chart_ptr, float x, float y
   float x_fac = ( x - chart_ptr->params.min_x ) / ( chart_ptr->params.max_x - chart_ptr->params.min_x );
   float y_fac = ( y - chart_ptr->params.min_y ) / ( chart_ptr->params.max_y - chart_ptr->params.min_y );
   int x_int   = (int)roundf( x_fac * (float)chart_ptr->params.w );
-  int y_int   = chart_ptr->params.h - 1 - (int)roundf( y_fac * (float)chart_ptr->params.h ); // flip y so big values are at top of image
+  int y_int   = chart_ptr->params.h - 1 - (int)roundf( y_fac * (float)chart_ptr->params.h ); // Flip y so big values are at top of image.
   if ( x_int < 0 || x_int >= chart_ptr->params.w || y_int < 0 || y_int >= chart_ptr->params.h ) { return -1; }
   return ( y_int * chart_ptr->params.w + x_int ) * _IMG_N_CHNS;
 }
 
-// x0,x1 etc are allowed to be out of bounds of the drawing area. this function will draw up to the image edges towards oob pixels.
+// x0,x1 etc are allowed to be out of bounds of the drawing area. this function will draw up to the image edges towards OOB pixels.
 static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, int x1, int y1 ) {
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return false; }
 
-  int x = x0;
-  int y = y0;
-  // original deltas between start and end points
-  int d_x = x1 - x0;
-  int d_y = y1 - y0;
-  // increase rate on each axis
-  int i_x = 1;
-  int i_y = 1;
-  // remember direction of line on each axis
+  int x = x0, y = y0;
+  int d_x = x1 - x0, d_y = y1 - y0; // Original deltas between start and end points.
+  int i_x = 1, i_y = 1;             // Increase rate on each axis.
+  // Remember direction of line on each axis.
   if ( d_x < 0 ) {
     i_x = -1;
     d_x = abs( d_x );
@@ -45,22 +54,16 @@ static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, i
     i_y = -1;
     d_y = abs( d_y );
   }
-  // scaled deltas (used to allow integer comparison of <0.5)
+  // Scaled deltas (used to allow integer comparison of <0.5).
   int d2_x = d_x * 2;
   int d2_y = d_y * 2;
-  // identify major axis (remember these have been absoluted)
-  if ( d_x > d_y ) {
-    // initialise error term
+  if ( d_x > d_y ) { // Identify major axis (remember these have been absoluted).
     int err = d2_y - d_x;
     for ( int i = 0; i <= d_x; i++ ) {
-      {
-        if ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h ) {
-        } else { // ignore OOB pixel
-          int idx                                   = ( y * chart_ptr->params.w + x );
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 0] = 0xFF;
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 1] = 0xFF;
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 2] = 0xFF;
-        }
+      bool in_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
+      if ( in_bounds ) {
+        int idx = ( y * chart_ptr->params.w + x );
+        memcpy( &chart_ptr->rgb_ptr[idx * _IMG_N_CHNS], _line_colour, _IMG_N_CHNS * sizeof( uint8_t ) );
       }
       if ( err >= 0 ) {
         err -= d2_x;
@@ -70,17 +73,12 @@ static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, i
       x += i_x;
     } // endfor
   } else {
-    // initialise error term
     int err = d2_x - d_y;
     for ( int i = 0; i <= d_y; i++ ) {
-      {
-        if ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h ) {
-        } else { // ignore OOB pixel
-          int idx                                   = ( y * chart_ptr->params.w + x );
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 0] = 0xFF;
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 1] = 0xFF;
-          chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 2] = 0xFF;
-        }
+      bool in_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
+      if ( in_bounds ) {
+        int idx = ( y * chart_ptr->params.w + x );
+        memcpy( &chart_ptr->rgb_ptr[idx * _IMG_N_CHNS], _line_colour, _IMG_N_CHNS * sizeof( uint8_t ) );
       }
       if ( err >= 0 ) {
         err -= d2_y;
@@ -91,25 +89,24 @@ static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, i
     } // endfor
   }   // endif
   return true;
-} // endfunc
+}
 
 bool apg_line_chart_plot_lines( apg_line_chart_t* chart_ptr, float* xy_ptr, int n ) {
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return false; }
+
   for ( int i = 0; i < n - 1; i++ ) {
     int x0, y0, x1, y1;
     {
-      int idx     = i;
-      float x     = xy_ptr[idx * 2 + 0];
-      float y     = xy_ptr[idx * 2 + 1];
+      int idx = i;
+      float x = xy_ptr[idx * 2 + 0], y = xy_ptr[idx * 2 + 1];
       float x_fac = ( x - chart_ptr->params.min_x ) / ( chart_ptr->params.max_x - chart_ptr->params.min_x );
       float y_fac = ( y - chart_ptr->params.min_y ) / ( chart_ptr->params.max_y - chart_ptr->params.min_y );
       x0          = (int)roundf( x_fac * (float)chart_ptr->params.w );
       y0          = chart_ptr->params.h - 1 - (int)roundf( y_fac * (float)chart_ptr->params.h );
     }
     {
-      int idx     = i + 1;
-      float x     = xy_ptr[idx * 2 + 0];
-      float y     = xy_ptr[idx * 2 + 1];
+      int idx = i + 1;
+      float x = xy_ptr[idx * 2 + 0], y = xy_ptr[idx * 2 + 1];
       float x_fac = ( x - chart_ptr->params.min_x ) / ( chart_ptr->params.max_x - chart_ptr->params.min_x );
       float y_fac = ( y - chart_ptr->params.min_y ) / ( chart_ptr->params.max_y - chart_ptr->params.min_y );
       x1          = (int)roundf( x_fac * (float)chart_ptr->params.w );
@@ -124,8 +121,7 @@ bool apg_line_chart_plot_points( apg_line_chart_t* chart_ptr, float* xy_ptr, int
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return false; }
 
   for ( int i = 0; i < n; i++ ) {
-    float x            = xy_ptr[i * 2 + 0];
-    float y            = xy_ptr[i * 2 + 1];
+    float x = xy_ptr[i * 2 + 0], y = xy_ptr[i * 2 + 1];
     int plot_pixel_idx = _apg_line_chart_get_pixel_idx( chart_ptr, x, y );
     if ( plot_pixel_idx < 0 || plot_pixel_idx >= chart_ptr->params.h * chart_ptr->params.w * _IMG_N_CHNS ) { continue; }
     chart_ptr->rgb_ptr[plot_pixel_idx + 0] = chart_ptr->rgb_ptr[plot_pixel_idx + 1] = chart_ptr->rgb_ptr[plot_pixel_idx + 2] = 0xFF; // or some symbol.
@@ -148,11 +144,7 @@ bool apg_line_chart_x_axis_draw( apg_line_chart_t* chart_ptr, float y_value ) {
 
   int idx_i = y_int * chart_ptr->params.w;
   int idx_f = ( y_int + 1 ) * chart_ptr->params.w;
-  for ( int i = idx_i; i < idx_f; i++ ) {
-    chart_ptr->rgb_ptr[i * _IMG_N_CHNS + 0] = 0x00;
-    chart_ptr->rgb_ptr[i * _IMG_N_CHNS + 1] = 0xFF;
-    chart_ptr->rgb_ptr[i * _IMG_N_CHNS + 2] = 0xFF;
-  }
+  for ( int i = idx_i; i < idx_f; i++ ) { memcpy( &chart_ptr->rgb_ptr[i * _IMG_N_CHNS], _x_axis_colour, _IMG_N_CHNS ); }
   return true;
 }
 
@@ -165,10 +157,8 @@ bool apg_line_chart_y_axis_draw( apg_line_chart_t* chart_ptr, float x_value ) {
   if ( x_int < 0 || x_int >= chart_ptr->params.w ) { return false; }
 
   for ( int i = 0; i < chart_ptr->params.h; i++ ) {
-    int idx                                   = i * chart_ptr->params.w + x_int;
-    chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 0] = 0xFF;
-    chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 1] = 0xFF;
-    chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 2] = 0x00;
+    int idx = i * chart_ptr->params.w + x_int;
+    memcpy( &chart_ptr->rgb_ptr[idx * _IMG_N_CHNS + 0], _y_axis_colour, _IMG_N_CHNS );
   }
   return true;
 }
