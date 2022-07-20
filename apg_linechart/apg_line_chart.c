@@ -1,6 +1,5 @@
 /* ===============================================================================================
 apg_line_chart
-Mini-library for drawing bitmaps with line plots.
 Author:   Anton Gerdelan  <antonofnote at gmail>  @capnramses
 URL:      https://github.com/capnramses/apg
 Licence:  See bottom of corresponding header file.
@@ -9,10 +8,6 @@ Version:  0.1
 ==================================================================================================
 */
 
-#ifdef _APG_LINE_CHART_UNIT_TEST
-#define APG_TGA_IMPLEMENTATION
-#include "apg_tga.h"
-#endif
 #include "apg_line_chart.h"
 #include <math.h>
 #include <stdlib.h>
@@ -23,9 +18,11 @@ Version:  0.1
 #define _2PI ( _PI * 2.0f )
 #define _IMG_N_CHNS 3 // Number of colour channels per pixel.
 
-static uint8_t _line_colour[_IMG_N_CHNS]   = { 0xFF, 0xFF, 0xFF };
-static uint8_t _x_axis_colour[_IMG_N_CHNS] = { 0x00, 0xFF, 0xFF };
-static uint8_t _y_axis_colour[_IMG_N_CHNS] = { 0xFF, 0xFF, 0x00 };
+static uint8_t _plot_colour[_IMG_N_CHNS]   = { 0xFF, 0xFF, 0xFF };
+static uint8_t _line_colour[_IMG_N_CHNS]   = { 0x66, 0x66, 0x66 };
+static uint8_t _x_axis_colour[_IMG_N_CHNS] = { 0x00, 0xAA, 0xAA };
+static uint8_t _y_axis_colour[_IMG_N_CHNS] = { 0xAA, 0xAA, 0x00 };
+static uint8_t _background_colour          = 0x00;
 
 int _apg_line_chart_get_pixel_idx( apg_line_chart_t* chart_ptr, float x, float y ) {
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return -1; }
@@ -60,8 +57,8 @@ static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, i
   if ( d_x > d_y ) { // Identify major axis (remember these have been absoluted).
     int err = d2_y - d_x;
     for ( int i = 0; i <= d_x; i++ ) {
-      bool in_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
-      if ( in_bounds ) {
+      bool out_of_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
+      if ( !out_of_bounds ) {
         int idx = ( y * chart_ptr->params.w + x );
         memcpy( &chart_ptr->rgb_ptr[idx * _IMG_N_CHNS], _line_colour, _IMG_N_CHNS * sizeof( uint8_t ) );
       }
@@ -75,8 +72,8 @@ static bool _draw_bresenham_line( apg_line_chart_t* chart_ptr, int x0, int y0, i
   } else {
     int err = d2_x - d_y;
     for ( int i = 0; i <= d_y; i++ ) {
-      bool in_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
-      if ( in_bounds ) {
+      bool out_of_bounds = ( x < 0 || x >= chart_ptr->params.w || y < 0 || y >= chart_ptr->params.h );
+      if ( !out_of_bounds ) {
         int idx = ( y * chart_ptr->params.w + x );
         memcpy( &chart_ptr->rgb_ptr[idx * _IMG_N_CHNS], _line_colour, _IMG_N_CHNS * sizeof( uint8_t ) );
       }
@@ -124,14 +121,14 @@ bool apg_line_chart_plot_points( apg_line_chart_t* chart_ptr, float* xy_ptr, int
     float x = xy_ptr[i * 2 + 0], y = xy_ptr[i * 2 + 1];
     int plot_pixel_idx = _apg_line_chart_get_pixel_idx( chart_ptr, x, y );
     if ( plot_pixel_idx < 0 || plot_pixel_idx >= chart_ptr->params.h * chart_ptr->params.w * _IMG_N_CHNS ) { continue; }
-    chart_ptr->rgb_ptr[plot_pixel_idx + 0] = chart_ptr->rgb_ptr[plot_pixel_idx + 1] = chart_ptr->rgb_ptr[plot_pixel_idx + 2] = 0xFF; // or some symbol.
+    memcpy( &chart_ptr->rgb_ptr[plot_pixel_idx], _plot_colour, _IMG_N_CHNS ); // Or some symbol.
   }
   return true;
 }
 
 bool apg_line_chart_clear( apg_line_chart_t* chart_ptr ) {
   if ( !chart_ptr || !chart_ptr->rgb_ptr ) { return false; }
-  memset( chart_ptr->rgb_ptr, 0, chart_ptr->params.w * chart_ptr->params.h * _IMG_N_CHNS );
+  memset( chart_ptr->rgb_ptr, _background_colour, chart_ptr->params.w * chart_ptr->params.h * _IMG_N_CHNS );
   return true;
 }
 
@@ -166,6 +163,7 @@ bool apg_line_chart_y_axis_draw( apg_line_chart_t* chart_ptr, float x_value ) {
 apg_line_chart_t apg_line_chart_init( apg_line_chart_params_t chart_params ) {
   apg_line_chart_t chart = ( apg_line_chart_t ){ .params = chart_params };
   chart.rgb_ptr          = calloc( chart_params.w * chart_params.h, _IMG_N_CHNS );
+  apg_line_chart_clear( &chart );
   if ( !chart.rgb_ptr ) { return chart; }
   return chart;
 }
@@ -177,39 +175,101 @@ bool apg_line_chart_free( apg_line_chart_t* chart_ptr ) {
   return true;
 }
 
+void apg_line_chart_set_background_colour( uint8_t greyscale_value ) { _background_colour = greyscale_value; }
+
+void apg_line_chart_set_line_colour( uint8_t r, uint8_t g, uint8_t b ) {
+  _line_colour[0] = r;
+  _line_colour[1] = g;
+  _line_colour[2] = b;
+}
+
+void apg_line_chart_set_plot_colour( uint8_t r, uint8_t g, uint8_t b ) {
+  _plot_colour[0] = r;
+  _plot_colour[1] = g;
+  _plot_colour[2] = b;
+}
+
+void apg_line_chart_set_x_axis_colour( uint8_t r, uint8_t g, uint8_t b ) {
+  _x_axis_colour[0] = r;
+  _x_axis_colour[1] = g;
+  _x_axis_colour[2] = b;
+}
+
+void apg_line_chart_set_y_axis_colour( uint8_t r, uint8_t g, uint8_t b ) {
+  _y_axis_colour[0] = r;
+  _y_axis_colour[1] = g;
+  _y_axis_colour[2] = b;
+}
+
+// Example/test program follows.
 #ifdef _APG_LINE_CHART_UNIT_TEST
-#define TEST_X 256
-#define TEST_Y 256
+// Was using my own TGA writer here but I think it's buggy.
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+#define _APG_LINE_CHART_TEST_PX_X 512
+#define _APG_LINE_CHART_TEST_PX_Y 512
+#define _APG_LINE_CHART_TEST_N 32
 
 int main() {
-  // Init some test data
-  float xy_array[256 * 2];
-  for ( int i = 0; i < 256; i++ ) {
-    float x             = i * 1.0f / 256.0f * _2PI;
+  // Init some test data. I want to plot n values, between 0 ant 2pi on x. Any value of n is fine.
+  float xy_array[_APG_LINE_CHART_TEST_N * 2];
+  for ( int i = 0; i < _APG_LINE_CHART_TEST_N; i++ ) {
+    float x             = i * 1.0f / (float)(_APG_LINE_CHART_TEST_N - 1) * _2PI;
     float y             = sinf( x );
     xy_array[i * 2 + 0] = x;
     xy_array[i * 2 + 1] = y;
   }
-
-  apg_line_chart_t chart = apg_line_chart_init( ( apg_line_chart_params_t ){ .w = TEST_X, .h = TEST_Y, .min_x = 0.0f, .max_x = _2PI, .min_y = -1.0f, .max_y = 1.0f } );
+  // Create a chart bitmap with 512,512 pixels (any values are fine).
+  // Have it plot between 0 and 2pi on x, and just over -1 to 1 on y, so the wave peaks are clearly visible.
+  apg_line_chart_t chart = apg_line_chart_init( ( apg_line_chart_params_t ){
+    .w = _APG_LINE_CHART_TEST_PX_X, .h = _APG_LINE_CHART_TEST_PX_Y, .min_x = -0.1f, .max_x = _2PI + 0.1f, .min_y = -1.1f, .max_y = 1.1f } );
   if ( !chart.rgb_ptr ) {
     fprintf( stderr, "ERROR allocating chart.\n" );
     return 1;
   }
+  // This is the horizontal "axis" line. I want it in the middle of the range hence 0 in a range of -1 to 1.
+  if ( !apg_line_chart_x_axis_draw( &chart, 0.0f ) ) { return 1; }
+  // This is the vertical "axis" line. I want it in the middle of the data range hence pi out of 2pi.
+  if ( !apg_line_chart_y_axis_draw( &chart, _PI ) ) { return 1; }
+  // Draw lines connecting the data series. I do this before the plot points, so they get drawn on top of the line.
+  if ( !apg_line_chart_plot_lines( &chart, xy_array, _APG_LINE_CHART_TEST_N ) ) { return 1; }
+  // Draw plot points. These will be drawn over the lines.
+  if ( !apg_line_chart_plot_points( &chart, xy_array, _APG_LINE_CHART_TEST_N ) ) { return 1; }
 
-  apg_line_chart_plot_points( &chart, xy_array, 256 );
+  // Output the bitmap to a TGA image so we can see it. You might instead draw it onto your application window.
+  if ( !stbi_write_png( "output_black.png", _APG_LINE_CHART_TEST_PX_X, _APG_LINE_CHART_TEST_PX_Y, 3, chart.rgb_ptr, _APG_LINE_CHART_TEST_PX_X * 3 ) ) {
+    return 1;
+  }
+  printf( "Wrote output_black.png.\n" );
 
-  apg_line_chart_x_axis_draw( &chart, TEST_Y / 2.0f );
-  apg_line_chart_y_axis_draw( &chart, 0.0f );
+  // Redraw the chart with a white background.
+  apg_line_chart_set_background_colour( 0xFF );         // White background.
+  apg_line_chart_set_line_colour( 0xAA, 0xAA, 0xAA );   // Light grey plot lines.
+  apg_line_chart_set_plot_colour( 0x00, 0x00, 0x00 );   // Black plot points.
+  apg_line_chart_set_x_axis_colour( 0x66, 0x66, 0x66 ); // Grey.
+  apg_line_chart_set_y_axis_colour( 0x66, 0x66, 0x66 ); // Grey.
 
-  apg_tga_write_file( "output.tga", chart.rgb_ptr, TEST_X, TEST_Y, 3 );
-  printf( "wrote output.tga\n" );
+  // Clear _after_ changing the background colour, otherwise it will still be black.
+  if ( !apg_line_chart_clear( &chart ) ) { return 1; }
 
+  if ( !apg_line_chart_x_axis_draw( &chart, 0.0f ) ) { return 1; }
+  if ( !apg_line_chart_y_axis_draw( &chart, _PI ) ) { return 1; }
+  if ( !apg_line_chart_plot_lines( &chart, xy_array, _APG_LINE_CHART_TEST_N ) ) { return 1; }
+  if ( !apg_line_chart_plot_points( &chart, xy_array, _APG_LINE_CHART_TEST_N ) ) { return 1; }
+
+  // Output second bitmap for white chart.
+  if ( !stbi_write_png( "output_white.png", _APG_LINE_CHART_TEST_PX_X, _APG_LINE_CHART_TEST_PX_Y, 3, chart.rgb_ptr, _APG_LINE_CHART_TEST_PX_X * 3 ) ) {
+    return 1;
+  }
+  printf( "Wrote output_white.png.\n" );
+
+  // Free allocated chart memory.
   if ( !apg_line_chart_free( &chart ) ) {
     fprintf( stderr, "ERROR freeing chart.\n" );
     return 1;
   }
-  printf( "Freed chart.\n" );
+  printf( "Success.\n" );
 
   return 0;
 }
