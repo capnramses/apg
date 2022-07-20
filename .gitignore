@@ -60,5 +60,5 @@ apg_mod/*.raw
 apg_mod/*.mp3
 *Tutorial.txt
 apg/tests/out_path.png
-apg_linechart/output_black.png
-apg_linechart/output_white.png
+output_black.png
+output_white.png

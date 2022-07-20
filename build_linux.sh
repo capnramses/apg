@@ -59,6 +59,14 @@ clang $SANS $FLAGS tests/main.c -I ./ apg_jobs.c -pthread
 cd ..
 
 #
+# [apg_linechart]
+#
+echo "building apg_line_chart tests..."
+cd apg_line_chart
+$CC $FLAGS -std=c99 -I./ -I../third_party/stb/ apg_linechart.c -lm
+cd ..
+
+#
 # [apg_maths]
 #
 echo "building apg_maths tests..."
