@@ -62,3 +62,4 @@ apg_mod/*.mp3
 apg/tests/out_path.png
 output_black.png
 output_white.png
+apg/tests/x.png
