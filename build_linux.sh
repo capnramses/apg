@@ -63,7 +63,7 @@ cd ..
 #
 echo "building apg_line_chart tests..."
 cd apg_line_chart
-$CC $FLAGS -std=c99 -I./ -I../third_party/stb/ apg_linechart.c -lm
+$CC $FLAGS -std=c99 -I./ -I../third_party/stb/ apg_line_chart.c -lm
 cd ..
 
 #
