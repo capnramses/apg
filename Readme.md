@@ -12,7 +12,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 | apg_jobs    | Simple worker/jobs thread pool system.          | C        | 2               | 0.2     | No                                      |
 | apg_gldb    | OpenGL debug drawing (lines, boxes, ... )       | C        | 2               | 0.3     | No                                      |
 | apg_interp  | Interpolation / "tweening" / "easing".          | C, JS    | 1, 1            | 0.7     | No                                      |
-| apg_plot    | Quick line-plot bitmaps from 2D data series.    | C        | 2               | 0.1     | No                                      |
+| apg_plot    | Quick line-plot bitmaps from 2D data series.    | C        | 2               | 0.2     | No                                      |
 | apg_maths   | 3D maths for graphics/games.                    | C, JS    | 2, 1            | 0.16    | No                                      |
 | apg_mod     | Unannounced work-in-progress.                   | C        | 2               | 0.1     | No                                      |
 | apg_pixfont | String-to-image with a pixel font.              | C        | 2               | 0.1.0   | No                                      |
