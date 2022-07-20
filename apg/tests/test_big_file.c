@@ -24,6 +24,7 @@ int main() {
   printf( "File size as long int is % li\n     size as size_t is\t  %zu\nSize of long is\t\t  %zu\nSize of off_t is\t  %zu\n", (long int)record.sz, record.sz,
     sizeof( long ), sizeof( off_t ) );
   printf( "File read of size         %zu was successful.\n", record.sz );
+	printf( "size of long long %zu\n", sizeof(long long int ) );
   
   printf("File read took %lf seconds.\n", end );
   return 0;
