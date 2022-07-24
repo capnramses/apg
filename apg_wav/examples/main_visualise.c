@@ -1,4 +1,5 @@
 /** Example program that plays a sound and also draws the waveform into an image file `out_vis.png`.
+ * If the wave file has 2 channels then the second channel is also written, to `out_vis2.png`.
  *
  * For this example install the PortAudio library first:
  * http://portaudio.com/
@@ -52,41 +53,66 @@ static int antons_pa_cb( const void* input_buffer_ptr, void* output_buffer_ptr, 
 }
 
 static void _wav_bitmap( apg_wav_t* wav_ptr ) {
-  // NOTE--ignoring n_chans here, so won't work for 2-channel wavs
-
   uint32_t actual_data_sz = wav_ptr->header_ptr->file_sz - 44; // 44 is size of WAV PCM header.
   uint32_t sample_sz      = wav_ptr->header_ptr->bits_per_sample / 8;
+  int n_channels          = wav_ptr->header_ptr->n_chans;
   uint32_t n_samples      = actual_data_sz / sample_sz;
-  float duration_s        = apg_wav_duration( wav_ptr );
-  int img_width           = (int)( duration_s * 512.0f );
-  int img_height          = 256;
+  printf( "sample size %u, n samples %u\n", sample_sz, n_samples );
+  float duration_s = apg_wav_duration( wav_ptr );
+  int img_width    = (int)( duration_s * 512.0f );
+  int img_height   = 256;
 
-  apg_plot_t chart = apg_plot_init( ( apg_plot_params_t ){ .h = img_height, .w = img_width, .max_y = 1.0f, .min_y = -1.0f, .max_x = n_samples, .min_x = 0 } );
+  apg_plot_t chart =
+    apg_plot_init( ( apg_plot_params_t ){ .h = img_height, .w = img_width, .max_y = 1.0f, .min_y = -1.0f, .max_x = n_samples / n_channels, .min_x = 0 } );
+  apg_plot_t chart2 =
+    apg_plot_init( ( apg_plot_params_t ){ .h = img_height, .w = img_width, .max_y = 1.0f, .min_y = -1.0f, .max_x = n_samples / n_channels, .min_x = 0 } );
   apg_plot_background_colour( 0xCC );
   apg_plot_line_colour( 0x00, 0x00, 0xFF );
   apg_plot_x_axis_colour( 0, 0, 0 );
   apg_plot_clear( &chart );
+  apg_plot_clear( &chart2 );
 
-  float* xy_ptr = malloc( n_samples * wav_ptr->header_ptr->bits_per_sample * 2.0f );
+  float* xy_ptr = malloc( n_samples / n_channels * wav_ptr->header_ptr->bits_per_sample * 2.0f );
   if ( !xy_ptr ) { return; }
+  float* xy_ptr2 = malloc( n_samples / n_channels * wav_ptr->header_ptr->bits_per_sample * 2.0f );
+  if ( !xy_ptr2 ) { return; }
 
-  for ( uint32_t i = 0; i < n_samples; i++ ) {
+  for ( uint32_t i = 0; i < n_samples / n_channels; i++ ) {
     xy_ptr[i * 2 + 0] = (float)i;
     if ( 1 == sample_sz ) { // uint8_t
-      xy_ptr[i * 2 + 1] = (float)wav_ptr->pcm_data_ptr[i * sample_sz] / 127.5f - 1.0f;
+      xy_ptr[i * 2 + 1] = (float)wav_ptr->pcm_data_ptr[i * sample_sz * n_channels] / 127.5f - 1.0f;
     } else if ( 2 == sample_sz ) { // int16_t signed
       int16_t sample = 0;
-      memcpy( &sample, &wav_ptr->pcm_data_ptr[i * sample_sz], sample_sz );
+      memcpy( &sample, &wav_ptr->pcm_data_ptr[i * sample_sz * n_channels], sample_sz );
       xy_ptr[i * 2 + 1] = (float)sample / 32768.0f;
     }
   }
+  if ( n_channels > 1 ) {
+    for ( uint32_t i = 0; i < n_samples / n_channels; i++ ) {
+      xy_ptr2[i * 2 + 0] = (float)i;
+      if ( 1 == sample_sz ) { // uint8_t
+        xy_ptr2[i * 2 + 1] = (float)wav_ptr->pcm_data_ptr[( i * n_channels + 1 ) * sample_sz] / 127.5f - 1.0f;
+      } else if ( 2 == sample_sz ) { // int16_t signed
+        int16_t sample = 0;
+        memcpy( &sample, &wav_ptr->pcm_data_ptr[( i * n_channels + 1 ) * sample_sz], sample_sz );
+        xy_ptr2[i * 2 + 1] = (float)sample / 32768.0f;
+      }
+    }
+  }
 
-  apg_plot_plot_lines( &chart, xy_ptr, n_samples );
+  apg_plot_plot_lines( &chart, xy_ptr, n_samples / n_channels );
   apg_plot_x_axis_draw( &chart, 0.0f );
   stbi_write_png( "out_vis.png", img_width, img_height, 3, chart.rgb_ptr, 3 * img_width );
+  if ( n_channels > 1 ) {
+    apg_plot_plot_lines( &chart2, xy_ptr2, n_samples / n_channels );
+    apg_plot_x_axis_draw( &chart2, 0.0f );
+    stbi_write_png( "out_vis2.png", img_width, img_height, 3, chart2.rgb_ptr, 3 * img_width );
+  }
 
   free( xy_ptr );
+  free( xy_ptr2 );
   apg_plot_free( &chart );
+  apg_plot_free( &chart2 );
 }
 
 int main( int argc, char** argv ) {

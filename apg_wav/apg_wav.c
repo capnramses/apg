@@ -102,13 +102,14 @@ bool apg_wav_read( const char* filename, apg_wav_t* wav_ptr ) {
   wav_ptr->header_ptr = (apg_wav_header_t*)record.data_ptr;
   // too small for reported data (not reliable! - might need to remove this validation check).
   if ( record.sz < wav_ptr->header_ptr->file_sz || record.sz < wav_ptr->header_ptr->data_sz + 44 ) {
-    fprintf( stderr, "WARNING: invalid data in header. Corrupted file.\n" );
+    fprintf( stderr, "WARNING: Size of file mismatches data in header. Probably corrupted file.\n" );
     //  return false;
   }
   // unsupported type
   if ( wav_ptr->header_ptr->fmt_type != 1 || wav_ptr->header_ptr->fmt_sz != 16 ) {
-    fprintf( stderr, "WARNING: fmt_type = %i (expected 1), fmt_sz = %i (expected 16)\n", (int)wav_ptr->header_ptr->fmt_type, wav_ptr->header_ptr->fmt_sz );
-    // return false;
+    fprintf( stderr, "WARNING: unsupported format: fmt_type = %i (expected 1), fmt_sz = %i (expected 16)\n", (int)wav_ptr->header_ptr->fmt_type,
+      wav_ptr->header_ptr->fmt_sz );
+    return false;
   }
 
   wav_ptr->file_data_ptr = byte_ptr;
