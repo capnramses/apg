@@ -7,8 +7,15 @@
 
 Compile e.g.:
 
-  gcc examples\main_visualise.c apg_wav.c ..\apg_plot\apg_plot.c -o test_visualise_file.exe
-  -I . -I ..\apg_plot\ -I ..\third_party\ -I ..\third_party\portaudio\include\ -lm -lportaudio -L .
+Windows MinGW
+
+  gcc -o test_visualise_file.exe examples\main_visualise.c apg_wav.c ..\apg_plot\apg_plot.c
+    -I . -I ..\apg_plot\ -I ..\third_party\ -I ..\third_party\portaudio\include\ -lm -lportaudio -L .
+
+Ubuntu
+
+  gcc -o test_visualise_file.bin examples/main_visualise.c apg_wav.c ../apg_plot/apg_plot.c -I ./ -I ../apg_plot/ -I ../third_party/ -lportaudio -lm
+
 */
 
 #include "portaudio.h"
@@ -127,7 +134,7 @@ int main( int argc, char** argv ) {
   audio_source_t audio_source = ( audio_source_t ){ .wav_data_idx = 0 };
   bool res                    = apg_wav_read( filename, &audio_source.wav );
   if ( !res ) {
-    fprintf( stderr, "ERROR loading file %s %i\n", filename );
+    fprintf( stderr, "ERROR loading file %s\n", filename );
     return 1;
   }
   audio_source.duration_s = apg_wav_duration( &audio_source.wav );
@@ -156,12 +163,12 @@ int main( int argc, char** argv ) {
 
   PaStream* stream = NULL; // usually just 1 stream per device
   err              = Pa_OpenDefaultStream( &stream,
-                 0,                                    // no input channels (mic/record etc)
-                 audio_source.wav.header_ptr->n_chans, // mono/stereo
-                 fmt,                                  // 8-bit, 16-bit int or 32-bit float supported in this demo
-                 audio_source.wav.header_ptr->sample_rate_hz,
-                 256, // frames per buffer to request from callback (can use paFramesPerBufferUnspecified)
-                 antons_pa_cb, &audio_source );
+    0,                                    // no input channels (mic/record etc)
+    audio_source.wav.header_ptr->n_chans, // mono/stereo
+    fmt,                                  // 8-bit, 16-bit int or 32-bit float supported in this demo
+    audio_source.wav.header_ptr->sample_rate_hz,
+    256, // frames per buffer to request from callback (can use paFramesPerBufferUnspecified)
+    antons_pa_cb, &audio_source );
   if ( err != paNoError ) {
     printf( "PortAudio error: %s\n", Pa_GetErrorText( err ) );
     return 1;
