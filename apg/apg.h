@@ -661,8 +661,13 @@ static int _dir_contents_count( const char* path ) {
     if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) || S_ISLNK( path_stat.st_mode ) ) { count++; }
   } // endwhile
   closedir( folder );
-#else
-  // TODO WIN32
+#else /* _WIN32 */
+  WIN32_FIND_DATA fdFile;
+  HANDLE hFind = NULL;
+  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
+  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
+  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
+  FindClose( hFind );                                       // Clean-up global state.
 #endif
   return count;
 }
@@ -676,41 +681,56 @@ int _dir_contents_cmp( const void* a, const void* b ) {
 bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_list ) {
   if ( !path_ptr || !list_ptr || !n_list ) { return false; }
   if ( !apg_is_dir( path_ptr ) ) { return false; }
-  *n_list = 0;
 
-  int count = _dir_contents_count( path_ptr ); // Loop over once to let us allocate array in one go.
-  int n     = 0;
-  *list_ptr = calloc( count, sizeof( apg_dirent_t ) );
-
-#ifndef _WIN32
-  struct dirent* entry;
   apg_dirent_t new_entry;
   struct apg_stat_t path_stat;
   char tmp[2048];
+  int count = _dir_contents_count( path_ptr ); // Loop over once to let us allocate array in one go.
+  int n     = 0;
+  *n_list   = 0;
+  *list_ptr = calloc( count, sizeof( apg_dirent_t ) );
+
+#ifndef _WIN32
+  struct dirent* entry_ptr;
   DIR* folder = opendir( path_ptr );
   if ( folder == NULL ) { return false; }
 
-  printf( "allocated %i contents\n", count );
-
-  while ( ( entry = readdir( folder ) ) ) {
+  while ( ( entry_ptr = readdir( folder ) ) ) {
     tmp[0] = '\0';
     apg_strncat( tmp, path_ptr, 2045, 2045 );
     if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
-    apg_strncat( tmp, entry->d_name, 2047, 2047 );
+    apg_strncat( tmp, entry_ptr->d_name, 2047, 2047 );
+
     if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
     new_entry.type = APG_DIRENT_OTHER;
     if ( S_ISREG( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_FILE; }
     if ( S_ISDIR( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_DIR; }
     if ( S_ISLNK( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_SYMLINK; }
-    new_entry.path     = strdup( entry->d_name );
+    new_entry.path     = strdup( entry_ptr->d_name );
     ( *list_ptr )[n++] = new_entry;
   }
-  printf( "n = %i count = %i\n", n, count );
-  closedir( folder );
-#else
 
+  closedir( folder );
+
+#else /* _WIN32 */
+  WIN32_FIND_DATA fdFile;
+  HANDLE hFind = NULL;
+  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
+  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
+  do {
+    tmp[0] = '\0';
+    apg_strncat( tmp, path, 2045, 2045 );
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    apg_strncat( tmp, fdFile.cFileName, 2047, 2047 );
+
+    new_entry.type = APG_DIRENT_FILE;
+    if ( fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) { new_entry.type = APG_DIRENT_DIR; }
+    new_entry.path     = strdup( fdFile.cFileName );
+    ( *list_ptr )[n++] = new_entry;
+  } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
+  FindClose( hFind );                         // Clean-up global state.
 #endif
-  printf( "n = %i count = %i\n", n, count );
+
   *n_list = n;
   // Sort in alphabetical order by default (because mostly I want to print the list).
   qsort( *list_ptr, n, sizeof( apg_dirent_t ), _dir_contents_cmp );
