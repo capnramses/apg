@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.10  - xx Sep 2022. Cross-platform directory/filesystem functions.
   1.9   - 10 Jun 2022. Large file support in file I/O.
   1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
   1.8   - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
@@ -161,8 +162,74 @@ typedef struct apg_file_t {
   size_t sz; // Size of memory pointed to by data_ptr in bytes.
 } apg_file_t;
 
-/** @return size in bytes of file given by filename, or -1 on error. Supports large (multi-GB) files. */
+typedef enum apg_dirent_type_t { APG_DIRENT_NONE, APG_DIRENT_FILE, APG_DIRENT_DIR, APG_DIRENT_SYMLINK, APG_DIRENT_OTHER } apg_dirent_type_t;
+
+/** A directory entry. */
+typedef struct apg_dirent_t {
+  apg_dirent_type_t type;
+  char* path;
+} apg_dirent_t;
+
+/**
+ * @return
+ *   False if path is not a file.
+ *   False on any error.
+ *   True if path was a file.
+ */
+bool apg_is_file( const char* path );
+
+/**
+ * @return
+ *   False if path is not a directory.
+ *   False on any error.
+ *   True if path was a directory.
+ */
+bool apg_is_dir( const char* path );
+
+/** Get a file's size. Supports large (multi-GB) files.
+ * @return
+ *   Size in bytes of file given by filename, or -1 on error.
+ */
 int64_t apg_file_size( const char* filename );
+
+/** Get a list of items in a directory, including file and directories.
+ *
+ * @param path_ptr
+ * A directory path to scan for contents.
+ *
+ * @param list_ptr
+ * The caller must provide an address to a contents pointer. This function
+ * will allocate memory for, and populate a list, that this parameter will
+ * be pointed to `apg_free_contents_list()`.
+ *
+ * @param n_list
+ * The caller must provide the address on an integer. The number of items
+ * populated in the list will be set here. This value must be retained by
+ * the called, unmodified, as it is used to free the string memory when
+ * passed to
+ *
+ * @return
+ * On success this function returns `true`.
+ * Basic errors, such as NULL parameters, or an invalid directory path will
+ * return `false`.
+ *
+ * @warning
+ * Symlinks and hard links may not be reported as such, and are most likely
+ * still reported as directory, and file types, respectively.
+ *
+ * @warning
+ * This function allocates memory for the the items in `list_ptr`, as well as
+ * strings inside each item. Call `apg_free_contents_list()` to free the
+ * allocated memory.
+ *
+ * @note
+ * Note that the file names of contents do not include `path`, so you will need
+ * to concatenate the full path in order to access the files. The internal
+ * function `_fix_dir_slashes()` may be useful here.
+ */
+bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_list );
+
+bool apg_free_contents_list( apg_dirent_t** list_ptr, int n_list );
 
 /** Reads an entire file into memory, unaltered. Supports large (multi-GB) files.
  *
@@ -408,6 +475,7 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
 #include <dbghelp.h> /* SymInitialize */
 #endif
 #else
+#include <dirent.h> /* Directories. */
 #include <execinfo.h>
 #include <strings.h> /* for strcasecmp */
 #include <unistd.h>  /* linux-only? */
@@ -533,6 +601,18 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 /*=================================================================================================
 FILES IMPLEMENTATION
 =================================================================================================*/
+bool apg_is_file( const char* path ) {
+  struct apg_stat_t path_stat;
+  if ( 0 != apg_stat( path, &path_stat ) ) { return false; }
+  return S_ISREG( path_stat.st_mode );
+}
+
+bool apg_is_dir( const char* path ) {
+  struct apg_stat_t path_stat;
+  if ( 0 != apg_stat( path, &path_stat ) ) { return false; }
+  return S_ISDIR( path_stat.st_mode );
+}
+
 int64_t apg_file_size( const char* filename ) {
   struct apg_stat_t buff;
   if ( !filename ) { return -1; }
@@ -540,6 +620,112 @@ int64_t apg_file_size( const char* filename ) {
   if ( res < 0 ) { return -1; }
   int64_t sz = (int64_t)buff.st_size;
   return sz;
+}
+
+/** Make sure a path string ends with a Unix-style directory slash. */
+static bool _fix_dir_slashes( char* path, int max_len ) {
+  int len = strlen( path );
+  // "anton\\"
+  if ( path[len - 2] == '\\' && path[len - 1] == '\\' ) {
+    path[len - 2] = '/';
+    path[len - 1] = '\0';
+    // "anton\"
+  } else if ( path[len - 1] == '\\' ) {
+    path[len - 1] = '/';
+    path[len]     = '\0';
+    // "anton"
+  } else if ( path[len - 1] != '/' ) {
+    if ( len + 1 >= max_len ) { return false; }
+    path[len]     = '/';
+    path[len + 1] = '\0';
+  }
+  return true;
+}
+
+static int _dir_contents_count( const char* path ) {
+  int count = 0;
+  if ( !path ) { return count; }
+  if ( !apg_is_dir( path ) ) { return count; }
+#ifndef _WIN32
+  struct dirent* entry;
+  struct apg_stat_t path_stat;
+  char tmp[2048];
+  DIR* folder = opendir( path );
+  if ( folder == NULL ) { return count; }
+  while ( ( entry = readdir( folder ) ) ) {
+    tmp[0] = '\0';
+    apg_strncat( tmp, path, 2045, 2045 );
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    apg_strncat( tmp, entry->d_name, 2047, 2047 );
+    if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
+    if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) || S_ISLNK( path_stat.st_mode ) ) { count++; }
+  } // endwhile
+  closedir( folder );
+#else
+  // TODO WIN32
+#endif
+  return count;
+}
+
+int _dir_contents_cmp( const void* a, const void* b ) {
+  apg_dirent_t* a_ptr = (apg_dirent_t*)a;
+  apg_dirent_t* b_ptr = (apg_dirent_t*)b;
+  return strcmp( a_ptr->path, b_ptr->path );
+}
+
+bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_list ) {
+  if ( !path_ptr || !list_ptr || !n_list ) { return false; }
+  if ( !apg_is_dir( path_ptr ) ) { return false; }
+  *n_list = 0;
+
+  int count = _dir_contents_count( path_ptr ); // Loop over once to let us allocate array in one go.
+  int n     = 0;
+  *list_ptr = calloc( count, sizeof( apg_dirent_t ) );
+
+#ifndef _WIN32
+  struct dirent* entry;
+  apg_dirent_t new_entry;
+  struct apg_stat_t path_stat;
+  char tmp[2048];
+  DIR* folder = opendir( path_ptr );
+  if ( folder == NULL ) { return false; }
+
+  printf( "allocated %i contents\n", count );
+
+  while ( ( entry = readdir( folder ) ) ) {
+    tmp[0] = '\0';
+    apg_strncat( tmp, path_ptr, 2045, 2045 );
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    apg_strncat( tmp, entry->d_name, 2047, 2047 );
+    if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
+    new_entry.type = APG_DIRENT_OTHER;
+    if ( S_ISREG( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_FILE; }
+    if ( S_ISDIR( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_DIR; }
+    if ( S_ISLNK( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_SYMLINK; }
+    new_entry.path     = strdup( entry->d_name );
+    ( *list_ptr )[n++] = new_entry;
+  }
+  printf( "n = %i count = %i\n", n, count );
+  closedir( folder );
+#else
+
+#endif
+  printf( "n = %i count = %i\n", n, count );
+  *n_list = n;
+  // Sort in alphabetical order by default (because mostly I want to print the list).
+  qsort( *list_ptr, n, sizeof( apg_dirent_t ), _dir_contents_cmp );
+  return true;
+}
+
+bool apg_free_dir_contents_list( apg_dirent_t** list_ptr, int n_list ) {
+  if ( !list_ptr ) { return false; }
+  for ( int i = 0; i < n_list; i++ ) {
+    if ( ( *list_ptr )[i].path ) { free( ( *list_ptr )[i].path ); }
+  }
+  free( *list_ptr );
+  *list_ptr = NULL;
+
+  return true;
 }
 
 bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
