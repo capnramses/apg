@@ -626,15 +626,15 @@ int64_t apg_file_size( const char* filename ) {
 static bool _fix_dir_slashes( char* path, int max_len ) {
   int len = strlen( path );
   // "anton\\"
-  if ( path[len - 2] == '\\' && path[len - 1] == '\\' ) {
+  if ( len > 2 && path[len - 2] == '\\' && path[len - 1] == '\\' ) {
     path[len - 2] = '/';
     path[len - 1] = '\0';
     // "anton\"
-  } else if ( path[len - 1] == '\\' ) {
+  } else if ( len >= 1 && path[len - 1] == '\\' ) {
     path[len - 1] = '/';
     path[len]     = '\0';
     // "anton"
-  } else if ( path[len - 1] != '/' ) {
+  } else if ( len >= 1 && path[len - 1] != '/' ) {
     if ( len + 1 >= max_len ) { return false; }
     path[len]     = '/';
     path[len + 1] = '\0';

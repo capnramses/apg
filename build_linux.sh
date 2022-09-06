@@ -17,6 +17,8 @@ cd apg
 $CC $FLAGS -o test_rle_compress_file.bin tests/rle_compress.c -I ./
 $CC $FLAGS -o test_rle_string.bin tests/rle_test.c -I ./
 $CC $FLAGS -o test_hash.bin tests/hash_test.c -I ./
+$CC $FLAGS -o test_is_file.bin tests/is_file.c -I ./
+$CC $FLAGS -o test_dir_list.bin tests/dir_list.c -I ./
 cd ..
 
 #
