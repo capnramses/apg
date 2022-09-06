@@ -41,4 +41,18 @@ set LINKER_FLAGS=/out:bigfile_test.exe
 set SRC=..\tests\test_big_file.c
 cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
 
+REM ==============================================================
+REM IS FILE TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:is_file_test.exe
+set SRC=..\tests\is_file.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
+
+REM ==============================================================
+REM IS FILE TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:dir_list_test.exe
+set SRC=..\tests\dir_list.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
+
 pause

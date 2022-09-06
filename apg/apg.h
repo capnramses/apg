@@ -162,7 +162,7 @@ typedef struct apg_file_t {
   size_t sz; // Size of memory pointed to by data_ptr in bytes.
 } apg_file_t;
 
-typedef enum apg_dirent_type_t { APG_DIRENT_NONE, APG_DIRENT_FILE, APG_DIRENT_DIR, APG_DIRENT_SYMLINK, APG_DIRENT_OTHER } apg_dirent_type_t;
+typedef enum apg_dirent_type_t { APG_DIRENT_NONE, APG_DIRENT_FILE, APG_DIRENT_DIR, APG_DIRENT_OTHER } apg_dirent_type_t;
 
 /** A directory entry. */
 typedef struct apg_dirent_t {
@@ -170,25 +170,25 @@ typedef struct apg_dirent_t {
   char* path;
 } apg_dirent_t;
 
-/**
+/** Check if a path is a valid file.
  * @return
- *   False if path is not a file.
- *   False on any error.
- *   True if path was a file.
+ * False if path is not a file.
+ * False on any error.
+ * True if path was a file.
  */
 bool apg_is_file( const char* path );
 
-/**
+/** Check if a path is a valid directory.
  * @return
- *   False if path is not a directory.
- *   False on any error.
- *   True if path was a directory.
+ * False if path is not a directory.
+ * False on any error.
+ * True if path was a directory.
  */
 bool apg_is_dir( const char* path );
 
 /** Get a file's size. Supports large (multi-GB) files.
  * @return
- *   Size in bytes of file given by filename, or -1 on error.
+ * Size in bytes of file given by filename, or -1 on error.
  */
 int64_t apg_file_size( const char* filename );
 
@@ -250,7 +250,7 @@ bool apg_file_to_str( const char* file_name, int64_t max_len, char* str_ptr );
 /*=================================================================================================
 LOG FILES
 =================================================================================================*/
-/* make bad log args print compiler warnings. note: mingw sucks for this */
+/* Make bad log args print compiler warnings. Note: mingw sucks for this. */
 #if defined( __clang__ )
 #define ATTRIB_PRINTF( fmt, args ) __attribute__( ( __format__( __printf__, fmt, args ) ) )
 #elif defined( __MINGW32__ )
@@ -475,7 +475,6 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
 #include <dbghelp.h> /* SymInitialize */
 #endif
 #else
-#include <dirent.h> /* Directories. */
 #include <execinfo.h>
 #include <strings.h> /* for strcasecmp */
 #include <unistd.h>  /* linux-only? */
@@ -601,16 +600,36 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
 /*=================================================================================================
 FILES IMPLEMENTATION
 =================================================================================================*/
+#ifndef _MSC_VER
+#include <dirent.h> /* Directories. */
+#endif
+
 bool apg_is_file( const char* path ) {
   struct apg_stat_t path_stat;
   if ( 0 != apg_stat( path, &path_stat ) ) { return false; }
+#ifdef _MSC_VER
+  return path_stat.st_mode & _S_IFREG;
+#else /* POSIX */
   return S_ISREG( path_stat.st_mode );
+#endif
 }
 
 bool apg_is_dir( const char* path ) {
+  char tmp[2048];
+  { // Remove trailing slashes because Windows/MinGW stat() can't handle them.
+    tmp[0] = '\0';
+    apg_strncat( tmp, path, 2047, 2047 );
+    int len = (int)strlen( tmp );
+    if ( len > 1 && tmp[len - 2] == '\\' && tmp[len - 1] == '\\' ) { tmp[len - 2] = tmp[len - 1] = '\0'; }
+    if ( len > 0 && ( tmp[len - 1] == '/' || tmp[len - 1] == '\\' ) ) { tmp[len - 1] = '\0'; }
+  }
   struct apg_stat_t path_stat;
-  if ( 0 != apg_stat( path, &path_stat ) ) { return false; }
+  if ( 0 != apg_stat( tmp, &path_stat ) ) { return false; }
+#ifdef _MSC_VER
+  return path_stat.st_mode & _S_IFDIR;
+#else /* POSIX */
   return S_ISDIR( path_stat.st_mode );
+#endif
 }
 
 int64_t apg_file_size( const char* filename ) {
@@ -624,7 +643,7 @@ int64_t apg_file_size( const char* filename ) {
 
 /** Make sure a path string ends with a Unix-style directory slash. */
 static bool _fix_dir_slashes( char* path, int max_len ) {
-  int len = strlen( path );
+  int len = (int)strlen( path );
   // "anton\\"
   if ( len > 2 && path[len - 2] == '\\' && path[len - 1] == '\\' ) {
     path[len - 2] = '/';
@@ -643,13 +662,20 @@ static bool _fix_dir_slashes( char* path, int max_len ) {
 }
 
 static int _dir_contents_count( const char* path ) {
+  char tmp[2048];
   int count = 0;
   if ( !path ) { return count; }
   if ( !apg_is_dir( path ) ) { return count; }
-#ifndef _WIN32
+#ifdef _MSC_VER /* MSVC */
+  WIN32_FIND_DATA fdFile;
+  HANDLE hFind = NULL;
+  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
+  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
+  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
+  FindClose( hFind );                                       // Clean-up global state.
+#else                                                       /* POSIX (including MinGW on Windows) */
   struct dirent* entry;
   struct apg_stat_t path_stat;
-  char tmp[2048];
   DIR* folder = opendir( path );
   if ( folder == NULL ) { return count; }
   while ( ( entry = readdir( folder ) ) ) {
@@ -658,16 +684,9 @@ static int _dir_contents_count( const char* path ) {
     if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
     apg_strncat( tmp, entry->d_name, 2047, 2047 );
     if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
-    if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) || S_ISLNK( path_stat.st_mode ) ) { count++; }
+    if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) ) { count++; }
   } // endwhile
   closedir( folder );
-#else /* _WIN32 */
-  WIN32_FIND_DATA fdFile;
-  HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
-  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
-  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                                       // Clean-up global state.
 #endif
   return count;
 }
@@ -683,14 +702,31 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
   if ( !apg_is_dir( path_ptr ) ) { return false; }
 
   apg_dirent_t new_entry;
-  struct apg_stat_t path_stat;
   char tmp[2048];
   int count = _dir_contents_count( path_ptr ); // Loop over once to let us allocate array in one go.
   int n     = 0;
   *n_list   = 0;
   *list_ptr = calloc( count, sizeof( apg_dirent_t ) );
 
-#ifndef _WIN32
+#ifdef _MSC_VER /* MSVC */
+  WIN32_FIND_DATA fdFile;
+  HANDLE hFind = NULL;
+  sprintf( tmp, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
+  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
+  do {
+    tmp[0] = '\0';
+    apg_strncat( tmp, path_ptr, 2045, 2045 );
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    apg_strncat( tmp, fdFile.cFileName, 2047, 2047 );
+
+    new_entry.type = APG_DIRENT_FILE;
+    if ( fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) { new_entry.type = APG_DIRENT_DIR; }
+    new_entry.path     = strdup( fdFile.cFileName );
+    ( *list_ptr )[n++] = new_entry;
+  } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
+  FindClose( hFind );                         // Clean-up global state.
+#else                                         /* POSIX (including MinGW on Windows) */
+  struct apg_stat_t path_stat;
   struct dirent* entry_ptr;
   DIR* folder = opendir( path_ptr );
   if ( folder == NULL ) { return false; }
@@ -705,30 +741,10 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
     new_entry.type = APG_DIRENT_OTHER;
     if ( S_ISREG( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_FILE; }
     if ( S_ISDIR( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_DIR; }
-    if ( S_ISLNK( path_stat.st_mode ) ) { new_entry.type = APG_DIRENT_SYMLINK; }
     new_entry.path     = strdup( entry_ptr->d_name );
     ( *list_ptr )[n++] = new_entry;
   }
-
   closedir( folder );
-
-#else /* _WIN32 */
-  WIN32_FIND_DATA fdFile;
-  HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
-  if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
-  do {
-    tmp[0] = '\0';
-    apg_strncat( tmp, path, 2045, 2045 );
-    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
-    apg_strncat( tmp, fdFile.cFileName, 2047, 2047 );
-
-    new_entry.type = APG_DIRENT_FILE;
-    if ( fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) { new_entry.type = APG_DIRENT_DIR; }
-    new_entry.path     = strdup( fdFile.cFileName );
-    ( *list_ptr )[n++] = new_entry;
-  } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                         // Clean-up global state.
 #endif
 
   *n_list = n;
