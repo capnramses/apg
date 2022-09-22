@@ -50,10 +50,11 @@ Technical Details:
 TODO:
 ==============================================================
 - Support more glyphs - e.g. French { ç â à }
+- Whole-word wrap rather than char wrap. (Or char wrap with a dash).
 
 History:
 ==============================================================
-0.1.1 - 2022 Sep 22 - Tidied comments. Character-based word-wrap option.
+0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
 0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
 0.0.5 - 2021 Jan 31 - apg_pixfont_image_size_for_str() always returns even dimensions, padding a pixel if required. Helps image alignment.
 0.0.4 - 2021 Jan 05 - Removed vflip again, to simplify code in several places.
@@ -79,7 +80,7 @@ extern "C" {
  * @param w,h             Minimum dimensions of image require to fix the whole string.
  * @param thickness       A scaling factor for the text ( default is 1px thick glyph stems ).
  * @param add_outline     If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes.
- * @param word_wrap_chars If a number greater than 0 is provided, then the text will limit line width the that many characters.
+ * @param col_max         If a number greater than 0 is provided, then the text will limit line width to that many characters.
  *                        If the current line exceeds the character count then it will wrap to the next line.
  *
  * @return            `APG_PIXFONT_FAILURE` on error (zero-length strings, NULL pointer args), otherwise success.
@@ -91,7 +92,7 @@ extern "C" {
  * - To address this you could pad the image, or set OpenGL byte alignment to 1.
  * - If you want power-of-two sized images then allocate the next power-of-two size up.
  */
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int word_wrap_chars );
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int col_max );
 
 /** Writes an ASCII string into an image using the pixel font.
  * Allocate image memory first and clear to a background colour as desired. The pixel font text writes over the top in white.
@@ -105,13 +106,13 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
  * @param thickness       A scaling factor for the text ( default is 1px thick glyph stems ). Useful for making big headings.
  * @param add_outline     If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes.
  *                        Note that the outline will not scale, it stays 1px thick, which gives a consistent look.
- * @param word_wrap_chars If a number greater than 0 is provided, then the text will limit line width the that many characters.
+ * @param col_max         If a number greater than 0 is provided, then the text will limit line width the that many characters.
  *                        If the current line exceeds the character count then it will wrap to the next line.
  *
  * @return           Returns `APG_PIXFONT_FAILURE` on error, otherwise success.
  */
 int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline, int word_wrap_chars );
+  unsigned char a, int thickness, int add_outline, int col_max );
 
 #ifdef __cplusplus
 }

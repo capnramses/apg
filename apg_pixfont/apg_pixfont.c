@@ -90,7 +90,7 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int word_wrap_chars ) {
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int col_max ) {
   if ( !ascii_str || !w || !h || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   *w = *h = 0;
@@ -100,16 +100,22 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
 
   int x_cursor = 0, y_cursor = 0, max_x = 0;
 
-  for ( int i = 0; i < len; i++ ) {
+  for ( int i = 0, col = 0; i < len; i++ ) {
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
     if ( '\n' == ascii_str[i] ) {
       y_cursor += _font_img_h;
-      x_cursor = 0;
+      x_cursor = col = 0;
       continue;
+    }
+    if ( col_max > 0 && col >= col_max ) {
+      y_cursor += _font_img_h;
+      x_cursor = col = 0;
+      if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
     }
     if ( ' ' == ascii_str[i] ) {
       x_cursor += 5; // leave a gap
       max_x = x_cursor > max_x ? x_cursor : max_x;
+      col++;
       continue;
     }
     int additional_i = 0;
@@ -117,8 +123,9 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
     max_x = x_cursor > max_x ? x_cursor : max_x;
+    col++;
   } // endfor chars in str
-  ;
+
   *w = max_x;                  // each char is 6px wide + 1 spacing px
   *h = _font_img_h + y_cursor; // only 1 row of text supported for now
 
@@ -155,7 +162,7 @@ static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline, int word_wrap_chars ) {
+  unsigned char a, int thickness, int add_outline, int col_max ) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   int len      = _apg_pixfont_strnlen( ascii_str, APG_PIXFONT_MAX_STRLEN );
@@ -165,15 +172,23 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
   uint8_t colour[4] = {r, g, b, a};
   if ( 2 == n_channels ) { colour[1] = a; } // 2-channel is usually RedAlpha, not RG.
 
-  for ( int i = 0; i < len; i++ ) {
+  for ( int i = 0, col = 0; i < len; i++ ) {
     if ( '\n' == ascii_str[i] ) {
       y_cursor += _font_img_h * thickness;
-      x_cursor = 0;
+      x_cursor = col = 0;
       continue;
+    }
+    // Here separately to avoid double line-breaks if a `\n` was on the char limit. Note no `continue;` statement,
+    // so we still print the overlapping char.
+    if ( col_max > 0 && col >= col_max ) {
+      y_cursor += _font_img_h * thickness;
+      x_cursor = col = 0;
+      if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
     }
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
     if ( ' ' == ascii_str[i] ) {
       x_cursor += 5 * thickness; // leave a gap
+      col++;
       continue;
     }
     int additional_i = 0;
@@ -200,6 +215,7 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
       }   // endfor glyph x
     }     // endfor glyph y
     x_cursor += spacing_px * thickness;
+    col++;
   } // endfor chars in str
 
 	// NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
