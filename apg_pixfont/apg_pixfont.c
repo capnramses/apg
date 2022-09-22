@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.1.0
+/* apg_pixfont - C Pixel Font Utility v0.1.1
 C99 Implementation
 See header file for licence and instructions.
 Anton Gerdelan 2019
@@ -90,7 +90,7 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline ) {
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int word_wrap_chars ) {
   if ( !ascii_str || !w || !h || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   *w = *h = 0;
@@ -155,7 +155,7 @@ static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline ) {
+  unsigned char a, int thickness, int add_outline, int word_wrap_chars ) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   int len      = _apg_pixfont_strnlen( ascii_str, APG_PIXFONT_MAX_STRLEN );

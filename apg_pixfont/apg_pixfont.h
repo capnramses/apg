@@ -73,22 +73,25 @@ extern "C" {
 #define APG_PIXFONT_SUCCESS 1
 #define APG_PIXFONT_MAX_STRLEN 2048
 
-/** Get image dimensions required for writing full string into with str_into_image()
+/** Get image dimensions required for writing full string into with str_into_image().
  *
- * @param ascii_str   Null-terminated string to render. ASCII plus a few basic UTF-8 encoded Unicode Latin characters are supported.
- * @param w,h         Minimum dimensions of image require to fix the whole string.
- * @param thickness   A scaling factor for the text ( default is 1px thick glyph stems ).
- * @param add_outline If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes.
-
-RETURNS:
-* APG_PIXFONT_FAILURE on error (zero-length strings, NULL pointer args), otherwise success
-
-CAVEATS: image widths will always tightly fit text size
-* Very short strings, eg '|' will produce images that are smaller than 4-byte-aligned memory expected by eg OpenGL textures.
-  To address this you could pad the image, or set OpenGL byte alignment to 1
-* If you want power-of-two sized images then allocate the next power-of-two size up.
-*/
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline );
+ * @param ascii_str       Null-terminated string to render. ASCII plus a few basic UTF-8 encoded Unicode Latin characters are supported.
+ * @param w,h             Minimum dimensions of image require to fix the whole string.
+ * @param thickness       A scaling factor for the text ( default is 1px thick glyph stems ).
+ * @param add_outline     If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes.
+ * @param word_wrap_chars If a number greater than 0 is provided, then the text will limit line width the that many characters.
+ *                        If the current line exceeds the character count then it will wrap to the next line.
+ *
+ * @return            `APG_PIXFONT_FAILURE` on error (zero-length strings, NULL pointer args), otherwise success.
+ *
+ * @note
+ * - Image widths returned will always tightly fit text size. You can, however, use a large image than this.
+ * - If the provided image is smaller than the reported size required then text will appear cut off on the image boundary.
+ * - Very short strings, eg '|' will produce images that are smaller than 4-byte-aligned memory expected by eg OpenGL textures.
+ * - To address this you could pad the image, or set OpenGL byte alignment to 1.
+ * - If you want power-of-two sized images then allocate the next power-of-two size up.
+ */
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int word_wrap_chars );
 
 /** Writes an ASCII string into an image using the pixel font.
  * Allocate image memory first and clear to a background colour as desired. The pixel font text writes over the top in white.
@@ -96,17 +99,19 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
  * @param ascii_str       Null-terminated string to render. ASCII plus a few basic UTF-8 encoded Unicode Latin characters are supported.
  * @param image           A pre-allocated block of memory to draw the image into. Use image_size_for_str() to find the size required for this.
  * @param w,h             Dimensions of image to write into. If text pixels extend out of these bounds it won't attempt to write anything there.
- * @param vertically_flip Image can be vertically flipped (0=no,1=yes) for eg OpenGL textures.
+ * @param vertically_flip Image can be vertically flipped (0=no,1=yes) for e.g. OpenGL textures.
  * @param n_channels      1 for greyscale, 2 for RG, 3 for RGB, 4 for RGBA. if using 2-4 then size memory allocated for image should reflect that.
  * @param r,g,b,a         Colour of the text. 1-channel uses only red colour. 2-channel uses only red and alpha. 3-channel uses r,g,b. 4-channel uses all.
  * @param thickness       A scaling factor for the text ( default is 1px thick glyph stems ). Useful for making big headings.
- * @param add_outline     If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes. Note that the outline will not scale, it stays
- * 1px thick, which gives a consistent look.
+ * @param add_outline     If the text will add an outline to the right and bottom of glyph pixels 0=no, 1=yes.
+ *                        Note that the outline will not scale, it stays 1px thick, which gives a consistent look.
+ * @param word_wrap_chars If a number greater than 0 is provided, then the text will limit line width the that many characters.
+ *                        If the current line exceeds the character count then it will wrap to the next line.
  *
  * @return           Returns `APG_PIXFONT_FAILURE` on error, otherwise success.
  */
 int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline );
+  unsigned char a, int thickness, int add_outline, int word_wrap_chars );
 
 #ifdef __cplusplus
 }
