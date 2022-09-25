@@ -54,6 +54,7 @@ TODO:
 
 History:
 ==============================================================
+0.2.0 - 2022 Sep 25 - Word-wrap function.
 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
 0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
 0.0.5 - 2021 Jan 31 - apg_pixfont_image_size_for_str() always returns even dimensions, padding a pixel if required. Helps image alignment.
@@ -73,6 +74,14 @@ extern "C" {
 #define APG_PIXFONT_FAILURE 0
 #define APG_PIXFONT_SUCCESS 1
 #define APG_PIXFONT_MAX_STRLEN 2048
+
+/** Word-wrap a string at col_max by converting white-space to line breaks between words, where appropriate.
+ *  Note that very long words are not split by this function; breaking those is handled inside the other functions, when drawing.
+ *  The original string is modified, but the length of the string is never changed.
+ *  The combination of the above two points means that sometimes gaps are left at the end of lines, as this function does not (yet) anticipate
+ *  long words being split later. This should be an edge-case, as whole-words typically not not exceed a line length.
+ */
+void apg_pixfont_word_wrap_str( char* str_ptr, int col_max );
 
 /** Get image dimensions required for writing full string into with str_into_image().
  *

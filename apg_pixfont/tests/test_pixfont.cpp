@@ -1,30 +1,40 @@
+/* test_pixfont.cpp - Test program for apg_pixfont.
+C++ Implementation
+See apg_pixfont.h for library licence and instructions.
+Anton Gerdelan 2019
+============================================================== */
+
 #include "apg_pixfont.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include <stdio.h>
 
-#define N_TEST_STRINGS 7
+#define N_TEST_STRINGS 8
 
 int main() {
   const char* test_strings[N_TEST_STRINGS] = {
-    "Hello, World!",                                 //
-    "This is a line\nbreak - did it work?",          //
-    "über spaß!",                                    //
-    "An bhfuil cead agam dul\ngo dtí an leithreas?", //
-    "This is My Lovely, Big Heading",                //
-    "Absolute Unit of a Text",                       //
-    "Nobody Needs\nText This\nHUGE!"                 //
+    "Hello, World!",                                                                                           //
+    "This is a line\nbreak - did it work?",                                                                    //
+    "über spaß!",                                                                                              //
+    "An bhfuil cead agam dul\ngo dtí an leithreas?",                                                           //
+    "This is My Lovely, Big Heading",                                                                          //
+    "Absolute Unit of a Text",                                                                                 //
+    "Nobody Needs\nText This\nHUGE!",                                                                          //
+    "Small is ok but but VERYVERYVERYVERYVERYVERYVERYVERY long STRINGSINHERETHEYWONTSTOPSOLONGOMG to be here." //
   };
-  const int n_chans[N_TEST_STRINGS]            = { 1, 2, 3, 4, 4, 4, 4 };
-  int thickness[N_TEST_STRINGS]                = { 1, 1, 1, 1, 2, 3, 10 };
-  bool outlines[N_TEST_STRINGS]                = { false, true, false, true, true, true, true };
-  const char* output_filenames[N_TEST_STRINGS] = { "0.png", "1.png", "2.png", "3.png", "4.png", "5.png", "6.png" };
+  const int n_chans[N_TEST_STRINGS]            = { 1, 2, 3, 4, 4, 4, 4, 4 };
+  int thickness[N_TEST_STRINGS]                = { 1, 1, 1, 1, 2, 3, 10, 1 };
+  bool outlines[N_TEST_STRINGS]                = { false, true, false, true, true, true, true, true };
+  const char* output_filenames[N_TEST_STRINGS] = { "0.png", "1.png", "2.png", "3.png", "4.png", "5.png", "6.png", "7.png" };
 
   for ( int i = 0; i < N_TEST_STRINGS; i++ ) {
-    // ALLOCATE MEMORY FOR TEXT IMAGE
     int w = 0, h = 0;
 
-    bool result = apg_pixfont_image_size_for_str( test_strings[i], &w, &h, thickness[i], outlines[i], 10 );
+    char* str = strdup( test_strings[i] );
+    apg_pixfont_word_wrap_str( str, 10 );
+
+    // FIND SIZE REQUIRED FOR TEXT IMAGE
+    bool result = apg_pixfont_image_size_for_str( str, &w, &h, thickness[i], outlines[i], 10 );
     if ( !result ) {
       fprintf( stderr, "ERROR: sizing string image %i\n", i );
       return 1;
@@ -32,7 +42,7 @@ int main() {
 
     // CREATE TEXT IMAGE
     unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
-    result                  = apg_pixfont_str_into_image( test_strings[i], text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], 10 );
+    result                  = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], 10 );
     if ( !result ) {
       fprintf( stderr, "ERROR: creating string image %i\n", i );
       return 1;
@@ -47,6 +57,7 @@ int main() {
 
     // FREE IMAGE MEMORY
     free( text_img );
+    free( str );
   }
 
   // convert a font image file to C array for pasting into apg_pixfont.c

@@ -1,10 +1,11 @@
-/* apg_pixfont - C Pixel Font Utility v0.1.1
+/* apg_pixfont - C Pixel Font Utility v0.2.0
 C99 Implementation
 See header file for licence and instructions.
 Anton Gerdelan 2019
 ============================================================== */
 #include "apg_pixfont.h"
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -90,6 +91,34 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void apg_pixfont_word_wrap_str( char* str_ptr, int col_max ) {
+	if ( !str_ptr || col_max <= 0 ) { return; }
+
+  int len = _apg_pixfont_strnlen( str_ptr, APG_PIXFONT_MAX_STRLEN );
+	if ( len < col_max ) { return; } // Entire string fits in one line.
+
+	int word_start = 0, word_n = 0, col = 0;
+	for ( int i = 0; i < len; i++ ) {
+		if ( col > col_max ) {
+			if ( word_start > 0 ) {
+				str_ptr[word_start - 1] = '\n'; // Might introduce double line-breaks.
+				col = word_n;
+			}
+		}
+		if ( isspace( str_ptr[i] ) ) {
+			word_n = 0;
+			word_start = i + 1;
+			if ( '\n' == str_ptr[i] ) {
+				col = 0;
+				continue;
+			}
+		} else {
+			word_n++;
+		}
+		col++;
+	}
+}
+
 int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int col_max ) {
   if ( !ascii_str || !w || !h || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
