@@ -1,8 +1,6 @@
-/* apg_pixfont - C Pixel Font Utility v0.1.0
+/* apg_pixfont - C Pixel Font Utility
 LICENCE: see bottom of this file
-==============================================================
-Authors and Contributors:
-- Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
+By Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
 
 What Does It Do?
 ==============================================================
@@ -25,21 +23,59 @@ Instructions:
 
 2. Find out the required image dimensions
 
-int w, h;
-int n_channels = 1;
-int thickness = 1;
-bool outlines = false;
+    int w, h;              // Image dimensions.
+    int n_channels = 1;    // Greyscale image output.
+    int thickness = 1;     // Single-pixel thick glyph lines.
+    int col_max = 0;       // Maximum characters in a line. Zero means no limit.
+    bool outlines = false; // If true, also draw a partial outline.
 
-apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines );
+    apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines, col_max );
 
 3. Allocate the memory
 
-unsigned char* img_mem = (unsigned char*)malloc( w * h * n_channels );
-memset( img_mem, 0x00, w * h * n_channels );
+    unsigned char* img_mem = (unsigned char*)malloc( w * h * n_channels );
+    memset( img_mem, 0x00, w * h * n_channels );
 
 4. Then paint the string onto the memory
 
-apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines );
+    apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines, col_max );
+
+Advanced Tips:
+==============================================================
+*. If you want characters to wrap around at some line limit, you can set `col_max` to some number. This will just do the following:
+
+From:
+
+     col max
+       |
+A verylongword.
+       |
+
+To:
+       |
+A verylo
+ngword.
+       |
+
+*. If you want words to wrap neatly at the end of a line, you can call the replace whitespace preceding
+  overlapping words with linebreaks. Do this before calling the functions in steps 2 and 3.
+
+    apg_pixfont_word_wrap_str( my_string, 60 );
+
+This will achieve the following:
+
+From:
+
+         col max
+            |
+A verylongword.
+            |
+
+To:
+            |
+A
+verylongword.
+            |
 
 ==============================================================
 
@@ -50,10 +86,10 @@ Technical Details:
 TODO:
 ==============================================================
 - Support more glyphs - e.g. French { ç â à }
-- Whole-word wrap rather than char wrap. (Or char wrap with a dash).
 
 History:
 ==============================================================
+0.2.1 - 2022 Sep 26 - Readme correction.
 0.2.0 - 2022 Sep 25 - Word-wrap function.
 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
 0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
