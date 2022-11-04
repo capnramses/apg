@@ -40,22 +40,23 @@ http://fileformats.archiveteam.org/wiki/Amiga_Module
 ToDo
 ---------------------
 
-* Move raw sample rip into a test/ or examples/ program.
-* Figure out correct frequency for each sample and create a .wav rip test/
-  program.
+* DONE Move raw sample rip into a test/ or examples/ program.
+* DONE Figure out correct frequency for each sample and create a .wav rip test/ program.
+* Start a first, messy, player using PortAudio.
 * Figure out the playback row advance speed and whether to pin it to PAL or NTSC.
 * Write a full tracker/player example program using PortAudio.
 * Add repeat/loop features to samples.
 * Add effects and finetune values to samples.
+* Maybe try web asm -> web player? The library as .wasm and a web front-end could work well.
 * Graphical tracker player demo (probably pulseaudio+allegro/sdl/opengl or similar).
 * Interactive visual track editor demo.
 * File writing.
-* Maybe try web asm -> web player?
 * Support other module formats:
   * IT support (Impulse Tracker) https://en.wikipedia.org/wiki/Impulse_Tracker#IT_file_format
   * S3M (Scream Tracker) https://en.wikipedia.org/wiki/S3M_(file_format)
   * XM support (Extended Module - Triton's FastTracker 2) https://en.wikipedia.org/wiki/XM_(file_format)
   * Other formats here https://en.wikipedia.org/wiki/Module_file
+
 History
 ---------------------
 

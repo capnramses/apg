@@ -1,3 +1,6 @@
+// apg_mod - test/example - print .mod song score rows to stdout.
+// By Anton Gerdelan
+
 #include "apg_mod.h"
 #include <stdint.h>
 #include <stdio.h>

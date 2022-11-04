@@ -1,3 +1,7 @@
+// apg_mod - test/example - extract audio samples as .wav files.
+// Depends on apg_wav to do the conversion.
+// By Anton Gerdelan
+
 #include "apg_mod.h"
 #include "apg_wav.h"
 #include <stdint.h>
@@ -33,7 +37,7 @@ int main( int argc, char** argv ) {
       printf( "couldnt write a sample for %i\n", i );
       continue;
     }
-    printf( "Wrote %s, size %u.\n", tmp );
+    printf( "Wrote %s\n", tmp );
   }
 
   if ( !apg_mod_free( &mod ) ) {
