@@ -81,7 +81,7 @@ cd ..
 #
 echo "building apg_mod tests..."
 cd apg_mod
-$CC $FLAGS -std=c99 -I./ tests/main.c apg_mod.c -lm
+bash ./build.sh
 cd ..
 
 #
