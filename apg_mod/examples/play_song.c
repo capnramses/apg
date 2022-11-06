@@ -46,7 +46,8 @@ int main( int argc, char** argv ) {
 
   printf( "Loaded song: %s\n", mod.song_name );
 
-  // TODO WIP Create buffers for sound samples.
+#if 0
+  // TODO WIP Create buffers for sound samples?.
   //
   for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
     if ( 0 == mod.sample_sz_bytes[i] ) { continue; }
@@ -56,6 +57,7 @@ int main( int argc, char** argv ) {
 
     // bool ret           = apg_wav_write( tmp, mod.sample_data_ptrs[i], mod.sample_sz_bytes[i], 1, sample_rate_hz, n_samples, 16 );
   }
+#endif
 
   for ( int o_idx = 0; o_idx < mod.n_orders; o_idx++ ) {
     uint8_t p_idx = mod.orders_ptr[o_idx];
