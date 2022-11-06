@@ -29,10 +29,10 @@ beside every row print:
 #include <stdlib.h>
 #include <string.h>
 
-PaStream* stream        = NULL;    // Usually just 1 stream per device.
-int n_stream_chans      = 1;       // Mono or stereo.
-PaSampleFormat fmt      = paInt16; // I can't remember if this is correct but its 16int in dump_wavs.
-uint32_t sample_rate_hz = 11025;
+PaStream* stream        = NULL;      // Usually just 1 stream per device.
+int n_stream_chans      = 2;         // Mono or stereo.
+PaSampleFormat fmt      = paFloat32; // paInt16; // I can't remember if this is correct but its 16int in dump_wavs.
+uint32_t sample_rate_hz = 11025;     // 48000 ???
 
 /* Callback that feeds wave data into PortAudio's stream during playback. */
 static int _pa_cb(                               //
@@ -47,6 +47,10 @@ static int _pa_cb(                               //
 
   apg_mod_t* mod_ptr = (apg_mod_t*)user_data_ptr;
   assert( mod_ptr );
+
+
+	// TEMP zero the output to stop random noise
+	memset( output_buffer_ptr, 0, 1024 );
 
 #if 0 // TODO! Fetch correct row->channel->note->sample
 
