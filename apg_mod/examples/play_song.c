@@ -29,11 +29,10 @@ beside every row print:
 #include <stdlib.h>
 #include <string.h>
 
-PaStream* stream        = NULL;         // Usually just 1 stream per device.
-int n_stream_chans      = 1;            // 2;            // Mono or stereo.
-PaSampleFormat fmt      = paInt16;      // paFloat32;    //  I can't remember if this is correct but its 16int in dump_wavs.
-uint32_t sample_rate_hz = 11025;        // 48000 ???
-apg_mod_note_t current_sample_notes[8]; // 1 per channel
+PaStream* stream        = NULL;    // Usually just 1 stream per device.
+int n_stream_chans      = 1;       // 2;            // Mono or stereo.
+PaSampleFormat fmt      = paInt16; // paFloat32;    //  I can't remember if this is correct but its 16int in dump_wavs.
+uint32_t sample_rate_hz = 11025;   // 48000 ???
 
 int curr_order      = 0;
 int curr_row        = 0;
@@ -84,7 +83,7 @@ static int _pa_cb(                               //
   }
 #endif
 
-  {
+  { // TODO don't do this here - do in main thread, mix, and just pass in pre-mixed buffer to iterate over
     if ( curr_order >= mod_ptr->n_orders ) { curr_order = 0; } // Loop
     uint8_t curr_pattern = mod_ptr->orders_ptr[curr_order];
 
@@ -94,11 +93,11 @@ static int _pa_cb(                               //
 
     apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
     if ( apg_mod_fetch_note( mod_ptr, curr_pattern, curr_row, curr_channel, &note ) ) {
-      // int idx = apg_mod_find_period_table_idx( note.period_value_12b );
+      int idx = apg_mod_find_period_table_idx( note.period_value_12b );
 
-      { // TODO mix all n channels' samples
+      if ( idx > -1 ) {
         // HACK just using channel 0
-        int s_idx        = current_sample_notes[0].sample_idx;
+        int s_idx        = note.sample_idx;
         int8_t* data_ptr = mod_ptr->sample_data_ptrs[s_idx];
         uint32_t data_sz = mod_ptr->sample_sz_bytes[s_idx];
 
@@ -113,14 +112,18 @@ static int _pa_cb(                               //
         if ( curr_buffer_seg + frames_per_buffer * 1 * sample_sz >= data_sz ) {
           curr_row++;
           curr_buffer_seg = 0;
-          if ( curr_row >= APG_MOD_N_PATTERN_ROWS ) {
-            curr_row = 0;
-            curr_order++;
-          }
         }
+      } else {
+        memset( output_buffer_ptr, 0, frames_per_buffer * 1 * sample_sz ); // no note in row so insert silence rather than repeat.
+        curr_row++;
+        curr_buffer_seg = 0;
+      } // endif idx
+      if ( curr_row >= APG_MOD_N_PATTERN_ROWS ) {
+        curr_row = 0;
+        curr_order++;
       }
-    }
-  }
+    } // endif fetch note
+  }   // endblock
 
   return 0;
 }
@@ -195,8 +198,8 @@ int main( int argc, char** argv ) {
       }
     }
   */
-  Pa_Sleep( 5000 ); // Wait for last note(s) to finish.
-  {                 // Shut down PortAudio
+  Pa_Sleep( 35000 ); // Wait for last note(s) to finish.
+  {                  // Shut down PortAudio
     err = Pa_StopStream( stream );
     if ( err != paNoError ) {
       printf( "PortAudio error: %s\n", Pa_GetErrorText( err ) );
