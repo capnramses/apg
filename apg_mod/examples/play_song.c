@@ -29,10 +29,16 @@ beside every row print:
 #include <stdlib.h>
 #include <string.h>
 
-PaStream* stream        = NULL;      // Usually just 1 stream per device.
-int n_stream_chans      = 2;         // Mono or stereo.
-PaSampleFormat fmt      = paFloat32; // paInt16; // I can't remember if this is correct but its 16int in dump_wavs.
-uint32_t sample_rate_hz = 11025;     // 48000 ???
+PaStream* stream        = NULL;         // Usually just 1 stream per device.
+int n_stream_chans      = 1;            // 2;            // Mono or stereo.
+PaSampleFormat fmt      = paInt16;      // paFloat32;    //  I can't remember if this is correct but its 16int in dump_wavs.
+uint32_t sample_rate_hz = 11025;        // 48000 ???
+apg_mod_note_t current_sample_notes[8]; // 1 per channel
+
+int curr_order      = 0;
+int curr_row        = 0;
+int curr_buffer_seg = 0;
+int sample_sz       = 2; // 2 bytes per wave data point?
 
 /* Callback that feeds wave data into PortAudio's stream during playback. */
 static int _pa_cb(                               //
@@ -48,9 +54,8 @@ static int _pa_cb(                               //
   apg_mod_t* mod_ptr = (apg_mod_t*)user_data_ptr;
   assert( mod_ptr );
 
-
-	// TEMP zero the output to stop random noise
-	memset( output_buffer_ptr, 0, 1024 );
+  // TEMP zero the output to stop random noise
+  // memset( output_buffer_ptr, 0, 1024 );
 
 #if 0 // TODO! Fetch correct row->channel->note->sample
 
@@ -78,6 +83,44 @@ static int _pa_cb(                               //
     // bool ret           = apg_wav_write( tmp, mod.sample_data_ptrs[i], mod.sample_sz_bytes[i], 1, sample_rate_hz, n_samples, 16 );
   }
 #endif
+
+  {
+    if ( curr_order >= mod_ptr->n_orders ) { curr_order = 0; } // Loop
+    uint8_t curr_pattern = mod_ptr->orders_ptr[curr_order];
+
+    // TODO loop over and combine all n (4) channels with e.g.
+    // for ( int curr_channel = 0; curr_channel < mod.n_chans; curr_channel++ ) {
+    int curr_channel = 0;
+
+    apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
+    if ( apg_mod_fetch_note( mod_ptr, curr_pattern, curr_row, curr_channel, &note ) ) {
+      // int idx = apg_mod_find_period_table_idx( note.period_value_12b );
+
+      { // TODO mix all n channels' samples
+        // HACK just using channel 0
+        int s_idx        = current_sample_notes[0].sample_idx;
+        int8_t* data_ptr = mod_ptr->sample_data_ptrs[s_idx];
+        uint32_t data_sz = mod_ptr->sample_sz_bytes[s_idx];
+
+        // curr_buffer_seg
+        if ( curr_buffer_seg + frames_per_buffer * 1 * sample_sz < data_sz ) {
+          memcpy( output_buffer_ptr, &data_ptr[curr_buffer_seg], frames_per_buffer * 1 * sample_sz );
+          curr_buffer_seg += frames_per_buffer * 1 * sample_sz;
+        } else {
+          memset( output_buffer_ptr, 0, frames_per_buffer * 1 * sample_sz );
+        }
+
+        if ( curr_buffer_seg + frames_per_buffer * 1 * sample_sz >= data_sz ) {
+          curr_row++;
+          curr_buffer_seg = 0;
+          if ( curr_row >= APG_MOD_N_PATTERN_ROWS ) {
+            curr_row = 0;
+            curr_order++;
+          }
+        }
+      }
+    }
+  }
 
   return 0;
 }
@@ -112,7 +155,7 @@ int main( int argc, char** argv ) {
     n_stream_chans,           // mono/stereo
     fmt,                      // 8-bit, 16-bit int or 32-bit float supported in this demo
     sample_rate_hz,           //
-    256,                      // frames per buffer to request from callback (can use paFramesPerBufferUnspecified)
+    256,                      // 256,                      // frames per buffer to request from callback (can use paFramesPerBufferUnspecified)
     _pa_cb,                   //
     &mod                      //
   );
@@ -126,32 +169,32 @@ int main( int argc, char** argv ) {
     printf( "PortAudio error: %s\n", Pa_GetErrorText( err ) );
     return 1;
   }
+  /*
+    // Loop over rows in song
+    for ( int o_idx = 0; o_idx < mod.n_orders; o_idx++ ) {
+      uint8_t p_idx = mod.orders_ptr[o_idx];
+      printf( "o%i/%i --p%i--\n", o_idx, mod.n_orders, p_idx );
+      for ( int r_idx = 0; r_idx < APG_MOD_N_PATTERN_ROWS; r_idx++ ) {
+        printf( "r%2i] ", r_idx );
+        // TODO reset channel buffers
+        for ( int c_idx = 0; c_idx < mod.n_chans; c_idx++ ) {
+          apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
+          if ( apg_mod_fetch_note( &mod, p_idx, r_idx, c_idx, &note ) ) {
+            int idx = apg_mod_find_period_table_idx( note.period_value_12b );
+            char tmp[4];
+            strcpy( tmp, "..." );
+            if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
+            printf( "%s %2i %2i %2i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
 
-  // Loop over rows in song
-  for ( int o_idx = 0; o_idx < mod.n_orders; o_idx++ ) {
-    uint8_t p_idx = mod.orders_ptr[o_idx];
-    printf( "o%i/%i --p%i--\n", o_idx, mod.n_orders, p_idx );
-    for ( int r_idx = 0; r_idx < APG_MOD_N_PATTERN_ROWS; r_idx++ ) {
-      printf( "r%2i] ", r_idx );
-      // TODO reset channel buffers
-      for ( int c_idx = 0; c_idx < mod.n_chans; c_idx++ ) {
-        apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
-        if ( apg_mod_fetch_note( &mod, p_idx, r_idx, c_idx, &note ) ) {
-          int idx = apg_mod_find_period_table_idx( note.period_value_12b );
-          char tmp[4];
-          strcpy( tmp, "..." );
-          if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
-          printf( "%s %2i %2i %2i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
-
-          // TODO copy note buffer into a channel buffer
+            current_sample_notes[c_idx] = note; // For use in PA callback.
+          }
         }
+        // TODO mix all channel buffers together
+        // TODO queue the mixed buffer to the end of the playing feed/buffer
+        printf( "\n" );
       }
-      // TODO mix all channel buffers together
-      // TODO queue the mixed buffer to the end of the playing feed/buffer
-      printf( "\n" );
     }
-  }
-
+  */
   Pa_Sleep( 5000 ); // Wait for last note(s) to finish.
   {                 // Shut down PortAudio
     err = Pa_StopStream( stream );
