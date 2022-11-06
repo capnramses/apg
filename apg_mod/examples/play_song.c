@@ -46,15 +46,15 @@ int main( int argc, char** argv ) {
 
   printf( "Loaded song: %s\n", mod.song_name );
 
-	// TODO WIP Create buffers for sound samples.
-	//
+  // TODO WIP Create buffers for sound samples.
+  //
   for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
     if ( 0 == mod.sample_sz_bytes[i] ) { continue; }
     uint32_t n_samples = mod.sample_sz_bytes[i] / sizeof( int16_t ); // not sure why this exists as a param if it can be derived from other params.
-    
-		// TODO put this stuff in a buffer: (I guess 'samples' here is the actual data-points on the sound waveform encoding.
 
-		//bool ret           = apg_wav_write( tmp, mod.sample_data_ptrs[i], mod.sample_sz_bytes[i], 1, sample_rate_hz, n_samples, 16 );
+    // TODO put this stuff in a buffer: (I guess 'samples' here is the actual data-points on the sound waveform encoding.
+
+    // bool ret           = apg_wav_write( tmp, mod.sample_data_ptrs[i], mod.sample_sz_bytes[i], 1, sample_rate_hz, n_samples, 16 );
   }
 
   for ( int o_idx = 0; o_idx < mod.n_orders; o_idx++ ) {
@@ -62,6 +62,7 @@ int main( int argc, char** argv ) {
     printf( "o%i/%i --p%i--\n", o_idx, mod.n_orders, p_idx );
     for ( int r_idx = 0; r_idx < APG_MOD_N_PATTERN_ROWS; r_idx++ ) {
       printf( "r%2i] ", r_idx );
+      // TODO reset channel buffers
       for ( int c_idx = 0; c_idx < mod.n_chans; c_idx++ ) {
         apg_mod_note_t note = ( apg_mod_note_t ){ .sample_idx = 0 };
         if ( apg_mod_fetch_note( &mod, p_idx, r_idx, c_idx, &note ) ) {
@@ -70,8 +71,12 @@ int main( int argc, char** argv ) {
           strcpy( tmp, "..." );
           if ( idx > -1 ) { strcpy( tmp, _note_names[idx] ); }
           printf( "%s %2i %2i %2i, ", tmp, note.sample_idx, note.effect_type_4b, note.effect_params );
+
+          // TODO copy note buffer into a channel buffer
         }
       }
+      // TODO mix all channel buffers together
+      // TODO queue the mixed buffer to the end of the playing feed/buffer
       printf( "\n" );
     }
   }
