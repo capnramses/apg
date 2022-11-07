@@ -99,7 +99,6 @@ static int _pa_cb(                               //
         // HACK just using channel 0
         int s_idx = note.sample_idx; // TODO wrong starting note - off by one?
 
-        fprintf( stderr, "o %i r  %i p %i sample idx %i\n", curr_order, curr_row, curr_pattern, s_idx );
 
         int8_t* data_ptr = mod_ptr->sample_data_ptrs[s_idx];
         uint32_t data_sz = mod_ptr->sample_sz_bytes[s_idx];
@@ -117,17 +116,20 @@ static int _pa_cb(                               //
 
         if ( curr_buffer_seg + frames_per_buffer * 1 * sample_sz >= data_sz ) {
           curr_row++;
+        fprintf( stderr, "o %i r  %i p %i sample idx %i\n", curr_order, curr_row, curr_pattern, s_idx );
           curr_buffer_seg = 0;
         }
       } else {
         memset( output_buffer_ptr, 0, frames_per_buffer * 1 * sample_sz );
         curr_row++;
+        fprintf( stderr, "o %i r  %i p %i \n", curr_order, curr_row, curr_pattern );
         curr_buffer_seg = 0;
       }
 
       if ( curr_row >= APG_MOD_N_PATTERN_ROWS ) {
         curr_row = 0;
         curr_order++;
+        fprintf( stderr, "o %i r  %i p %i \n", curr_order, curr_row, curr_pattern );
       }
     } // endif fetch note
   }   // endblock

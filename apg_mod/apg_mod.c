@@ -146,16 +146,17 @@ bool apg_mod_fetch_note( const apg_mod_t* mod_ptr, int pattern_idx, int row_idx,
 
   if ( !mod_ptr || !mod_ptr->mod_data_ptr || !note_ptr ) { return false; }
 
-  uint32_t offset = 1084 + pattern_idx * row_idx * channel_idx * APG_MOD_N_NOTE_BYTES;
+  uint32_t offset = 1084 + pattern_idx * 1024 + row_idx * 16 + channel_idx * APG_MOD_N_NOTE_BYTES; // TODO looks wrong - surely (pattern_idx * n_rows_in_a_pattern)
+                                                                                               // + row_idx... ?
   if ( offset + 4 > mod_ptr->mod_data_sz ) {
     fprintf( stderr, "ERROR fetching note - past EOF.\n" );
     return false;
   }
 
-  const uint8_t* byte_ptr    = mod_ptr->mod_data_ptr;
-  const uint8_t* note_bytes  = &byte_ptr[offset];
-  note_ptr->sample_idx       = ( note_bytes[0] & 0xF0 ) + ( note_bytes[2] >> 4 );
-  note_ptr->period_value_12b = ( ( note_bytes[0] & 0x0F ) << 8 ) + note_bytes[1];
+  const uint8_t* byte_ptr   = mod_ptr->mod_data_ptr;
+  const uint8_t* note_bytes = &byte_ptr[offset];
+  note_ptr->sample_idx       = ( note_bytes[0] & 0xF0 ) | ( ( note_bytes[2] >> 4 ) & 0x0F ); // original: ( note_bytes[0] & 0xF0 ) + ( note_bytes[2] >> 4 );
+  note_ptr->period_value_12b = ( ( (uint16_t)note_bytes[0] & 0x0F ) << 8 ) + (uint16_t)note_bytes[1]; // TODO - check 16-bit shift-conversion worked here
   note_ptr->effect_type_4b   = note_bytes[2] & 0x0F;
   note_ptr->effect_params    = note_bytes[3];
 
