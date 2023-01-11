@@ -1,75 +1,106 @@
-/*
-BMP File Reader/Writer Implementation
+/*****************************************************************************\
+apg_bmp - A BMP File Reader/Writer Library
 Original author: Anton Gerdelan
+Project URL:     https://github.com/capnramses/apg
+Licence:         See bottom of file.
+Language:        C89 ( Implementation is C99 )
 
-Version History:
-  3.2 - 22 March 2022. Minor signed/unsigned tweaks to constants.
-  3.1 - 18 March 2020.
+Contributors
+------------------------
+  Anton Gerdelan - Initial code.
+  Saija Sorsa    - Fuzz testing.
 
-Licence: see bottom of file.
-C89 ( Implementation is C99 )
-
-Contributors:
-- Anton Gerdelan - Initial code.
-- Saija Sorsa    - Fuzz testing.
-
-Instructions:
+Instructions
+------------------------
 - Just drop this header, and the matching .c file into your project.
+- If in a C++ project set these files to build as C, not C++.
 - To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
 
-Advantages:
-- The implementation is fast, simple, and supports more formats than most BMP reader libraries.
+Advantages
+------------------------
+- The implementation is fast, simple, and supports more formats than most
+  BMP reader libraries.
 - The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
-- The reader is robust to large files and malformed files, and will return any valid partial data in an image.
-- Reader supports 32bpp (with alpha channel), 24bpp, 8bpp, 4bpp, and 1bpp monochrome BMP images.
+- The reader is robust to large files and malformed files, and will return
+  any valid partial data in an image.
+- Reader supports 32bpp (with alpha channel), 24bpp, 8bpp, 4bpp, and 1bpp
+  monochrome BMP images.
 - Reader handles indexed BMP images using a colour palette.
 - Writer supports 32bpp RGBA and 24bpp uncompressed RGB images.
 
-Current Limitations:
+Current Limitations
+------------------------
 - 16-bit images not supported (don't have any samples to test on).
 - No support for interleaved channel bit layouts eg RGB101010 RGB555 RGB565.
 - No support for compressed BMP images, although in practice these are not used.
-- Output images with alpha channel are written in BITMAPINFOHEADER format.
-  For better alpha support in other apps the 124-bit v5 header could be used instead,
-	at the cost of some backward compatibility and bloat.
+- Images with alpha channel are written in BITMAPINFOHEADER format for maximum
+  backwards-compatibility. For wider alpha support in other apps the 124-bit v5
+  header could be used instead. Your own apps using apg_bmp_read() will still
+  read the alpha channel correctly.
 
-To Do:
-- FUZZING
-  - create a unique fuzz test set for (8,4,1 BPP).
-- (maybe) FEATURE Flipping the image based on negative width and height in header, and/or function arguments. 
-- (maybe) PERF ifdef intrinsics/asm for bitscan. Platform-specific code so won't include unless necessary.
-- (maybe) FEATURE Add parameter for padding output memory to eg 4-byte alignment or n channels.
-- (maybe) FEATURE Improved apps support in alpha channel writing (using v5 header).
-*/
+FAQ
+------------------------
+Q. What makes this image loader special? Why would I use it?
+
+This library started as a curiosity project, to see if I could read really old BMP files,
+and understand the format. It was then used as an example for a security class learning fuzzing.
+Because it was fuzzed it was used in some very large projects as an image loader.
+There are many other BMP loaders out there, but this one is pretty small and fast, and can handle
+some very old formats that are not broadly supported.
+There is a blog post about it here https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
+
+Q. Why won't Visual Studio won't compile this in my C++ project, can you change the code?
+
+This is a C library, just make sure the apg_bmp.c file is set to compile as C, not C++, and it will compile
+in with your C++.
+
+Q. Are you open to pull requests?
+
+Yes, but it's not being actively worked on, so turn-around time may be slow. If the PR is accepted, I'll
+add you to the Contributors list.
+
+Version History
+------------------------
+  3.3 - 11 Jan   2023. Fixed bug: images with alpha channel were y-flipped.
+  3.2 - 22 March 2022. Minor signed/unsigned tweaks to constants.
+  3.1 - 18 March 2020.
+\*****************************************************************************/
 
 #ifndef APG_BMP_H_
 #define APG_BMP_H_
+
+#ifdef _WIN32
+/** Explicit symbol export for building .DLLs with MSVC so it generates a corresponding .LIB. */
+#define APG_BMP_EXPORT __declspec( dllexport )
+#else
+#define APG_BMP_EXPORT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* CPP */
 
-/* Reads a bitmap from a file, allocates memory for the raw image data, and returns it.
-PARAMS
-  * w,h,     - Retrieves the width and height of the BMP in pixels.
-  * n_chans  - Retrieves the number of channels in the BMP.
-RETURNS
-  * Tightly-packed pixel memory in RGBA order. The caller must call free() on the memory.
-  * NULL on any error. Any allocated memory is freed before returning NULL. */
-unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans );
+/** Reads a bitmap from a file, allocates memory for the raw image data, and returns it.
+ * @param w,h     Retrieves the width and height of the BMP in pixels.
+ * @param n_chans Retrieves the number of channels in the BMP.
+ * @returns       Tightly-packed pixel memory in RGBA order. The caller must call free() on the memory.
+ *                NULL on any error. Any allocated memory is freed before returning NULL.
+ */
+APG_BMP_EXPORT unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans );
 
-/* Calls free() on memory created by apg_bmp_read */
-void apg_bmp_free( unsigned char* pixels_ptr );
+/** Calls free() on memory created by apg_bmp_read. */
+APG_BMP_EXPORT void apg_bmp_free( unsigned char* pixels_ptr );
 
-/* Writes a bitmap to a file.
-PARAMS
-  * filename   - e.g."my_bitmap.bmp". Must not be NULL.
-  * pixels_ptr - Pointer to tightly-packed pixel memory in RGBA order. Must not be NULL. There must be abs(w)*abs(h)*n_chans bytes in the memory pointed to.
-  * w,h,       - Width and height of the image in pixels.
-  * n_chans    - The number of channels in the BMP. 3 or 4 supported for writing, which means RGB or RGBA memory, respectively.
-RETURNS
-  * Zero on any error, non zero on success. */
-unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int w, int h, unsigned int n_chans );
+/** Writes a bitmap to a file.
+ * @param filename   e.g."my_bitmap.bmp". Must not be NULL.
+ * @param pixels_ptr Pointer to tightly-packed pixel memory in RGBA order. Must not be NULL.
+ *                   There must be abs(w)*abs(h)*n_chans bytes in the memory pointed to.
+ * @param w,h        Width and height of the image in pixels.
+ * @param n_chans    The number of channels in the BMP. 3 or 4 supported for writing,
+ *                   which means RGB or RGBA memory, respectively.
+ * @returns Zero on any error, non zero on success.
+ */
+APG_BMP_EXPORT unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int w, int h, unsigned int n_chans );
 
 #ifdef __cplusplus
 }

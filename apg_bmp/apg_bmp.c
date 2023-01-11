@@ -1,10 +1,10 @@
-/*
-BMP File Reader/Writer Implementation
+/*****************************************************************************\
+apg_bmp - BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3.2
+Version: 3.3
 Licence: see apg_bmp.h
 C99
-*/
+\*****************************************************************************/
 
 #include "apg_bmp.h"
 #include <assert.h>
@@ -23,8 +23,8 @@ C99
 #define _BMP_MIN_DIB_HDR_SZ 40ULL
 #define _BMP_MIN_HDR_SZ ( _BMP_FILE_HDR_SZ + _BMP_MIN_DIB_HDR_SZ )
 
-#pragma pack( push, 1 ) // supported on GCC in addition to individual packing attribs
-/* All BMP files, regardless of type, start with this file header */
+#pragma pack( push, 1 ) // Supported on GCC in addition to individual packing attribs.
+/** All BMP files, regardless of type, start with this file header. */
 typedef struct _bmp_file_header_t {
   char file_type[2];
   uint32_t file_sz;
@@ -33,22 +33,24 @@ typedef struct _bmp_file_header_t {
   uint32_t image_data_offset;
 } _bmp_file_header_t;
 
-/* Following the file header is the BMP type header. this is the most commonly used format */
+/** Following the file header is the BMP type header. this is the most commonly used format. */
 typedef struct _bmp_dib_BITMAPINFOHEADER_t {
   uint32_t this_header_sz;
-  int32_t w;                      // in older headers w & h these are shorts and may be unsigned
+  int32_t w;                      // In older headers w & h these are shorts and may be unsigned.
   int32_t h;                      //
-  uint16_t n_planes;              // must be 1
+  uint16_t n_planes;              // Must be 1.
   uint16_t bpp;                   // bits per pixel. 1,4,8,16,24,32.
   uint32_t compression_method;    // 16 and 32-bit images must have a value of 3 here
-  uint32_t image_uncompressed_sz; // not consistently used in the wild, so ignored here.
-  int32_t horiz_pixels_per_meter; // not used.
-  int32_t vert_pixels_per_meter;  // not used.
+  uint32_t image_uncompressed_sz; // Not consistently used in the wild, so ignored here.
+  int32_t horiz_pixels_per_meter; // Not used.
+  int32_t vert_pixels_per_meter;  // Not used.
   uint32_t n_colours_in_palette;  //
-  uint32_t n_important_colours;   // not used.
-  /* NOTE(Anton) a DIB header may end here at 40-bytes. be careful using sizeof() */
-  /* if 'compression' value, above, is set to 3 ie the image is 16 or 32-bit, then these colour channel masks follow the headers.
-  these are big-endian order bit masks to assign bits of each pixel to different colours. bits used must be contiguous and not overlap. */
+  uint32_t n_important_colours;   // Not used.
+  /* NOTE(Anton) a DIB header may end here at 40-bytes. Be careful using sizeof(). */
+  /* If 'compression' value, above, is set to 3 ie the image is 16 or 32-bit,
+  then these colour channel masks follow the headers.
+  These are big-endian order bit masks to assign bits of each pixel to different colours.
+  Bits used must be contiguous and not overlap. */
   uint32_t bitmask_r;
   uint32_t bitmask_g;
   uint32_t bitmask_b;
@@ -68,16 +70,16 @@ typedef enum _bmp_compression_t {
   BI_CMYRLE4        = 13
 } _bmp_compression_t;
 
-/* convenience struct and file->memory function */
+/** Convenience struct and file->memory function. */
 typedef struct _entire_file_t {
   void* data;
   size_t sz;
 } _entire_file_t;
 
-/*
-RETURNS
-- true on success. record->data is allocated memory and must be freed by the caller.
-- false on any error. Any allocated memory is freed if false is returned */
+/**
+ * @returns true on success. record->data is allocated memory and must be freed by the caller.
+ * Returns false on any error. Any allocated memory is freed if false is returned.
+ */
 static bool _read_entire_file( const char* filename, _entire_file_t* record ) {
   FILE* fp = fopen( filename, "rb" );
   if ( !fp ) { return false; }
@@ -114,12 +116,12 @@ static bool _validate_dib_hdr( _bmp_dib_BITMAPINFOHEADER_t* dib_hdr_ptr, size_t 
   // NOTE(Anton) using abs() in the if-statement was blowing up on large negative numbers. switched to labs()
   if ( 0 == dib_hdr_ptr->w || 0 == dib_hdr_ptr->h || labs( dib_hdr_ptr->w ) > _BMP_MAX_DIMS || labs( dib_hdr_ptr->h ) > _BMP_MAX_DIMS ) { return false; }
 
-  /* NOTE(Anton) if images reliably used n_colours_in_palette we could have done a palette/file size integrity check here.
-  because some always set 0 then we have to check every palette indexing as we read them */
+  /* NOTE(Anton) If images reliably used n_colours_in_palette we could have done a palette/file size integrity check here.
+  because some always set 0 then we have to check every palette indexing as we read them. */
   return true;
 }
 
-/* NOTE(Anton) this could have ifdef branches on different compilers for the intrinsics versions for perf */
+/* NOTE(Anton) This could have ifdef branches on different compilers for the intrinsics versions for perf. */
 static uint32_t _bitscan( uint32_t dword ) {
   for ( uint32_t i = 0; i < 32; i++ ) {
     if ( 1 & dword ) { return i; }
@@ -131,7 +133,7 @@ static uint32_t _bitscan( uint32_t dword ) {
 unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans ) {
   if ( !filename || !w || !h || !n_chans ) { return NULL; }
 
-  // read in the whole file into memory first - much faster than parsing on-the-fly
+  // Read in the whole file into memory first - much faster than parsing on-the-fly.
   _entire_file_t record;
   if ( !_read_entire_file( filename, &record ) ) { return NULL; }
   if ( record.sz < _BMP_MIN_HDR_SZ ) {
@@ -139,44 +141,41 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     return NULL;
   }
 
-  // grab and validate the first, file, header
+  // Grab and validate the first, file, header.
   _bmp_file_header_t* file_hdr_ptr = (_bmp_file_header_t*)record.data;
   if ( !_validate_file_hdr( file_hdr_ptr, record.sz ) ) {
     free( record.data );
     return NULL;
   }
 
-  // grad and validate the second, DIB, header
+  // Grab and validate the second, DIB, header.
   _bmp_dib_BITMAPINFOHEADER_t* dib_hdr_ptr = (_bmp_dib_BITMAPINFOHEADER_t*)( (uint8_t*)record.data + _BMP_FILE_HDR_SZ );
   if ( !_validate_dib_hdr( dib_hdr_ptr, record.sz ) ) {
     free( record.data );
     return NULL;
   }
 
-  // bitmaps can have negative dims to indicate the image should be flipped
+  // Bitmaps can have negative dims to indicate the image should be flipped.
   uint32_t width = *w = abs( dib_hdr_ptr->w );
   uint32_t height = *h = abs( dib_hdr_ptr->h );
 
-  // TODO(Anton) flip image memory at the end if this is true. because doing it per row was making me write bugs.
-  // bool vertically_flip = dib_hdr_ptr->h > 0 ? false : true;
-
-  // channel count and palette are not well defined in the header so we make a good guess here
+  // Channel count and palette are not well defined in the header so we make a good guess here.
   uint32_t n_dst_chans = 3, n_src_chans = 3;
   bool has_palette = false;
   switch ( dib_hdr_ptr->bpp ) {
-  case 32: n_dst_chans = n_src_chans = 4; break; // technically can be RGB but not supported
-  case 24: n_dst_chans = n_src_chans = 3; break; // technically can be RGBA but not supported
-  case 8:                                        // seems to always use a BGR0 palette, even for greyscale
+  case 32: n_dst_chans = n_src_chans = 4; break; // Technically can be RGB but not supported.
+  case 24: n_dst_chans = n_src_chans = 3; break; // Technically can be RGBA but not supported.
+  case 8:                                        // Seems to always use a BGR0 palette, even for greyscale.
     n_dst_chans = 3;
     has_palette = true;
     n_src_chans = 1;
     break;
-  case 4: // always has a palette - needed for a MS-saved BMP
+  case 4: // Always has a palette - needed for a MS-saved BMP.
     n_dst_chans = 3;
     has_palette = true;
     n_src_chans = 1;
     break;
-  case 1: // 1-bpp means the palette has 3 colour channels with 2 colours i.e. monochrome but not always black & white
+  case 1: // 1-bpp means the palette has 3 colour channels with 2 colours i.e. monochrome but not always black & white.
     n_dst_chans = 3;
     has_palette = true;
     n_src_chans = 1;
@@ -186,7 +185,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     return NULL;
   } // endswitch
   *n_chans = n_dst_chans;
-  // NOTE(Anton) some image formats are not allowed a palette - could check for a bad header spec here also
+  // NOTE(Anton) Some image formats are not allowed a palette - could check for a bad header spec here also.
   if ( dib_hdr_ptr->n_colours_in_palette > 0 ) { has_palette = true; }
 
 #ifdef APG_BMP_DEBUG_OUTPUT
@@ -205,26 +204,26 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     return NULL;
   }
 
-  // work out if any padding how much to skip at end of each row
+  // Work out if any padding how much to skip at end of each row.
   uint32_t unpadded_row_sz = width * n_src_chans;
-  // bit-encoded palette indices have different padding properties
+  // Bit-encoded palette indices have different padding properties.
   if ( 4 == dib_hdr_ptr->bpp ) {
-    unpadded_row_sz = width % 2 > 0 ? width / 2 + 1 : width / 2; // find how many whole bytes required for this bit width
+    unpadded_row_sz = width % 2 > 0 ? width / 2 + 1 : width / 2; // Find how many whole bytes required for this bit width,
   }
   if ( 1 == dib_hdr_ptr->bpp ) {
-    unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8; // find how many whole bytes required for this bit width
+    unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8; // Find how many whole bytes required for this bit width,
   }
   uint32_t row_padding_sz = 0 == unpadded_row_sz % 4 ? 0 : 4 - ( unpadded_row_sz % 4 ); // NOTE(Anton) didn't expect operator precedence of - over %
 
-  // another file size integrity check: partially validate source image data size
+  // Another file size integrity check: partially validate source image data size,
   // 'image_data_offset' is by row padded to 4 bytes and is either colour data or palette indices.
   if ( file_hdr_ptr->image_data_offset + ( unpadded_row_sz + row_padding_sz ) * height > record.sz ) {
     free( record.data );
     return NULL;
   }
 
-  // find which bit number each colour channel starts at, so we can separate colours out
-  uint32_t bitshift_rgba[4] = {0, 0, 0, 0}; // NOTE(Anton) noticed this was int and not uint32_t so changed it. 17 Mar 2020
+  // Find which bit number each colour channel starts at, so we can separate colours out.
+  uint32_t bitshift_rgba[4] = { 0, 0, 0, 0 };
   uint32_t bitmask_a        = 0;
   if ( has_bitmasks ) {
     bitmask_a        = ~( dib_hdr_ptr->bitmask_r | dib_hdr_ptr->bitmask_g | dib_hdr_ptr->bitmask_b );
@@ -234,7 +233,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     bitshift_rgba[3] = _bitscan( bitmask_a );
   }
 
-  // allocate memory for the output pixels block. cast to size_t in case width and height are both the max of 65536 and n_dst_chans > 1
+  // Allocate memory for the output pixels block. Cast to size_t in case width and height are both the max of 65536 and n_dst_chans > 1.
   unsigned char* dst_img_ptr = malloc( (size_t)width * (size_t)height * (size_t)n_dst_chans );
   if ( !dst_img_ptr ) {
     free( record.data );
@@ -245,9 +244,9 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
   uint8_t* src_img_ptr      = (uint8_t*)record.data + file_hdr_ptr->image_data_offset;
   size_t dst_stride_sz      = width * n_dst_chans;
 
-  //   == 32-bpp -> 32-bit RGBA. == 32-bit and 16-bit require bitmasks
+  // == 32-bpp -> 32-bit RGBA. == 32-bit and 16-bit require bitmasks.
   if ( 32 == dib_hdr_ptr->bpp ) {
-    // check source image has enough data in it to read from
+    // Check source image has enough data in it to read from.
     if ( (size_t)file_hdr_ptr->image_data_offset + (size_t)height * (size_t)width * (size_t)n_src_chans > record.sz ) {
       free( record.data );
       free( dst_img_ptr );
@@ -255,15 +254,15 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     }
     size_t src_byte_idx = 0;
     for ( uint32_t r = 0; r < height; r++ ) {
-      size_t dst_pixels_idx = r * dst_stride_sz;
+      size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
       for ( uint32_t c = 0; c < width; c++ ) {
         uint32_t pixel;
         memcpy( &pixel, &src_img_ptr[src_byte_idx], 4 );
-        // NOTE(Anton) the below assumes 32-bits is always RGBA 1 byte per channel. 10,10,10 RGB exists though and isn't handled.
-        dst_img_ptr[dst_pixels_idx++] = ( uint8_t )( ( pixel & dib_hdr_ptr->bitmask_r ) >> bitshift_rgba[0] );
-        dst_img_ptr[dst_pixels_idx++] = ( uint8_t )( ( pixel & dib_hdr_ptr->bitmask_g ) >> bitshift_rgba[1] );
-        dst_img_ptr[dst_pixels_idx++] = ( uint8_t )( ( pixel & dib_hdr_ptr->bitmask_b ) >> bitshift_rgba[2] );
-        dst_img_ptr[dst_pixels_idx++] = ( uint8_t )( ( pixel & bitmask_a ) >> bitshift_rgba[3] );
+        // NOTE(Anton) The below assumes 32-bits is always RGBA 1 byte per channel. 10,10,10 RGB exists though and isn't handled.
+        dst_img_ptr[dst_pixels_idx++] = (uint8_t)( ( pixel & dib_hdr_ptr->bitmask_r ) >> bitshift_rgba[0] );
+        dst_img_ptr[dst_pixels_idx++] = (uint8_t)( ( pixel & dib_hdr_ptr->bitmask_g ) >> bitshift_rgba[1] );
+        dst_img_ptr[dst_pixels_idx++] = (uint8_t)( ( pixel & dib_hdr_ptr->bitmask_b ) >> bitshift_rgba[2] );
+        dst_img_ptr[dst_pixels_idx++] = (uint8_t)( ( pixel & bitmask_a ) >> bitshift_rgba[3] );
         src_byte_idx += 4;
       }
       src_byte_idx += row_padding_sz;
@@ -271,7 +270,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
 
     // == 8-bpp -> 24-bit RGB ==
   } else if ( 8 == dib_hdr_ptr->bpp && has_palette ) {
-    // validate indices (body of image data) fits in file
+    // Validate indices (body of image data) fits in file.
     if ( file_hdr_ptr->image_data_offset + height * width > record.sz ) {
       free( record.data );
       free( dst_img_ptr );
@@ -282,7 +281,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
       for ( uint32_t c = 0; c < width; c++ ) {
         // "most palettes are 4 bytes in RGB0 order but 3 for..." - it was actually BRG0 in old images -- Anton
-        uint8_t index = src_img_ptr[src_byte_idx]; // 8-bit index value per pixel
+        uint8_t index = src_img_ptr[src_byte_idx]; // 8-bit index value per pixel.
 
         if ( palette_offset + index * 4 + 2 >= record.sz ) {
           free( record.data );
@@ -307,37 +306,37 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
           free( dst_img_ptr );
           return NULL;
         }
-        // handle 2 pixels at a time
+        // Handle 2 pixels at a time.
         uint8_t pixel_duo = src_img_ptr[src_byte_idx];
         uint8_t a_index   = ( 0xFF & pixel_duo ) >> 4;
         uint8_t b_index   = 0xF & pixel_duo;
 
-        if ( palette_offset + a_index * 4 + 2 >= record.sz ) { // invalid src image
+        if ( palette_offset + a_index * 4 + 2 >= record.sz ) { // Invalid src image.
           free( record.data );
           return dst_img_ptr;
         }
-        if ( dst_pixels_idx + 3 > width * height * n_dst_chans ) { // done
+        if ( dst_pixels_idx + 3 > width * height * n_dst_chans ) { // Done.
           free( record.data );
           return dst_img_ptr;
         }
         dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[a_index * 4 + 2];
         dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[a_index * 4 + 1];
         dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[a_index * 4 + 0];
-        if ( ++c >= width ) { // advance a column
+        if ( ++c >= width ) { // Advance a column.
           c = 0;
           r++;
-          if ( r >= height ) { // done. no need to get second pixel. eg a 1x1 pixel image.
+          if ( r >= height ) { // Done. no need to get second pixel. eg a 1x1 pixel image.
             free( record.data );
             return dst_img_ptr;
           }
           dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
         }
 
-        if ( palette_offset + b_index * 4 + 2 >= record.sz ) { // invalid src image
+        if ( palette_offset + b_index * 4 + 2 >= record.sz ) { // Invalid src image.
           free( record.data );
           return dst_img_ptr;
         }
-        if ( dst_pixels_idx + 3 > width * height * n_dst_chans ) { // done. probably redundant check since checking r >= height.
+        if ( dst_pixels_idx + 3 > width * height * n_dst_chans ) { // Done. Probably redundant check since checking r >= height.
           free( record.data );
           return dst_img_ptr;
         }
@@ -351,23 +350,23 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
 
     // == 1-bpp -> 24-bit RGB ==
   } else if ( 1 == dib_hdr_ptr->bpp && has_palette ) {
-    /* encoding method for monochrome is not well documented.
-    a 2x2 pixel image is stored as 4 1-bit palette indexes
-    the palette is stored as any 2 RGB0 colours (not necessarily B&W)
-    so for an image with indexes like so:
+    /* Encoding method for monochrome is not well documented.
+    A 2x2 pixel image is stored as 4 1-bit palette indexes
+    The palette is stored as any 2 RGB0 colours (not necessarily B&W)
+    So for an image with indexes like so:
     1 1
     0 1
     it is bit-encoded as follows, starting at MSB:
     01000000 00000000 00000000 00000000 (first byte val  64)
     11000000 00000000 00000000 00000000 (first byte val 192)
-    data is still split by row and each row padded to 4 byte multiples
+    data is still split by row and each row padded to 4 byte multiples.
      */
     size_t src_byte_idx = 0;
     for ( uint32_t r = 0; r < height; r++ ) {
-      uint8_t bit_idx       = 0; // used in monochrome
+      uint8_t bit_idx       = 0; // Used in monochrome,
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
       for ( uint32_t c = 0; c < width; c++ ) {
-        if ( 8 == bit_idx ) { // start reading from the next byte
+        if ( 8 == bit_idx ) { // Start reading from the next byte,
           src_byte_idx++;
           bit_idx = 0;
         }
@@ -389,12 +388,12 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
         dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[palette_idx * 4 + 0];
         bit_idx++;
       }
-      src_byte_idx += ( row_padding_sz + 1 ); // 1bpp is special here
+      src_byte_idx += ( row_padding_sz + 1 ); // 1bpp is special here.
     }
 
-    // == 24-bpp -> 24-bit RGB == (but also should handle some other n_chans cases)
+    // == 24-bpp -> 24-bit RGB == (but also should handle some other n_chans cases).
   } else {
-    // NOTE(Anton) this only supports 1 byte per channel
+    // NOTE(Anton) this only supports 1 byte per channel.
     if ( file_hdr_ptr->image_data_offset + height * width * n_dst_chans > record.sz ) {
       free( record.data );
       free( dst_img_ptr );
@@ -404,7 +403,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     for ( uint32_t r = 0; r < height; r++ ) {
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
       for ( uint32_t c = 0; c < width; c++ ) {
-        // re-orders from BGR to RGB
+        // Re-orders from BGR to RGB.
         if ( n_dst_chans > 3 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 3]; }
         if ( n_dst_chans > 2 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 2]; }
         if ( n_dst_chans > 1 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 1]; }
@@ -432,7 +431,7 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
 
   uint32_t height = labs( h );
   uint32_t width  = labs( w );
-  // work out if any padding how much to skip at end of each row
+  // Work out if any padding how much to skip at end of each row.
   const size_t unpadded_row_sz      = width * n_chans;
   const size_t row_padding_sz       = 0 == unpadded_row_sz % 4 ? 0 : 4 - unpadded_row_sz % 4;
   const size_t row_sz               = unpadded_row_sz + row_padding_sz;
@@ -450,7 +449,7 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
   }
   _bmp_dib_BITMAPINFOHEADER_t dib_hdr;
   {
-    dib_hdr.this_header_sz         = _BMP_MIN_DIB_HDR_SZ; // NOTE: must be 40 and not include the bitmask memory in size here
+    dib_hdr.this_header_sz         = _BMP_MIN_DIB_HDR_SZ; // NOTE: Must be 40 and not include the bitmask memory in size here.
     dib_hdr.w                      = w;
     dib_hdr.h                      = h;
     dib_hdr.n_planes               = 1;
@@ -461,8 +460,8 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
     dib_hdr.vert_pixels_per_meter  = 0;
     dib_hdr.n_colours_in_palette   = 0;
     dib_hdr.n_important_colours    = 0;
-    // big-endian masks. only used in BI_BITFIELDS and BI_ALPHABITFIELDS ( 16 and 32-bit images )
-    // important note: GIMP stores BMP data in this array order for 32-bit: [A][B][G][R]
+    // Big-endian masks. only used in BI_BITFIELDS and BI_ALPHABITFIELDS ( 16 and 32-bit images ).
+    // Important note: GIMP stores BMP data in this array order for 32-bit: [A][B][G][R].
     dib_hdr.bitmask_r = 0xFF000000;
     dib_hdr.bitmask_g = 0x00FF0000;
     dib_hdr.bitmask_b = 0x0000FF00;
@@ -472,9 +471,9 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
   if ( !dst_pixels_ptr ) { return 0; }
   {
     size_t dst_byte_idx = 0;
-    uint8_t padding[4]  = {0, 0, 0, 0};
-    uint8_t rgba[4]     = {0, 0, 0, 0};
-    uint8_t bgra[4]     = {0, 0, 0, 0};
+    uint8_t padding[4]  = { 0, 0, 0, 0 };
+    uint8_t rgba[4]     = { 0, 0, 0, 0 };
+    uint8_t bgra[4]     = { 0, 0, 0, 0 };
 
     for ( uint32_t row = 0; row < height; row++ ) {
       size_t src_byte_idx = ( height - 1 - row ) * n_chans * width;
@@ -485,11 +484,11 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
           bgra[1] = rgba[1];
           bgra[2] = rgba[0];
         } else {
-          /* NOTE(Anton) RGBA with alpha channel would be better supported with an extended DIB header */
+          /* NOTE(Anton) RGBA with alpha channel would be better supported with an extended DIB header. */
           bgra[0] = rgba[3];
           bgra[1] = rgba[2];
           bgra[2] = rgba[1];
-          bgra[3] = rgba[0]; // alpha
+          bgra[3] = rgba[0]; // Alpha.
         }
         memcpy( &dst_pixels_ptr[dst_byte_idx], bgra, n_chans );
         dst_byte_idx += (size_t)n_chans;
