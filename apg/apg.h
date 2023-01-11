@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.11  - 11 Jan 2022. Fixed a crash bug when failing to read an entire file.
   1.10  - xx Sep 2022. Cross-platform directory/filesystem functions.
   1.9   - 10 Jun 2022. Large file support in file I/O.
   1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
@@ -789,7 +790,6 @@ bool apg_read_entire_file( const char* filename, apg_file_t* record ) {
   return true;
 
 _apg_read_entire_file_fail:
-  if ( !f_ptr ) { fclose( f_ptr ); }
   if ( mem_ptr ) { free( mem_ptr ); }
   return false;
 }
