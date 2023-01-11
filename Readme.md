@@ -7,7 +7,7 @@ Small utility libraries and copy-paste snippets of reusable code.
 | Library     | Description                                     | Language | # Files         | Version | Fuzzed With                             |
 |-------------|-------------------------------------------------|----------|-----------------|---------|-----------------------------------------|
 | apg         | Generic C programming utils.                    | C        | 1               | 1.10    | No                                      |
-| apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.2     | [AFL](https://lcamtuf.coredump.cx/afl/) |
+| apg_bmp     | BMP bitmap image reader/writer library.         | C        | 2               | 3.3     | [AFL](https://lcamtuf.coredump.cx/afl/) |
 | apg_console | Quake-style graphical console. API-independent. | C        | 2 + apg_pixfont | 0.13    | No                                      |
 | apg_jobs    | Simple worker/jobs thread pool system.          | C        | 2               | 0.2     | No                                      |
 | apg_gldb    | OpenGL debug drawing (lines, boxes, ... )       | C        | 2               | 0.3     | No                                      |
