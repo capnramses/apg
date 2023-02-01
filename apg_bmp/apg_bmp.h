@@ -6,18 +6,18 @@ Licence:         See bottom of file.
 Language:        C89 ( Implementation is C99 )
 
 Contributors
-------------------------
+-------------------------------------------------------------------------------
   Anton Gerdelan - Initial code.
   Saija Sorsa    - Fuzz testing.
 
 Instructions
-------------------------
+-------------------------------------------------------------------------------
 - Just drop this header, and the matching .c file into your project.
 - If in a C++ project set these files to build as C, not C++.
 - To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
 
 Advantages
-------------------------
+-------------------------------------------------------------------------------
 - The implementation is fast, simple, and supports more formats than most
   BMP reader libraries.
 - The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
@@ -29,41 +29,48 @@ Advantages
 - Writer supports 32bpp RGBA and 24bpp uncompressed RGB images.
 
 Current Limitations
-------------------------
+-------------------------------------------------------------------------------
 - 16-bit images not supported (don't have any samples to test on).
-- No support for interleaved channel bit layouts eg RGB101010 RGB555 RGB565.
-- No support for compressed BMP images, although in practice these are not used.
+- No support for interleaved channel bit layouts;
+  e.g. RGB101010 RGB555 RGB565.
+- No support for compressed BMP images, although in practice these are
+  not used.
 - Images with alpha channel are written in BITMAPINFOHEADER format for maximum
   backwards-compatibility. For wider alpha support in other apps the 124-bit v5
   header could be used instead. Your own apps using apg_bmp_read() will still
   read the alpha channel correctly.
 
 FAQ
-------------------------
+-------------------------------------------------------------------------------
 Q. What makes this image loader special? Why would I use it?
 
-This library started as a curiosity project, to see if I could read really old BMP files,
-and understand the format. It was then used as an example for a security class learning fuzzing.
-Because it was fuzzed it was used in some very large projects as an image loader.
-There are many other BMP loaders out there, but this one is pretty small and fast, and can handle
-some very old formats that are not broadly supported.
-There is a blog post about it here https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
+This library started as a curiosity project, to see if I could read really old
+BMP files, and understand the format. It was then used as an example for a
+security class learning fuzzing. Because it was fuzzed it was used in some very
+large projects as an image loader. There are many other BMP loaders out there,
+but this one is pretty small and fast, and can handle some very old formats
+that are not broadly supported. There is a blog post about it here:
+https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
 
-Q. Why won't Visual Studio won't compile this in my C++ project, can you change the code?
+Q. Why won't this compile in my C++ project?
 
-This is a C library, just make sure the apg_bmp.c file is set to compile as C, not C++, and it will compile
-in with your C++.
+This is a C library, just make sure the apg_bmp.c file is set to compile as C,
+not C++, and the compiled object file will compile in with your C++ program.
 
 Q. Are you open to pull requests?
 
-Yes, but it's not being actively worked on, so turn-around time may be slow. If the PR is accepted, I'll
-add you to the Contributors list.
+Yes, but it's not being actively worked on, so turn-around time may be slow.
+If the PR is accepted, I'll add you to the Contributors list.
+
+Welcome:       Bug fixes, BMP feature-handling improvement.
+Not desired:   Build systems, language & code style changes, large PRs.
 
 Version History
-------------------------
-  3.3 - 11 Jan   2023. Fixed bug: images with alpha channel were y-flipped.
-  3.2 - 22 March 2022. Minor signed/unsigned tweaks to constants.
-  3.1 - 18 March 2020.
+-------------------------------------------------------------------------------
+  3.3.1   - 2023 Feb.  1. Fixed type casting warnings from MSVC.
+  3.3     - 2023 Jan. 11. Fixed bug: images with alpha channel were y-flipped.
+  3.2     - 2022 Mar. 22. Minor signed/unsigned tweaks to constants.
+  3.1     - 2020 Mar. 18.
 \*****************************************************************************/
 
 #ifndef APG_BMP_H_

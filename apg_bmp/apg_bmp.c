@@ -1,7 +1,7 @@
 /*****************************************************************************\
 apg_bmp - BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3.3
+Version: 3.3.1
 Licence: see apg_bmp.h
 C99
 \*****************************************************************************/
@@ -432,24 +432,24 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
   uint32_t height = labs( h );
   uint32_t width  = labs( w );
   // Work out if any padding how much to skip at end of each row.
-  const size_t unpadded_row_sz      = width * n_chans;
-  const size_t row_padding_sz       = 0 == unpadded_row_sz % 4 ? 0 : 4 - unpadded_row_sz % 4;
-  const size_t row_sz               = unpadded_row_sz + row_padding_sz;
-  const size_t dst_pixels_padded_sz = row_sz * height;
+  const uint32_t unpadded_row_sz      = width * n_chans;
+  const uint32_t row_padding_sz       = 0 == unpadded_row_sz % 4 ? 0 : 4 - unpadded_row_sz % 4;
+  const uint32_t row_sz               = unpadded_row_sz + row_padding_sz;
+  const uint32_t dst_pixels_padded_sz = row_sz * height;
 
   const size_t dib_hdr_sz = sizeof( _bmp_dib_BITMAPINFOHEADER_t );
   _bmp_file_header_t file_hdr;
   {
     file_hdr.file_type[0]      = 'B';
     file_hdr.file_type[1]      = 'M';
-    file_hdr.file_sz           = _BMP_FILE_HDR_SZ + dib_hdr_sz + dst_pixels_padded_sz;
+    file_hdr.file_sz           = (uint32_t)( _BMP_FILE_HDR_SZ + dib_hdr_sz ) + dst_pixels_padded_sz;
     file_hdr.reserved1         = 0;
     file_hdr.reserved2         = 0;
-    file_hdr.image_data_offset = _BMP_FILE_HDR_SZ + dib_hdr_sz;
+    file_hdr.image_data_offset = (uint32_t)( _BMP_FILE_HDR_SZ + dib_hdr_sz );
   }
   _bmp_dib_BITMAPINFOHEADER_t dib_hdr;
   {
-    dib_hdr.this_header_sz         = _BMP_MIN_DIB_HDR_SZ; // NOTE: Must be 40 and not include the bitmask memory in size here.
+    dib_hdr.this_header_sz         = (uint32_t)_BMP_MIN_DIB_HDR_SZ; // NOTE: Must be 40 and not include the bitmask memory in size here.
     dib_hdr.w                      = w;
     dib_hdr.h                      = h;
     dib_hdr.n_planes               = 1;
