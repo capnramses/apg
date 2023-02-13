@@ -58,8 +58,8 @@ COMPILER HELPERS
 #define APG_BUILD_PLAT_STR "Cygwin POSIX under Microsoft Windows."
 #elif __linux__
 #define APG_BUILD_PLAT_STR "Linux."
-#elif __APPLE__ /* Can add checks to detect OSX/iPhone/XCode iPhone emulators. */
-#define APG_BUILD_PLAT_STR "OS X."
+#elif __APPLE__ /* Can add checks to detect macOS/iPhone/XCode iPhone emulators. */
+#define APG_BUILD_PLAT_STR "Apple."
 #elif __unix__ /* Also valid for Linux. __APPLE__ is also BSD. */
 #define APG_BUILD_PLAT_STR "BSD."
 #else
