@@ -5,21 +5,24 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
-  1.13  - 16 Feb 2023. Removed scratch mem functions. Added *_r thread-safe versions of rand() functions. Typedef for seed type in header.
-  1.12  - 24 Jan 2023. C/CPP header guard. CPP example.
-  1.11  - 11 Jan 2023. Fixed a crash bug when failing to read an entire file.
-  1.10  - xx Sep 2022. Cross-platform directory/filesystem functions.
-  1.9   - 10 Jun 2022. Large file support in file I/O.
-  1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
-  1.8   - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
-  1.7   - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
-  1.6   - 13 Mar 2022. Greedy Best-First Search first implementation.
-  1.5   - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
-  1.4   - 12 Mar 2022. Hash table functions.
-  1.3   - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
-  1.2   - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
-  1.1   -  4 May 2020. Added custom rand() functions.
-  1.0   -  8 May 2015. First version by Anton Gerdelan.
+  1.13.1 - 16 Feb 2023. Added comments to confusing part of rand() functions.
+  1.13.0 - 16 Feb 2023. Removed scratch mem functions.
+                        Added *_r thread-safe versions of rand() functions.
+                        Typedef for seed type in header.
+  1.12   - 24 Jan 2023. C/CPP header guard. CPP example.
+  1.11   - 11 Jan 2023. Fixed a crash bug when failing to read an entire file.
+  1.10   - xx Sep 2022. Cross-platform directory/filesystem functions.
+  1.9    - 10 Jun 2022. Large file support in file I/O.
+  1.8.1  - 28 Mar 2022. Casting precision fix to gbfs.
+  1.8    - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
+  1.7    - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
+  1.6    - 13 Mar 2022. Greedy Best-First Search first implementation.
+  1.5    - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
+  1.4    - 12 Mar 2022. Hash table functions.
+  1.3    - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
+  1.2    - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
+  1.1    -  4 May 2020. Added custom rand() functions.
+  1.0    -  8 May 2015. First version by Anton Gerdelan.
 
 Usage Instructions
 -----------------------------
@@ -516,6 +519,7 @@ void apg_srand( apg_rand_t seed ) { _srand_next = seed; }
 
 int apg_rand( void ) {
   _srand_next = _srand_next * 1103515245 + 12345;
+  // NB: casting to uint is deliberate here, otherwise we will return negative numbers.
   return (unsigned int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
@@ -527,6 +531,7 @@ int apg_rand_r( apg_rand_t* seed_ptr ) {
   assert( seed_ptr );
   if ( !seed_ptr ) { return 0; }
   *seed_ptr = *seed_ptr * 1103515245 + 12345;
+  // NB: casting to uint is deliberate here, otherwise we will return negative numbers.
   return (unsigned int)( *seed_ptr / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
