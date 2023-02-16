@@ -5,8 +5,9 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
-  1.12  - 24 Jan 2022. C/CPP header guard. CPP example.
-  1.11  - 11 Jan 2022. Fixed a crash bug when failing to read an entire file.
+  1.13  - 16 Feb 2023. Removed scratch mem functions. Added *_r thread-safe versions of rand() functions. Typedef for seed type in header.
+  1.12  - 24 Jan 2023. C/CPP header guard. CPP example.
+  1.11  - 11 Jan 2023. Fixed a crash bug when failing to read an entire file.
   1.10  - xx Sep 2022. Cross-platform directory/filesystem functions.
   1.9   - 10 Jun 2022. Large file support in file I/O.
   1.8.1 - 28 Mar 2022. Casting precision fix to gbfs.
@@ -28,8 +29,10 @@ Usage Instructions
   * For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
     You can exclude this by:
 
+  #define APG_IMPLEMENTATION
   #define APG_NO_BACKTRACES
   #include apg.h
+
 * For a C++ example see tests/cpptest.cpp
 */
 
@@ -66,9 +69,9 @@ COMPILER HELPERS
 #define APG_BUILD_PLAT_STR "Unknown."
 #endif
 
-#define APG_UNUSED( x ) (void)( x ) /* to suppress compiler warnings */
+#define APG_UNUSED( x ) (void)( x ) /** To suppress compiler warnings. */
 
-/* to add function deprecation across compilers */
+/** To add function deprecation across compilers. */
 #ifdef __GNUC__
 #define APG_DEPRECATED( func ) func __attribute__( ( deprecated ) )
 #elif defined( _MSC_VER )
@@ -78,10 +81,10 @@ COMPILER HELPERS
 /*=================================================================================================
 MATHS
 =================================================================================================*/
-/* replacement for the deprecated min/max functions from original C spec.
+/** Replacements for the deprecated min/max functions from original C spec.
 was going to have a series of GL-like functions but it was a lot of fiddly code/alternatives,
 so I'm just copying from stb.h here. as much as I dislike pre-processor directives, this makes sense.
-I believe the trick is to have all the parentheses. same deal for clamp */
+I believe the trick is to have all the parentheses. same deal for clamp. */
 #define APG_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
 #define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
 #define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
@@ -89,62 +92,92 @@ I believe the trick is to have all the parentheses. same deal for clamp */
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS
 =================================================================================================*/
-/* platform-consistent rand() and srand()
-based on http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf pg 312
-WARNING - these functions are not thread-safe. */
-#define APG_RAND_MAX 32767 // Must be at least 32767 (0x7fff). Windows uses this value.
+/** Platform-consistent rand() and srand().
+ * Based on http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf pg 312
+ */
+#define APG_RAND_MAX 32767            /* Must be at least 32767 (0x7fff). Windows uses this value. */
+typedef unsigned long int apg_rand_t; /* More precision is more better. If you need exact compatibility with stdlib.h then change to `unsigned int`. */
 
-void apg_srand( unsigned int seed );
+/** A drop-in replacement for srand() that works with apg_rand() and apg_randf().
+ * It is not used by apg_rand_r() and apg_randf_r().
+ * Call this function once with a seed e.g. the current time in seconds. Then you may call apg_rand() or apg_randf() any number of times.
+ *
+ * @param seed The seeding integer can be the time, to feel more random.
+ * @warning    This function is not thread safe. For use in multi-threaded applications use `apg_rand_r()` instead.
+ */
+void apg_srand( apg_rand_t seed );
+
+/** A drop-in replacement for rand() that produces a consistent result on all platforms/implementations where rand() does not.
+ * Note that it has the same interface as rand() which means it has the same problems with thread-safety and precision.
+ *
+ * @warning This function is not thread safe. For use in multi-threaded applications use `apg_rand_r()` instead.
+ */
 int apg_rand( void );
 
-/* same as apg_rand() except returns a value between 0.0 and 1.0 */
+/** Same as apg_rand() except returns a value between 0.0 and 1.0. */
 float apg_randf( void );
 
-/* useful to re-seed apg_srand later with whatever the pseudo-random sequence is up to now i.e. for saved games. */
-unsigned int apg_get_srand_next( void );
+/** Useful to re-seed apg_srand() later with whatever the pseudo-random sequence is up to now e.g. for saved games. */
+apg_rand_t apg_get_srand_next( void );
 
+/** A thread-safe version of rand().
+ * This function is designed to be a mostly drop-in replacement for rand_r() from stdlib.h.
+ * No calls to apg_srand( seed ) are necessary.
+ *
+ * @param seed_ptr Address of a random number sequence that you have seeded at some point.
+ *
+ * @example
+ * apg_rand_t initial_seed = time( NULL );      // Equivalent to `srand( time( NULL ) );`.
+ * apg_rand_t working_seed = initial_seed;      // In case we want to remember the original sequence start.
+ * int random_result = rand_r( &working_seed ); // Equivalent to `rand();`
+ *
+ * @warning        rand_r() uses an unsigned int pointer, but we use slightly more precision here.
+ */
+int apg_rand_r( apg_rand_t* seed_ptr );
+
+/** Same as apg_rand_r() except returns a value between 0.0 and 1.0. */
+float apg_randf_r( apg_rand_t* seed_ptr );
 /*=================================================================================================
 TIME
 =================================================================================================*/
-/* Set up for using timers.
-WARNING - These functions are not thread-safe. */
+/** Set up for using timers. */
 void apg_time_init( void );
 
-/* Get a monotonic time value in seconds with up to nanoseconds precision.
-Value is some arbitrary system time but is invulnerable to clock changes.
-Call apg_time_init() once before calling apg_time_s().
-WARNING - These functions are not thread-safe. */
+/** Get a monotonic time value in seconds with up to nanoseconds precision.
+ * Value is some arbitrary system time but is invulnerable to clock changes.
+ * Call apg_time_init() once before calling apg_time_s().
+ */
 double apg_time_s( void );
 
-/* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
+/** NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep(). */
 void apg_sleep_ms( int ms );
 
 /*=================================================================================================
 STRINGS
 =================================================================================================*/
-/* Custom strcmp variant to do a partial match avoid commonly-made == 0 bracket soup bugs.
-PARAMS
-a,b         - Input strings to compare.
-a_max,b_max - Maximum lengths of a and b, respectively. Makes function robust to missing nul-terminators.
-RETURNS true if both strings are the same, or if the shorter string matches its length up to the longer string at that point. i.e. "ANT" "ANTON" returns true. */
+/** Custom strcmp variant to do a partial match avoid commonly-made == 0 bracket soup bugs.
+ * @param a,b         Input strings to compare.
+ * @param a_max,b_max Maximum lengths of a and b, respectively. Makes function robust to missing nul-terminators.
+ * @return            true if both strings are the same, or if the shorter string matches its length up to the longer string at that point.
+ *                    i.e. "ANT" "ANTON" returns true.
+ */
 bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max );
 
-/* because string.h doesn't always have strnlen() */
+/** Because string.h doesn't always have strnlen() */
 int apg_strnlen( const char* str, int maxlen );
 
-/* Custom strncat() without the annoying '\0' src truncation issues.
-   Resulting string is always '\0' truncated.
-   PARAMS
-     dest_max - This is the maximum length the destination string is allowed to grow to.
-     src_max  - This is the maximum number of bytes to copy from the source string.
-*/
+/** Custom strncat() without the annoying '\0' src truncation issues.
+ * Resulting string is always '\0' truncated.
+ * @param dest_max This is the maximum length the destination string is allowed to grow to.
+ * @param src_max  This is the maximum number of bytes to copy from the source string.
+ */
 void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max );
 
 /*=================================================================================================
 FILES
 =================================================================================================*/
-// These defines allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware.
-#ifdef _MSC_VER // This means "if MSVC" because we prefer POSIX stuff on MINGW.
+/** These defines allow support of >2GB files on different platforms. Was not required on my Linux with GCC, but was on Windows with GCC on the same hardware. */
+#ifdef _MSC_VER /* This means "if MSVC" because we prefer POSIX stuff on MINGW. */
 #define apg_fseek _fseeki64
 #define apg_ftell _ftelli64
 #define apg_stat _stat64
@@ -159,7 +192,7 @@ FILES
 /** Represents memory loaded from a file. */
 typedef struct apg_file_t {
   void* data_ptr;
-  size_t sz; // Size of memory pointed to by data_ptr in bytes.
+  size_t sz; /* Size of memory pointed to by data_ptr in bytes. */
 } apg_file_t;
 
 typedef enum apg_dirent_type_t { APG_DIRENT_NONE, APG_DIRENT_FILE, APG_DIRENT_DIR, APG_DIRENT_OTHER } apg_dirent_type_t;
@@ -179,16 +212,14 @@ typedef struct apg_dirent_t {
 bool apg_is_file( const char* path );
 
 /** Check if a path is a valid directory.
- * @return
- * False if path is not a directory.
- * False on any error.
- * True if path was a directory.
+ * @return false if path is not a directory.
+ *         false on any error.
+ *         true if path was a directory.
  */
 bool apg_is_dir( const char* path );
 
 /** Get a file's size. Supports large (multi-GB) files.
- * @return
- * Size in bytes of file given by filename, or -1 on error.
+ * @return Size in bytes of file given by filename, or -1 on error.
  */
 int64_t apg_file_size( const char* filename );
 
@@ -250,7 +281,7 @@ bool apg_file_to_str( const char* file_name, int64_t max_len, char* str_ptr );
 /*=================================================================================================
 LOG FILES
 =================================================================================================*/
-/* Make bad log args print compiler warnings. Note: mingw sucks for this. */
+/** Make bad log args print compiler warnings. Note: MinGW does not provide good support for this. */
 #if defined( __clang__ )
 #define ATTRIB_PRINTF( fmt, args ) __attribute__( ( __format__( __printf__, fmt, args ) ) )
 #elif defined( __MINGW32__ )
@@ -261,23 +292,25 @@ LOG FILES
 #define ATTRIB_PRINTF( fmt, args )
 #endif
 
-/* open/refresh a new log file and print timestamp */
+/** Open/refresh a new log file and print timestamp. */
 void apg_start_log();
-/* write a log entry */
+
+/** Write a log entry. */
 void apg_log( const char* message, ... ) ATTRIB_PRINTF( 1, 2 );
-/* write a log entry and print to stderr */
+
+/** Write a log entry and print to stderr. */
 void apg_log_err( const char* message, ... ) ATTRIB_PRINTF( 1, 2 );
 
 /*=================================================================================================
 BACKTRACES AND DUMPS
 =================================================================================================*/
-/* Obtain a backtrace and print it to an open file stream or eg stdout
+/** Obtain a backtrace and print it to an open file stream or eg stdout
 note: to convert trace addresses into line numbers you can use gdb:
 (gdb) info line *print_trace+0x5e
 Line 92 of "src/utils.c" starts at address 0x6c745 <print_trace+74> and ends at 0x6c762 <print_trace+103>. */
 void apg_print_trace( FILE* stream );
 
-/* writes a backtrace on sigsegv */
+/** Writes a backtrace on sigsegv. */
 void apg_start_crash_handler( void );
 
 #ifdef APG_UNIT_TESTS
@@ -288,7 +321,7 @@ void apg_deliberate_divzero( void );
 /*=================================================================================================
 COMMAND LINE PARAMETERS
 =================================================================================================*/
-/* i learned this trick from the DOOM source code */
+/** I learned this trick from the Doom source code. */
 int apg_check_param( const char* check );
 
 extern int g_apg_argc;
@@ -298,47 +331,21 @@ extern char** g_apg_argv;
 MEMORY
 =================================================================================================*/
 
-// NB `ULL` postfix is necessary or numbers ~4GB will be interpreted as integer constants and overflow.
+/** NB. `ULL` postfix is necessary or numbers ~4GB will be interpreted as integer constants and overflow. */
 #define APG_KILOBYTES( value ) ( (value)*1024ULL )
 #define APG_MEGABYTES( value ) ( APG_KILOBYTES( value ) * 1024ULL )
 #define APG_GIGABYTES( value ) ( APG_MEGABYTES( value ) * 1024ULL )
 
-/* avoid use of malloc at runtime. use alloca() for up to ~1MB, or scratch_mem() for reusing a larger preallocated heap block */
-
-/* call once at program start, after starting logs
-(re)allocates scratch memory for use by scratch_mem
-not thread safe
-scratch_a_sz - size of main scratch in bytes
-scratch_b_sz - size of second scratch in bytes ( can be zero if not needed )
-scratch_c_sz - size of second scratch in bytes ( can be zero if not needed )
-asserts on out of memory */
-void apg_scratch_init( size_t scratch_a_sz, size_t scratch_b_sz, size_t scratch_c_sz );
-
-/* frees both scratch memory allocations
-asserts if nothing allocated */
-void apg_scratch_free();
-
-/* returns a pointer to a pre-allocated, zeroed, block of memory to use for eg image resizes to avoid alloc
-asserts if sz requested in bytes is larger than pre-allocated size or if prealloc_scratch() hasn't been called */
-void* apg_scratch_mem_a( size_t sz );
-
-/* use the second scratch */
-void* apg_scratch_mem_b( size_t sz );
-
-/* use the third scratch */
-void* apg_scratch_mem_c( size_t sz );
-
 /*=================================================================================================
 COMPRESSION
 =================================================================================================*/
-/* Apply run-length encoding to an array of bytes pointed to by bytes_in, over size in bytes given by sz_in.
-The result is written to bytes_out, with output size in bytes written to sz_out.
-PARAMS
-  bytes_in  - If NULL then sz_out is set to 0.
-  sz_in     - If 0 then sz_out is set to 0.
-  bytes_out - If NULL then sz_out is reported, but no memory is written to. This is useful for determining the size required for output buffer allocation.
-  sz_out    - Must not be NULL.
-*/
+/** Apply run-length encoding to an array of bytes pointed to by bytes_in, over size in bytes given by sz_in.
+ * The result is written to bytes_out, with output size in bytes written to sz_out.
+ * @param bytes_in  If NULL then sz_out is set to 0.
+ * @param sz_in     If 0 then sz_out is set to 0.
+ * @param bytes_out If NULL then sz_out is reported, but no memory is written to. This is useful for determining the size required for output buffer allocation.
+ * @param sz_out    Must not be NULL.
+ */
 void apg_rle_compress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
 void apg_rle_decompress( const uint8_t* bytes_in, size_t sz_in, uint8_t* bytes_out, size_t* sz_out );
 
@@ -361,8 +368,8 @@ Potential improvements:
  ================================================================================================*/
 
 typedef struct apg_hash_table_element_t {
-  char* keystr;    // This is either an allocated ASCII string or an integer value.
-  void* value_ptr; // Address of value in user code. Value data is not allocated or stored directly in the table. If NULL then element is empty.
+  char* keystr;    /* This is either an allocated ASCII string or an integer value. */
+  void* value_ptr; /* Address of value in user code. Value data is not allocated or stored directly in the table. If NULL then element is empty. */
 } apg_hash_table_element_t;
 
 typedef struct apg_hash_table_t {
@@ -417,14 +424,14 @@ bool apg_hash_auto_expand( apg_hash_table_t* table_ptr, size_t max_bytes );
 GREEDY BEST-FIRST SEARCH
 =================================================================================================*/
 
-/// If a node can have more than 6 neighbours change this value to set the size of the array of neighbour keys.
+/** If a node can have more than 6 neighbours change this value to set the size of the array of neighbour keys. */
 #define APG_GBFS_NEIGHBOURS_MAX 6
 
-/// Aux. memory retained to represent a 'vertex' in the search graph.
+/** Aux. memory retained to represent a 'vertex' in the search graph. */
 typedef struct apg_gbfs_node_t {
-  int64_t parent_idx; // Index of parent in the evaluated_nodes list.
-  int64_t our_key;    // Identifying key of the original node (e.g. a tile or pixel index in an array).
-  int64_t h;          // Distance to goal.
+  int64_t parent_idx; /* Index of parent in the evaluated_nodes list. */
+  int64_t our_key;    /* Identifying key of the original node (e.g. a tile or pixel index in an array). */
+  int64_t h;          /* Distance to goal. */
 } apg_gbfs_node_t;
 
 /** Greedy best-first search.
@@ -448,7 +455,7 @@ typedef struct apg_gbfs_node_t {
  * @return                      If a path is found the function returns `true`.
  *                              If no path is found, or there was an error, such as array overflow, then the function returns `false`.
  *
- * @note I let the user supply the working sets (queue, evualated, and visited set) memory. This allows bigger searches than using small stack arrays,
+ * @note I let the user supply the working sets (queue, evaluated, and visited set) memory. This allows bigger searches than using small stack arrays,
  * and can avoid syscalls. Repeated searches can reuse any allocated memory.
  */
 bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int64_t key, int64_t target_key ),
@@ -463,21 +470,21 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
 
 #include <assert.h>
 #include <math.h>   /* modff() */
-#include <signal.h> /* for crash handling */
+#include <signal.h> /* For crash handling. */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #ifdef _WIN32
-#include <windows.h> /* for backtraces and timers */
+#include <windows.h> /* For backtraces and timers. */
 #ifndef APG_NO_BACKTRACES
 #include <dbghelp.h> /* SymInitialize */
 #endif
 #else
 #include <execinfo.h>
-#include <strings.h> /* for strcasecmp */
-#include <unistd.h>  /* linux-only? */
+#include <strings.h> /* For strcasecmp. */
+#include <unistd.h>  /* Linux-only? */
 #endif
 /* includes for timers */
 #ifdef _WIN32
@@ -487,14 +494,14 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
 #else
 #include <sys/time.h>
 #endif
-/* fix used in bgfx and imgui to get around mingw not supplying alloca.h */
+/* Fix used in bgfx and imgui to get around mingw not supplying alloca.h. */
 #if defined( _MSC_VER ) || defined( __MINGW32__ )
 #include <malloc.h>
 #else
 #include <alloca.h>
 #endif
 #ifdef _MSC_VER
-// not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+/* not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in MinGW. */
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 #define strdup _strdup
@@ -503,9 +510,9 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS IMPLEMENTATION
 =================================================================================================*/
-static unsigned long int _srand_next = 1;
+static apg_rand_t _srand_next = 1;
 
-void apg_srand( unsigned int seed ) { _srand_next = seed; }
+void apg_srand( apg_rand_t seed ) { _srand_next = seed; }
 
 int apg_rand( void ) {
   _srand_next = _srand_next * 1103515245 + 12345;
@@ -514,7 +521,20 @@ int apg_rand( void ) {
 
 float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
 
-unsigned int apg_get_srand_next( void ) { return _srand_next; }
+apg_rand_t apg_get_srand_next( void ) { return _srand_next; }
+
+int apg_rand_r( apg_rand_t* seed_ptr ) {
+  assert( seed_ptr );
+  if ( !seed_ptr ) { return 0; }
+  *seed_ptr = *seed_ptr * 1103515245 + 12345;
+  return (unsigned int)( *seed_ptr / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+}
+
+float apg_randf_r( apg_rand_t* seed_ptr ) {
+  assert( seed_ptr );
+  if ( !seed_ptr ) { return 0.0f; }
+  return (float)apg_rand_r( seed_ptr ) / (float)APG_RAND_MAX;
+}
 
 /*=================================================================================================
 TIME IMPLEMENTATION
@@ -523,7 +543,7 @@ static uint64_t _frequency = 1000000, _offset;
 
 void apg_time_init( void ) {
 #ifdef _WIN32
-  _frequency = 1000; // QueryPerformanceCounter default
+  _frequency = 1000; /* QueryPerformanceCounter default. */
   QueryPerformanceFrequency( (LARGE_INTEGER*)&_frequency );
   QueryPerformanceCounter( (LARGE_INTEGER*)&_offset );
 #elif __APPLE__
@@ -532,7 +552,7 @@ void apg_time_init( void ) {
   _frequency       = ( info.denom * 1e9 ) / info.numer;
   _offset          = mach_absolute_time();
 #else
-  _frequency = 1000000000; // nanoseconds
+  _frequency = 1000000000; /* Nanoseconds. */
   struct timespec ts;
   clock_gettime( CLOCK_MONOTONIC, &ts );
   _offset = (uint64_t)ts.tv_sec * (uint64_t)_frequency + (uint64_t)ts.tv_nsec;
@@ -558,7 +578,7 @@ double apg_time_s( void ) {
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms ) {
 #ifdef _WIN32
-  Sleep( ms ); /* NOTE(Anton) may not need this since using gcc on Windows and usleep() works */
+  Sleep( ms ); /* May not need this since using GCC on Windows and usleep() works. */
 #elif _POSIX_C_SOURCE >= 199309L
   struct timespec ts;
   ts.tv_sec  = ms / 1000;
@@ -590,11 +610,11 @@ void apg_strncat( char* dst, const char* src, const int dest_max, const int src_
   assert( dst && src );
 
   int dst_len   = apg_strnlen( dst, dest_max );
-  dst[dst_len]  = '\0'; // just in case it wasn't already terminated before max length
+  dst[dst_len]  = '\0'; /* Just in case it wasn't already terminated before max length. */
   int remainder = dest_max - dst_len;
   if ( remainder <= 0 ) { return; }
-  const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
-  strncat( dst, src, n );                                // strncat manual guarantees null termination.
+  const int n = dest_max < src_max ? dest_max : src_max; /* Use src_max if smaller. */
+  strncat( dst, src, n );                                /* strncat manual guarantees null termination. */
 }
 
 /*=================================================================================================
@@ -616,7 +636,7 @@ bool apg_is_file( const char* path ) {
 
 bool apg_is_dir( const char* path ) {
   char tmp[2048];
-  { // Remove trailing slashes because Windows/MinGW stat() can't handle them.
+  { /* Remove trailing slashes because Windows/MinGW stat() can't handle them. */
     tmp[0] = '\0';
     apg_strncat( tmp, path, 2047, 2047 );
     int len = (int)strlen( tmp );
@@ -669,10 +689,10 @@ static int _dir_contents_count( const char* path ) {
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
+  sprintf( tmp, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
-  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                                       // Clean-up global state.
+  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); /* Find the next file. */
+  FindClose( hFind );                                       /* Clean-up global state. */
 #else                                                       /* POSIX (including MinGW on Windows) */
   struct dirent* entry;
   struct apg_stat_t path_stat;
@@ -681,7 +701,7 @@ static int _dir_contents_count( const char* path ) {
   while ( ( entry = readdir( folder ) ) ) {
     tmp[0] = '\0';
     apg_strncat( tmp, path, 2045, 2045 );
-    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } /* Error - path string too long. */
     apg_strncat( tmp, entry->d_name, 2047, 2047 );
     if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
     if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) ) { count++; }
@@ -970,6 +990,7 @@ void apg_deliberate_divzero() {
 }
 #endif /* APG_UNIT_TESTS */
 #endif /* APG_BACKTRACES */
+
 /*=================================================================================================
 COMMAND LINE PARAMETERS IMPLEMENTATION
 =================================================================================================*/

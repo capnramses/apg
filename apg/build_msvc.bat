@@ -55,4 +55,11 @@ set LINKER_FLAGS=/out:dir_list_test.exe
 set SRC=..\tests\dir_list.c
 cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
 
+REM ==============================================================
+REM RAND TEST
+REM ==============================================================
+set LINKER_FLAGS=/out:rand_test.exe
+set SRC=..\tests\rand_r_test.c
+cl %COMPILER_FLAGS% %SRC% %I% /link %LINKER_FLAGS% %LIBS%
+
 pause

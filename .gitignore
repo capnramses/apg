@@ -27,6 +27,7 @@ a.out
 *.s3m
 *.xm
 *.dat
+*.rle
 apg_bmp/test_read_bmp
 apg_bmp/test_write_bmp
 apg_bmp/tests_fuzzing/fuzz_24bpp
@@ -53,7 +54,6 @@ apg_pixfont/tests/6.png
 apg_pixfont/tests/7.png
 apg/tests/anton_24bpp.bmp
 apg/tests/anton2022.sav
-apg/tests/out2.rle
 apg_bmp/test_images/
 apg_maths/tests/tmp/
 apg_mod/*.raw
@@ -65,3 +65,6 @@ output_white.png
 apg/tests/x.png
 apg_wav/out_vis.png
 apg_wav/out_vis2.png
+apg/apg.h
+apg/tests/rle_compress.c
+apg/tests/test_rand_r

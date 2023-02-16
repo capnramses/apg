@@ -1,4 +1,4 @@
-#include "apg.H"
+#include "apg.h"
 
 #include <assert.h>
 #include <math.h>   /* modff() */
@@ -42,18 +42,31 @@
 /*=================================================================================================
 PSEUDO-RANDOM NUMBERS IMPLEMENTATION
 =================================================================================================*/
-static unsigned long int _srand_next = 1;
+static apg_rand_t _srand_next = 1;
 
-void apg_srand( unsigned int seed ) { _srand_next = seed; }
+void apg_srand( apg_rand_t seed ) { _srand_next = seed; }
 
 int apg_rand( void ) {
   _srand_next = _srand_next * 1103515245 + 12345;
-  return (unsigned int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+  return (int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
 float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
 
-unsigned int apg_get_srand_next( void ) { return _srand_next; }
+apg_rand_t apg_get_srand_next( void ) { return _srand_next; }
+
+int apg_rand_r( apg_rand_t* seed_ptr ) {
+  assert( seed_ptr );
+  if ( !seed_ptr ) { return 0; }
+  *seed_ptr = *seed_ptr * 1103515245 + 12345;
+  return (int)( *seed_ptr / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+}
+
+float apg_randf_r( apg_rand_t* seed_ptr ) {
+  assert( seed_ptr );
+  if ( !seed_ptr ) { return 0.0f; }
+  return (float)apg_rand_r( seed_ptr ) / (float)APG_RAND_MAX;
+}
 
 /*=================================================================================================
 TIME IMPLEMENTATION
