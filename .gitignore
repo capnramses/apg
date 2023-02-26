@@ -68,3 +68,5 @@ apg_wav/out_vis2.png
 apg/apg.h
 apg/tests/rle_compress.c
 apg/tests/test_rand_r
+apg_pixfont/utils/atlas.bmp
+apg_pixfont/utils/atlas.png
