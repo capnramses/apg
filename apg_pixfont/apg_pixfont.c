@@ -119,7 +119,7 @@ void apg_pixfont_word_wrap_str( char* str_ptr, int col_max ) {
 	}
 }
 
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int col_max ) {
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, apg_pixfont_style_t style, int col_max ) {
   if ( !ascii_str || !w || !h || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   *w = *h = 0;
@@ -151,6 +151,7 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
     uint32_t atlas_index      = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
+    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x = x_cursor > max_x ? x_cursor : max_x;
     col++;
   } // endfor chars in str
@@ -190,8 +191,17 @@ static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline, int col_max ) {
+int apg_pixfont_str_into_image(                                       //
+  const char* ascii_str,                                              //
+  unsigned char* image,                                               //
+  int w, int h,                                                       //
+  int n_channels,                                                     //
+  unsigned char r, unsigned char g, unsigned char b, unsigned char a, //
+  int thickness,                                                      //
+  int add_outline,                                                    //
+  apg_pixfont_style_t style,                                          //
+  int col_max                                                         //
+) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   int len      = _apg_pixfont_strnlen( ascii_str, APG_PIXFONT_MAX_STRLEN );
@@ -244,6 +254,7 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
       }   // endfor glyph x
     }     // endfor glyph y
     x_cursor += spacing_px * thickness;
+    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     col++;
   } // endfor chars in str
 
