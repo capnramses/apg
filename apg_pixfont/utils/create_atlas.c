@@ -3,6 +3,8 @@
 
 // gcc .\create_atlas.c ..\apg_pixfont.c -I ..\ -I ..\..\third_party\stb\
 
+// TODO(Anton) - remove control code sections from atlas output.
+
 #include "apg_pixfont.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
