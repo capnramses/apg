@@ -245,9 +245,19 @@ int apg_pixfont_str_into_image(                                       //
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
               int image_x     = x_cursor + x * thickness + x_th;
               int image_y     = y_cursor + y * thickness + y_th;
-              int out_img_idx = w * image_y + image_x;
+              int x_offset = 0;
+              if ( APG_PIXFONT_STYLE_ITALIC == style ) {
+                x_offset = ( 16 - image_y ) / 2;
+              } else if ( APG_PIXFONT_STYLE_BOLD == style ) {
+                x_offset = image_x % 1;
+              }
+
+              int out_img_idx = w * image_y + image_x + x_offset;
               if ( image_x >= w || image_y >= h ) { continue; }
               for ( int c = 0; c < n_channels; c++ ) { image[out_img_idx * n_channels + c] = colour[c]; }
+              if ( APG_PIXFONT_STYLE_BOLD == style ) {
+                for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + 1 ) * n_channels + c] = colour[c]; }
+              }
             }
           }
         } // endif colours

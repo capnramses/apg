@@ -90,6 +90,7 @@ int main() {
 
   if ( !draw_atlas( atlas_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) { fprintf( stderr, "ERROR drawing regular atlas.\n" ); }
   if ( !draw_atlas( atlas_italic_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) { fprintf( stderr, "ERROR drawing italic atlas.\n" ); }
+  if ( !draw_atlas( atlas_bold_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) { fprintf( stderr, "ERROR drawing bold atlas.\n" ); }
 
   printf( "done\n" );
   return 0;

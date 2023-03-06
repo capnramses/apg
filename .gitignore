@@ -71,3 +71,4 @@ apg/tests/test_rand_r
 apg_pixfont/utils/atlas.bmp
 apg_pixfont/utils/atlas.png
 apg_pixfont/utils/atlas_italic.png
+apg_pixfont/utils/atlas_bold.png

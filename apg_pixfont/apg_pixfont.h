@@ -1,3 +1,9 @@
+
+// TODO(anton) -- correct the sizing output for italic and bolb.
+//             -- add underline
+//             -- add strikethrough maybe
+
+
 /* apg_pixfont - C Pixel Font Utility
 LICENCE: see bottom of this file
 By Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
