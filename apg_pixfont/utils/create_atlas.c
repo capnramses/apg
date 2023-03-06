@@ -81,9 +81,11 @@ bool draw_atlas( const char* filename, int padding_px, int thickness, int add_ou
 }
 
 int main() {
-  const char* atlas_str        = "atlas.png";
-  const char* atlas_italic_str = "atlas_italic.png";
-  const char* atlas_bold_str   = "atlas_bold.png";
+  const char* atlas_str               = "atlas.png";
+  const char* atlas_italic_str        = "atlas_italic.png";
+  const char* atlas_bold_str          = "atlas_bold.png";
+  const char* atlas_underline_str     = "atlas_underline.png";
+  const char* atlas_strikethrough_str = "atlas_strikethrough.png";
   // Find max dimensions per character and check that font will fit in atlas.
   int padding_px            = 4;
   int thickness             = 1;
@@ -93,7 +95,12 @@ int main() {
   if ( !draw_atlas( atlas_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) { fprintf( stderr, "ERROR drawing regular atlas.\n" ); }
   if ( !draw_atlas( atlas_italic_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) { fprintf( stderr, "ERROR drawing italic atlas.\n" ); }
   if ( !draw_atlas( atlas_bold_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) { fprintf( stderr, "ERROR drawing bold atlas.\n" ); }
-
+  if ( !draw_atlas( atlas_underline_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_UNDERLINE ) ) {
+    fprintf( stderr, "ERROR drawing underline atlas.\n" );
+  }
+  if ( !draw_atlas( atlas_strikethrough_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_STRIKETHROUGH ) ) {
+    fprintf( stderr, "ERROR drawing strikthrough atlas.\n" );
+  }
   printf( "done\n" );
   return 0;
 }

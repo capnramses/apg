@@ -72,3 +72,5 @@ apg_pixfont/utils/atlas.bmp
 apg_pixfont/utils/atlas.png
 apg_pixfont/utils/atlas_italic.png
 apg_pixfont/utils/atlas_bold.png
+apg_pixfont/utils/atlas_underline.png
+apg_pixfont/utils/atlas_strikethrough.png
