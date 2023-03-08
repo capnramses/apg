@@ -250,7 +250,7 @@ int apg_pixfont_str_into_image(                                       //
               int image_y  = y_cursor + y * thickness + y_th;
               int x_offset = 0;
               if ( APG_PIXFONT_STYLE_ITALIC == style ) {
-                x_offset = ( 16 - image_y ) / 2;
+                x_offset = 7 - image_y / 2;
               } else if ( APG_PIXFONT_STYLE_BOLD == style ) {
                 x_offset = image_x % 1;
               }
