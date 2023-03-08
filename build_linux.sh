@@ -5,6 +5,10 @@ set -e
 # echo everything
 set -x
 
+colour_pass="\033[32;1m"
+colour_default="\033[0m"
+horiz_div="========================"
+
 CC=clang
 CPP=clang++
 FLAGS="-fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror -pedantic -g"
@@ -35,8 +39,8 @@ cd ..
 #
 echo "building apg_console tests..."
 cd apg_console
-cp ../apg_pixfont/apg_pixfont.c ./
-cp ../apg_pixfont/apg_pixfont.h ./
+#cp ../apg_pixfont/apg_pixfont.c ./
+#cp ../apg_pixfont/apg_pixfont.h ./
 $CC $FLAGS tests/main.c apg_console.c apg_pixfont.c -I ./
 cd ..
 
@@ -120,3 +124,5 @@ cd apg_wav
 $CC $FLAGS -I./ -Itests/ tests/main_write.c apg_wav.c -lm
 $CC $FLAGS -I./ -Itests/ tests/main_read.c apg_wav.c -lm
 cd ..
+
+printf '%b%s\n%s\n%s\n%b\n' $colour_pass $horiz_div "Compile Check PASSED" $horiz_div $colour_default
