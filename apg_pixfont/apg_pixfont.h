@@ -92,7 +92,7 @@ TODO:
 
 History:
 ==============================================================
-0.3.0 - 2023 Mar 08 - Atlas generation tools (useful for more efficient video game text).
+0.3.0 - 2023 Mar 08 - Atlas generation tools. '\n's at the end of strings are no longer included as blank area in the image.
 0.2.1 - 2022 Sep 26 - Readme correction.
 0.2.0 - 2022 Sep 25 - Word-wrap function.
 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.

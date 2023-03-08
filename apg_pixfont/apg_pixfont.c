@@ -128,7 +128,7 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
   if ( 0 == len ) { return APG_PIXFONT_FAILURE; }
 
   int x_cursor = 0, y_cursor = 0, max_x = 0;
-
+	int last_drawn_y_cursor = 0;
   for ( int i = 0, col = 0; i < len; i++ ) {
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
     if ( '\n' == ascii_str[i] ) {
@@ -148,16 +148,17 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
       continue;
     }
     int additional_i = 0;
-    uint32_t atlas_index      = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
+    uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
     x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x = x_cursor > max_x ? x_cursor : max_x;
     col++;
+		last_drawn_y_cursor = y_cursor;
   } // endfor chars in str
 
-  *w = max_x;                  // each char is 6px wide + 1 spacing px
-  *h = _font_img_h + y_cursor; // only 1 row of text supported for now
+  *w = max_x; // Each char is ~6px wide + 1 spacing px.
+  *h = last_drawn_y_cursor + _font_img_h;
 
   *w = *w * thickness;
   *h = *h * thickness;
