@@ -92,31 +92,31 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void apg_pixfont_word_wrap_str( char* str_ptr, int col_max ) {
-	if ( !str_ptr || col_max <= 0 ) { return; }
+  if ( !str_ptr || col_max <= 0 ) { return; }
 
   int len = _apg_pixfont_strnlen( str_ptr, APG_PIXFONT_MAX_STRLEN );
-	if ( len < col_max ) { return; } // Entire string fits in one line.
+  if ( len < col_max ) { return; } // Entire string fits in one line.
 
-	int word_start = 0, word_n = 0, col = 0;
-	for ( int i = 0; i < len; i++ ) {
-		if ( col > col_max ) {
-			if ( word_start > 0 ) {
-				str_ptr[word_start - 1] = '\n'; // Might introduce double line-breaks.
-				col = word_n;
-			}
-		}
-		if ( isspace( str_ptr[i] ) ) {
-			word_n = 0;
-			word_start = i + 1;
-			if ( '\n' == str_ptr[i] ) {
-				col = 0;
-				continue;
-			}
-		} else {
-			word_n++;
-		}
-		col++;
-	}
+  int word_start = 0, word_n = 0, col = 0;
+  for ( int i = 0; i < len; i++ ) {
+    if ( col > col_max ) {
+      if ( word_start > 0 ) {
+        str_ptr[word_start - 1] = '\n'; // Might introduce double line-breaks.
+        col                     = word_n;
+      }
+    }
+    if ( isspace( str_ptr[i] ) ) {
+      word_n     = 0;
+      word_start = i + 1;
+      if ( '\n' == str_ptr[i] ) {
+        col = 0;
+        continue;
+      }
+    } else {
+      word_n++;
+    }
+    col++;
+  }
 }
 
 int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, apg_pixfont_style_t style, int col_max ) {
@@ -128,7 +128,7 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
   if ( 0 == len ) { return APG_PIXFONT_FAILURE; }
 
   int x_cursor = 0, y_cursor = 0, max_x = 0;
-	int last_drawn_y_cursor = 0;
+  int last_drawn_y_cursor = 0;
   for ( int i = 0, col = 0; i < len; i++ ) {
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
     if ( '\n' == ascii_str[i] ) {
@@ -147,14 +147,14 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
       col++;
       continue;
     }
-    int additional_i = 0;
+    int additional_i     = 0;
     uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
     x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
-    max_x = x_cursor > max_x ? x_cursor : max_x;
+    max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
-		last_drawn_y_cursor = y_cursor;
+    last_drawn_y_cursor = y_cursor;
   } // endfor chars in str
 
   *w = max_x; // Each char is ~6px wide + 1 spacing px.
@@ -186,9 +186,9 @@ static bool _is_img_idx_coloured( const unsigned char* image, int idx, int n_cha
 
 // NOTE(Anton) could also user-specify an outline colour rather than all zero
 static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
-	for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
-	if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
-	if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
+  for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
+  if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
+  if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +209,7 @@ int apg_pixfont_str_into_image(                                       //
   int x_cursor = 0;
   int y_cursor = 0;
 
-  uint8_t colour[4] = {r, g, b, a};
+  uint8_t colour[4] = { r, g, b, a };
   if ( 2 == n_channels ) { colour[1] = a; } // 2-channel is usually RedAlpha, not RG.
 
   for ( int i = 0, col = 0; i < len; i++ ) {
@@ -231,10 +231,10 @@ int apg_pixfont_str_into_image(                                       //
       col++;
       continue;
     }
-    int additional_i = 0;
-    uint32_t atlas_index      = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
+    int additional_i     = 0;
+    uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
-    int spacing_px = _get_spacing_for_codepoint( atlas_index );
+    int spacing_px         = _get_spacing_for_codepoint( atlas_index );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
     atlas_index -= 33;
     for ( int y = 0; y < _font_img_h; y++ ) {
@@ -243,14 +243,11 @@ int apg_pixfont_str_into_image(                                       //
         int atlas_y       = y;
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
         // 0 is top of glyph subimage, 10 is the baseline.
-        if ( _font_img[atlas_img_idx] > 0x00 ||
-            ( APG_PIXFONT_STYLE_UNDERLINE == style  && y == 11 ) ||
-            ( APG_PIXFONT_STYLE_STRIKETHROUGH == style  && y == 8 )
-        ) {
+        if ( _font_img[atlas_img_idx] > 0x00 || ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 11 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) {
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
-              int image_x     = x_cursor + x * thickness + x_th;
-              int image_y     = y_cursor + y * thickness + y_th;
+              int image_x  = x_cursor + x * thickness + x_th;
+              int image_y  = y_cursor + y * thickness + y_th;
               int x_offset = 0;
               if ( APG_PIXFONT_STYLE_ITALIC == style ) {
                 x_offset = ( 16 - image_y ) / 2;
@@ -274,22 +271,31 @@ int apg_pixfont_str_into_image(                                       //
     col++;
   } // endfor chars in str
 
-	// NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
+  // NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
   if ( add_outline ) {
-			for ( int y = h - 1; y >= 0; y-- ) {
-				for ( int x = w - 1; x >= 0; x-- ) {
-					if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
-					if ( y > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-					if ( x > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-					if ( y > 0 && x > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-				} // endforx
-			} //endfor y
-  } // endfor outline
+    for ( int y = h - 1; y >= 0; y-- ) {
+      for ( int x = w - 1; x >= 0; x-- ) {
+        if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
+        if ( y > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+        if ( x > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+        if ( y > 0 && x > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+      } // endforx
+    }   // endfor y
+  }     // endfor outline
   return APG_PIXFONT_SUCCESS;
 }
