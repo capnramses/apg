@@ -14,7 +14,7 @@ Anton Gerdelan 2019
 int main() {
   const char* test_strings[N_TEST_STRINGS] = {
     "Hello, World!",                                                                                           //
-    "This is a line\nbreak - did it work?",                                                                    //
+    "This is a line\nbreak - did it work?\n\n\n",                                                                    //
     "über spaß!",                                                                                              //
     "An bhfuil cead agam dul\ngo dtí an leithreas?",                                                           //
     "This is My Lovely, Big Heading",                                                                          //
