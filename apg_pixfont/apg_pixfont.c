@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.2.1
+/* apg_pixfont - C Pixel Font Utility v0.3.0
 C99 Implementation
 See header file for licence and instructions.
 Anton Gerdelan 2019
