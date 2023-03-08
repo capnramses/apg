@@ -3,7 +3,7 @@
 # any error code causes script to exit with error code
 set -e
 # echo everything
-set -x
+#set -x
 
 colour_pass="\033[32;1m"
 colour_default="\033[0m"
