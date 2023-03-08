@@ -151,7 +151,8 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
     uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
-    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
+    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC ) ? x_cursor : x_cursor + 7; // Max is +7 per char. Should have LUT to get exact size.
+    x_cursor = ( style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
     last_drawn_y_cursor = y_cursor;
@@ -250,7 +251,7 @@ int apg_pixfont_str_into_image(                                       //
               int image_y  = y_cursor + y * thickness + y_th;
               int x_offset = 0;
               if ( APG_PIXFONT_STYLE_ITALIC == style ) {
-                x_offset = 7 - image_y / 2;
+                x_offset = 7 - image_y / 2; // Bottom left (y 14 and 15) dont move. Every 2 px up from that move 1. Max x is 6 + 7 + outline (14).
               } else if ( APG_PIXFONT_STYLE_BOLD == style ) {
                 x_offset = image_x % 1;
               }
@@ -266,8 +267,9 @@ int apg_pixfont_str_into_image(                                       //
         } // endif colours
       }   // endfor glyph x
     }     // endfor glyph y
-    x_cursor += spacing_px * thickness;
-    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
+    x_cursor += spacing_px * thickness; // TODO use actual max x written to above
+    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC ) ? x_cursor : x_cursor + 7; // Max is +7 per char. Should have LUT to get exact size.
+    x_cursor = ( style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     col++;
   } // endfor chars in str
 
