@@ -238,6 +238,8 @@ int apg_pixfont_str_into_image(                                       //
     int spacing_px         = _get_spacing_for_codepoint( atlas_index );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
     atlas_index -= 33;
+    int max_x_offset = 0;
+    // For each gyph in the thin strip of letters image.
     for ( int y = 0; y < _font_img_h; y++ ) {
       for ( int x = 0; x < white_part_spacing; x++ ) {
         int atlas_x       = atlas_index * 6 + x;
@@ -245,6 +247,7 @@ int apg_pixfont_str_into_image(                                       //
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
         // 0 is top of glyph subimage, 10 is the baseline.
         if ( _font_img[atlas_img_idx] > 0x00 || ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 11 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) {
+          // Fatten if necessary
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
               int image_x  = x_cursor + x * thickness + x_th;
@@ -252,6 +255,7 @@ int apg_pixfont_str_into_image(                                       //
               int x_offset = 0;
               if ( APG_PIXFONT_STYLE_ITALIC == style ) {
                 x_offset = 7 - image_y / 2; // Bottom left (y 14 and 15) dont move. Every 2 px up from that move 1. Max x is 6 + 7 + outline (14).
+                max_x_offset = x_offset > max_x_offset ? x_offset : max_x_offset;
               } else if ( APG_PIXFONT_STYLE_BOLD == style ) {
                 x_offset = image_x % 1;
               }
@@ -261,6 +265,7 @@ int apg_pixfont_str_into_image(                                       //
               for ( int c = 0; c < n_channels; c++ ) { image[out_img_idx * n_channels + c] = colour[c]; }
               if ( APG_PIXFONT_STYLE_BOLD == style ) {
                 for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + 1 ) * n_channels + c] = colour[c]; }
+                max_x_offset = 1;
               }
             }
           }
@@ -268,8 +273,7 @@ int apg_pixfont_str_into_image(                                       //
       }   // endfor glyph x
     }     // endfor glyph y
     x_cursor += spacing_px * thickness; // TODO use actual max x written to above
-    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC ) ? x_cursor : x_cursor + 7; // Max is +7 per char. Should have LUT to get exact size.
-    x_cursor = ( style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
+    x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD  ) ? x_cursor : x_cursor + max_x_offset;
     col++;
   } // endfor chars in str
 
