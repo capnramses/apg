@@ -90,7 +90,7 @@ TODO:
 
 History:
 ==============================================================
-0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools.
+0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools. Basic Unicode UTF-8 support.
 0.2.1 - 2022 Sep 26 - Readme correction.
 0.2.0 - 2022 Sep 25 - Word-wrap function.
 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
