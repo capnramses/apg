@@ -86,7 +86,7 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
   if ( 'l' == codepoint || '!' == codepoint || '\'' == codepoint || '|' == codepoint || ':' == codepoint ) { return 2; }
   if ( ',' == codepoint || '.' == codepoint || '`' == codepoint || ';' == codepoint ) { return 3; }
   if ( '(' == codepoint || ')' == codepoint ) { return 4; }
-  if ( '{' == codepoint || '}' == codepoint ) { return 5; }
+  if ( ' ' == codepoint || '{' == codepoint || '}' == codepoint ) { return 5; }
   return 6;
 }
 
@@ -151,7 +151,6 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
     uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
-  //  x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC ) ? x_cursor : x_cursor + 7; // Max is +7 per char. Should have LUT to get exact size.
     x_cursor = ( style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
@@ -164,15 +163,12 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
   *w = *w * thickness;
   *h = *h * thickness;
 
-  if ( style == APG_PIXFONT_STYLE_ITALIC ) {
-*w = *w + 7;
-  } 
-
+  if ( APG_PIXFONT_STYLE_ITALIC == style ) { *w = *w + 7; } 
+  if ( APG_PIXFONT_STYLE_UNDERLINE == style || APG_PIXFONT_STYLE_STRIKETHROUGH == style ) { *w = *w + thickness; }
   if ( add_outline ) {
     *w = *w + 1;
     *h = *h + 1;
   }
-
   // make sure size is an even number, to help alignment of image
   if ( *w % 2 != 0 ) { *w = *w + 1; }
   if ( *h % 2 != 0 ) { *h = *h + 1; }
@@ -228,14 +224,9 @@ int apg_pixfont_str_into_image(                                       //
     if ( col_max > 0 && col >= col_max ) {
       y_cursor += _font_img_h * thickness;
       x_cursor = col = 0;
-      if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
+      if ( ' ' == ascii_str[i]) { continue; } // Skip spaces after wrap.
     }
-    if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
-    if ( ' ' == ascii_str[i] ) {
-      x_cursor += 5 * thickness; // leave a gap
-      col++;
-      continue;
-    }
+    if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return. Note that space isn't ignored/skipped because we sometimes drawn them e.g. underlines.
     int additional_i     = 0;
     uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
@@ -250,7 +241,7 @@ int apg_pixfont_str_into_image(                                       //
         int atlas_y       = y;
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
         // 0 is top of glyph subimage, 10 is the baseline.
-        if ( _font_img[atlas_img_idx] > 0x00 || ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 11 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) {
+        if ( _font_img[atlas_img_idx] > 0x00 || ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) {
           // Fatten if necessary
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
@@ -271,14 +262,17 @@ int apg_pixfont_str_into_image(                                       //
                 for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + 1 ) * n_channels + c] = colour[c]; }
                 max_x_offset = 1;
               }
-            }
-          }
-        } // endif colours
-      }   // endfor glyph x
-    }     // endfor glyph y
+              if ( ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style ) ) { // Already looping over thickness so just need one offset here.
+                int extra_ul_px = add_outline ? thickness : thickness - 1;
+                for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + extra_ul_px ) * n_channels + c] = colour[c]; }
+              } // endif underline.
+            } // endfor x thickness.
+          } // endfor y thickness.
+        } // endif colours.
+      } // endfor glyph x.
+    } // endfor glyph y.
     x_cursor += spacing_px * thickness; // TODO use actual max x written to above
-  //  x_cursor = ( style != APG_PIXFONT_STYLE_ITALIC && style != APG_PIXFONT_STYLE_BOLD  ) ? x_cursor : x_cursor + max_x_offset;
-  x_cursor = style == APG_PIXFONT_STYLE_BOLD ? x_cursor++ : x_cursor;
+    x_cursor = ( style == APG_PIXFONT_STYLE_BOLD || style == APG_PIXFONT_STYLE_UNDERLINE ) ? x_cursor + max_x_offset : x_cursor;
     col++;
   } // endfor chars in str
 
