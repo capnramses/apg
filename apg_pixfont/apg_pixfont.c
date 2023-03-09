@@ -141,12 +141,6 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
       x_cursor = col = 0;
       if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
     }
-    if ( ' ' == ascii_str[i] ) {
-      x_cursor += 5; // leave a gap
-      max_x = x_cursor > max_x ? x_cursor : max_x;
-      col++;
-      continue;
-    }
     int additional_i     = 0;
     uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
@@ -228,11 +222,11 @@ int apg_pixfont_str_into_image(                                       //
     }
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return. Note that space isn't ignored/skipped because we sometimes drawn them e.g. underlines.
     int additional_i     = 0;
-    uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
+    uint32_t codepoint = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
-    int spacing_px         = _get_spacing_for_codepoint( atlas_index );
+    int spacing_px         = _get_spacing_for_codepoint( codepoint );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
-    atlas_index -= 33;
+    uint32_t atlas_index = codepoint - 33; // Strip 'atlas' has no space graphics. Maybe it should.
     int max_x_offset = 0;
     // For each gyph in the thin strip of letters image.
     for ( int y = 0; y < _font_img_h; y++ ) {
@@ -262,7 +256,7 @@ int apg_pixfont_str_into_image(                                       //
                 for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + 1 ) * n_channels + c] = colour[c]; }
                 max_x_offset = 1;
               }
-              if ( ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style ) ) { // Already looping over thickness so just need one offset here.
+              if ( ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) { // Already looping over thickness so just need one offset here.
                 int extra_ul_px = add_outline ? thickness : thickness - 1;
                 for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + extra_ul_px ) * n_channels + c] = colour[c]; }
               } // endif underline.

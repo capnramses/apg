@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int cell_dims[2] = { 32, 32 }; // ~1MB per 256-char sheet. Prefer power-of-two sizes, but not essential.
+int cell_dims[2] = { 16, 16 }; // ~1MB per 256-char sheet. Prefer power-of-two sizes, but not essential.
 
 bool draw_atlas( const char* filename, int padding_px, int thickness, int add_outline, apg_pixfont_style_t style ) {
   int max_w = 0, max_h = 0;
@@ -70,31 +70,27 @@ bool draw_atlas( const char* filename, int padding_px, int thickness, int add_ou
       memcpy( dst_ptr, src_ptr, cell_dims[0] * n_chans );
     }
   }
-  printf( "Writing atlas.png\n" );
   int ret = stbi_write_png( filename, cell_dims[0] * 16, cell_dims[1] * 16, n_chans, atlas_ptr, cell_dims[0] * 16 * n_chans );
-  fprintf( stderr, "%i writing atlas\n", ret );
-
   free( subimg_ptr );
   free( atlas_ptr );
-
+  if (!ret) { return false; }
   return true;
 }
 
 int main() {
   const char* atlas_str               = "atlas.png";
-  const char* atlas_italic_str        = "atlas_italic.png";
   const char* atlas_bold_str          = "atlas_bold.png";
+  const char* atlas_italic_str        = "atlas_italic.png";
   const char* atlas_underline_str     = "atlas_underline.png";
   const char* atlas_strikethrough_str = "atlas_strikethrough.png";
   // Find max dimensions per character and check that font will fit in atlas.
-  int padding_px            = 4;
-  int thickness             = 2;
-  int add_outline           = 1;
-  apg_pixfont_style_t style = APG_PIXFONT_STYLE_REGULAR;
+  int padding_px  = 4;
+  int thickness   = 1;
+  int add_outline = 1;
 
   if ( !draw_atlas( atlas_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) { fprintf( stderr, "ERROR drawing regular atlas.\n" ); }
-  if ( !draw_atlas( atlas_italic_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) { fprintf( stderr, "ERROR drawing italic atlas.\n" ); }
   if ( !draw_atlas( atlas_bold_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) { fprintf( stderr, "ERROR drawing bold atlas.\n" ); }
+  if ( !draw_atlas( atlas_italic_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) { fprintf( stderr, "ERROR drawing italic atlas.\n" ); }
   if ( !draw_atlas( atlas_underline_str, padding_px, thickness, add_outline, APG_PIXFONT_STYLE_UNDERLINE ) ) {
     fprintf( stderr, "ERROR drawing underline atlas.\n" );
   }

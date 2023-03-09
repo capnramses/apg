@@ -1,6 +1,3 @@
-
-// TODO(anton) -- correct the sizing output for italic and bolb.
-
 /* apg_pixfont - C Pixel Font Utility
 LICENCE: see bottom of this file
 By Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
@@ -92,7 +89,7 @@ TODO:
 
 History:
 ==============================================================
-0.3.0 - 2023 Mar 08 - Atlas generation tools. '\n's at the end of strings are no longer included as blank area in the image.
+0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools.
 0.2.1 - 2022 Sep 26 - Readme correction.
 0.2.0 - 2022 Sep 25 - Word-wrap function.
 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
@@ -101,8 +98,8 @@ History:
 0.0.4 - 2021 Jan 05 - Removed vflip again, to simplify code in several places.
 0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
 0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
-0.0.1 - 2019 Aug 9 - Split into stand-alone library code.
-0.0.0 - 2018 - First version by Anton, as part of voxel game project
+0.0.1 - 2019 Aug 9  - Split into stand-alone library code.
+0.0.0 - 2018        - First version by Anton, as part of voxel game project
 */
 #ifndef _APG_PIXFONT_H_
 #define _APG_PIXFONT_H_
