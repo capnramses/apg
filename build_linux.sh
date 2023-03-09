@@ -3,7 +3,11 @@
 # any error code causes script to exit with error code
 set -e
 # echo everything
-set -x
+#set -x
+
+colour_pass="\033[32;1m"
+colour_default="\033[0m"
+horiz_div="========================"
 
 CC=clang
 CPP=clang++
@@ -120,3 +124,5 @@ cd apg_wav
 $CC $FLAGS -I./ -Itests/ tests/main_write.c apg_wav.c -lm
 $CC $FLAGS -I./ -Itests/ tests/main_read.c apg_wav.c -lm
 cd ..
+
+printf '%b%s\n%s\n%s\n%b\n' $colour_pass $horiz_div "Compile Check PASSED" $horiz_div $colour_default

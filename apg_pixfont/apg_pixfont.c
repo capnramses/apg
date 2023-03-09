@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.2.1
+/* apg_pixfont - C Pixel Font Utility v0.3.0
 C99 Implementation
 See header file for licence and instructions.
 Anton Gerdelan 2019
@@ -25,60 +25,112 @@ static int _apg_pixfont_strnlen( const char* str, int maxlen ) {
   return i;
 }
 
-// TODO(Anton) replace with unicode codepoint scans and then a lookup table for supported unicode
-// does not handle spacing for ' ' or '\n' - those must be handled before calling this function
-// additional_bytes_processed - if 2+ bytes formed a single glyph then additional_bytes_processed == 1+
+#define MASK_FIRST_ONE   128 // 128 or 10000000
+#define MASK_FIRST_TWO   192 // 192 or 11000000
+#define MASK_FIRST_THREE 224 // 224 or 11100000
+#define MASK_FIRST_FOUR  240 // 240 or 11110000
+#define MASK_FIRST_FIVE  248 // 248 or 11111000
+static uint32_t _utf8_to_cp( const char* mbs, int* sz ) {
+  assert( mbs && sz );
+  if ( !mbs || !sz ) { return 0; }
+  *sz = 0;
+  if ( '\0' == mbs[0] ) { return 0; }
+  uint8_t first_byte = (uint8_t)mbs[0];
+  if ( first_byte < MASK_FIRST_ONE ) {
+    *sz = 1;
+    return (uint32_t)mbs[0];
+  }
+  if ( first_byte < MASK_FIRST_THREE ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) {  return 0; }
+    uint8_t part_a     = first_byte << 3;             // shift 110xxxxx to xxxxx000
+    uint8_t part_b     = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint32_t codepoint = (uint32_t)part_a << 3;       // 00000000 00000000 00000000 xxxxx000 << 3 = 00000000 00000000 00000xxx xx000000
+    codepoint |= (uint32_t)part_b;                    // 00000000 00000000 00000xxx xx000000 | pb = 00000000 00000000 00000xxx xxxxxxxx
+    *sz = 2;
+    return codepoint;
+  }
+  if ( first_byte < MASK_FIRST_FOUR ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t third_byte = (uint8_t)mbs[2];
+    if ( third_byte < MASK_FIRST_ONE || third_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t part_a = first_byte << 4;             // shift 1110xxxx to xxxx0000
+    uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+		(void)part_b; // unused
+		(void)part_c; // unused
+
+    uint32_t codepoint = (uint32_t)part_a << 2;
+    codepoint = ( codepoint | (uint32_t)second_byte ) << 6;
+    codepoint |= (uint32_t)third_byte;
+    *sz = 3;
+    return codepoint;
+  }
+  if ( first_byte < MASK_FIRST_FIVE ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t third_byte = (uint8_t)mbs[2];
+    if ( third_byte < MASK_FIRST_ONE || third_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t fourth_byte = (uint8_t)mbs[3];
+    if ( fourth_byte < MASK_FIRST_ONE || fourth_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t part_a = first_byte << 4;             // shift 1110xxxx to xxxx0000
+    uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_d = fourth_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint32_t codepoint = (uint32_t)part_a << 1;
+    codepoint = ( codepoint | (uint32_t)part_b ) << 6;
+    codepoint = ( codepoint | (uint32_t)part_c ) << 6;
+    codepoint |= (uint32_t)part_d;
+    *sz = 4;
+    return codepoint;
+  }
+  return 0;
+}
+
 static uint32_t _atlas_index_for_sequence( const char* sequence, int* additional_bytes_processed ) {
   assert( sequence && additional_bytes_processed );
 
   int len              = _apg_pixfont_strnlen( sequence, APG_PIXFONT_MAX_STRLEN );
   uint32_t atlas_index = '?';
-
-  *additional_bytes_processed = 0;
-
   uint8_t first_byte = (uint8_t)sequence[0];
-
+  *additional_bytes_processed = 0;
   if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; }
-
-  if ( 0xC3 == first_byte && len > 1 ) {
-    uint8_t second_byte = (uint8_t)sequence[1];
-    // clang-format off
-    switch( second_byte ) {
-      case 0x84: { atlas_index = '~' + 1; } break; // big A umlaut
-      case 0x81: { atlas_index = '~' + 2; } break; // big A acute
-      case 0x86: { atlas_index = '~' + 3; } break; // big Ash (AE)
-      case 0x90: { atlas_index = '~' + 4; } break; // big Eth (-D)
-      case 0x8B: { atlas_index = '~' + 5; } break; // big E umlaut
-      case 0x89: { atlas_index = '~' + 6; } break; // big E acute
-      case 0x8F: { atlas_index = '~' + 7; } break; // big I umlaut
-      case 0x8D: { atlas_index = '~' + 8; } break; // big I acute
-      case 0x96: { atlas_index = '~' + 9; } break; // big O umlaut
-      case 0x93: { atlas_index = '~' + 10; } break; // big O acute
-      case 0x9E: { atlas_index = '~' + 11; } break; // big Thorn (|D)
-      case 0x9C: { atlas_index = '~' + 12; } break; // big U umlaut
-      case 0x9A: { atlas_index = '~' + 13; } break; // big U acute
-      case 0x9D: { atlas_index = '~' + 14; } break; // big Y acute
-      case 0x9F: { atlas_index = '~' + 15; } break; // small doppel S
-      case 0xA4: { atlas_index = '~' + 16; } break; // small a umlaut
-      case 0xA1: { atlas_index = '~' + 17; } break; // small a acute
-      case 0xA6: { atlas_index = '~' + 18; } break; // small ae umlaut
-      case 0xB0: { atlas_index = '~' + 19; } break; // small eth (-d)
-      case 0xAB: { atlas_index = '~' + 20; } break; // small e umlaut
-      case 0xA9: { atlas_index = '~' + 21; } break; // small e acute
-      case 0xAF: { atlas_index = '~' + 22; } break; // small i umlaut
-      case 0xAD: { atlas_index = '~' + 23; } break; // small i acute
-      case 0xB6: { atlas_index = '~' + 24; } break; // small o umlaut
-      case 0xB3: { atlas_index = '~' + 25; } break; // small o acute
-      case 0xBE: { atlas_index = '~' + 26; } break; // small thorn (|d)
-      case 0xBC: { atlas_index = '~' + 27; } break; // small u umlaut
-      case 0xBA: { atlas_index = '~' + 28; } break; // small u acute
-      case 0xBD: { atlas_index = '~' + 29; } break; // small y acute
+  if ( len > 1 ) {
+    uint32_t codepoint = _utf8_to_cp( sequence, additional_bytes_processed );
+    switch( codepoint ) {
+      case 0xC1: { atlas_index = '~' + 2; } break; // big A acute
+      case 0xC4: { atlas_index = '~' + 1; } break; // big A umlaut
+      case 0xC6: { atlas_index = '~' + 3; } break; // big Ash Æ
+      case 0xC9: { atlas_index = '~' + 6; } break; // big E acute
+      case 0xCB: { atlas_index = '~' + 5; } break; // big E umlaut
+      case 0xCD: { atlas_index = '~' + 8; } break; // big I acute
+      case 0xCF: { atlas_index = '~' + 7; } break; // big I umlaut
+      case 0xD0: { atlas_index = '~' + 4; } break; // big Eth Ð
+      case 0xD3: { atlas_index = '~' + 10; } break; // big O acute
+      case 0xD6: { atlas_index = '~' + 9; } break; // big O umlaut
+      case 0xDA: { atlas_index = '~' + 13; } break; // big U acute
+      case 0xDC: { atlas_index = '~' + 12; } break; // big U umlaut
+      case 0xDD: { atlas_index = '~' + 14; } break; // big Y acute
+      case 0xDE: { atlas_index = '~' + 11; } break; // big Thorn Þ
+      case 0xDF: { atlas_index = '~' + 15; } break; // small scharfus S ß
+      case 0xE1: { atlas_index = '~' + 17; } break; // small a acute
+      case 0xE4: { atlas_index = '~' + 16; } break; // small a umlaut
+      case 0xE6: { atlas_index = '~' + 18; } break; // small ash æ
+      case 0xE9: { atlas_index = '~' + 21; } break; // small e acute
+      case 0xEB: { atlas_index = '~' + 20; } break; // small e umlaut
+      case 0xED: { atlas_index = '~' + 23; } break; // small i acute
+      case 0xEF: { atlas_index = '~' + 22; } break; // small i umlaut
+      case 0xF0: { atlas_index = '~' + 19; } break; // small eth ð
+      case 0xF3: { atlas_index = '~' + 25; } break; // small o acute
+      case 0xF6: { atlas_index = '~' + 24; } break; // small o umlaut
+      case 0xFA: { atlas_index = '~' + 28; } break; // small u acute
+      case 0xFC: { atlas_index = '~' + 27; } break; // small u umlaut
+      case 0xFD: { atlas_index = '~' + 29; } break; // small y acute
+      case 0xFE: { atlas_index = '~' + 26; } break; // small thorn þ
       default: atlas_index = '?'; break;
     }
-    // clang-format on
-    *additional_bytes_processed = 1; // already handled next byte
   }
-
   return atlas_index;
 }
 
@@ -86,40 +138,40 @@ static int _get_spacing_for_codepoint( uint32_t codepoint ) {
   if ( 'l' == codepoint || '!' == codepoint || '\'' == codepoint || '|' == codepoint || ':' == codepoint ) { return 2; }
   if ( ',' == codepoint || '.' == codepoint || '`' == codepoint || ';' == codepoint ) { return 3; }
   if ( '(' == codepoint || ')' == codepoint ) { return 4; }
-  if ( '{' == codepoint || '}' == codepoint ) { return 5; }
+  if ( ' ' == codepoint || '{' == codepoint || '}' == codepoint ) { return 5; }
   return 6;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void apg_pixfont_word_wrap_str( char* str_ptr, int col_max ) {
-	if ( !str_ptr || col_max <= 0 ) { return; }
+  if ( !str_ptr || col_max <= 0 ) { return; }
 
   int len = _apg_pixfont_strnlen( str_ptr, APG_PIXFONT_MAX_STRLEN );
-	if ( len < col_max ) { return; } // Entire string fits in one line.
+  if ( len < col_max ) { return; } // Entire string fits in one line.
 
-	int word_start = 0, word_n = 0, col = 0;
-	for ( int i = 0; i < len; i++ ) {
-		if ( col > col_max ) {
-			if ( word_start > 0 ) {
-				str_ptr[word_start - 1] = '\n'; // Might introduce double line-breaks.
-				col = word_n;
-			}
-		}
-		if ( isspace( str_ptr[i] ) ) {
-			word_n = 0;
-			word_start = i + 1;
-			if ( '\n' == str_ptr[i] ) {
-				col = 0;
-				continue;
-			}
-		} else {
-			word_n++;
-		}
-		col++;
-	}
+  int word_start = 0, word_n = 0, col = 0;
+  for ( int i = 0; i < len; i++ ) {
+    if ( col > col_max ) {
+      if ( word_start > 0 ) {
+        str_ptr[word_start - 1] = '\n'; // Might introduce double line-breaks.
+        col                     = word_n;
+      }
+    }
+    if ( isspace( str_ptr[i] ) ) {
+      word_n     = 0;
+      word_start = i + 1;
+      if ( '\n' == str_ptr[i] ) {
+        col = 0;
+        continue;
+      }
+    } else {
+      word_n++;
+    }
+    col++;
+  }
 }
 
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, int col_max ) {
+int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, apg_pixfont_style_t style, int col_max ) {
   if ( !ascii_str || !w || !h || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   *w = *h = 0;
@@ -128,7 +180,7 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
   if ( 0 == len ) { return APG_PIXFONT_FAILURE; }
 
   int x_cursor = 0, y_cursor = 0, max_x = 0;
-
+  int last_drawn_y_cursor = 0;
   for ( int i = 0, col = 0; i < len; i++ ) {
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
     if ( '\n' == ascii_str[i] ) {
@@ -141,31 +193,28 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
       x_cursor = col = 0;
       if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
     }
-    if ( ' ' == ascii_str[i] ) {
-      x_cursor += 5; // leave a gap
-      max_x = x_cursor > max_x ? x_cursor : max_x;
-      col++;
-      continue;
-    }
-    int additional_i = 0;
-    uint32_t atlas_index      = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
+    int additional_i     = 0;
+    uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
     x_cursor += _get_spacing_for_codepoint( atlas_index );
-    max_x = x_cursor > max_x ? x_cursor : max_x;
+    x_cursor = ( style != APG_PIXFONT_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
+    max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
+    last_drawn_y_cursor = y_cursor;
   } // endfor chars in str
 
-  *w = max_x;                  // each char is 6px wide + 1 spacing px
-  *h = _font_img_h + y_cursor; // only 1 row of text supported for now
+  *w = max_x; // Each char is ~6px wide + 1 spacing px.
+  *h = last_drawn_y_cursor + _font_img_h;
 
   *w = *w * thickness;
   *h = *h * thickness;
 
+  if ( APG_PIXFONT_STYLE_ITALIC == style ) { *w = *w + 7; } 
+  if ( APG_PIXFONT_STYLE_UNDERLINE == style || APG_PIXFONT_STYLE_STRIKETHROUGH == style ) { *w = *w + thickness; }
   if ( add_outline ) {
     *w = *w + 1;
     *h = *h + 1;
   }
-
   // make sure size is an even number, to help alignment of image
   if ( *w % 2 != 0 ) { *w = *w + 1; }
   if ( *h % 2 != 0 ) { *h = *h + 1; }
@@ -184,21 +233,30 @@ static bool _is_img_idx_coloured( const unsigned char* image, int idx, int n_cha
 
 // NOTE(Anton) could also user-specify an outline colour rather than all zero
 static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
-	for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
-	if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
-	if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
+  for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
+  if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
+  if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int w, int h, int n_channels, unsigned char r, unsigned char g, unsigned char b,
-  unsigned char a, int thickness, int add_outline, int col_max ) {
+int apg_pixfont_str_into_image(                                       //
+  const char* ascii_str,                                              //
+  unsigned char* image,                                               //
+  int w, int h,                                                       //
+  int n_channels,                                                     //
+  unsigned char r, unsigned char g, unsigned char b, unsigned char a, //
+  int thickness,                                                      //
+  int add_outline,                                                    //
+  apg_pixfont_style_t style,                                          //
+  int col_max                                                         //
+) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APG_PIXFONT_FAILURE; }
 
   int len      = _apg_pixfont_strnlen( ascii_str, APG_PIXFONT_MAX_STRLEN );
   int x_cursor = 0;
   int y_cursor = 0;
 
-  uint8_t colour[4] = {r, g, b, a};
+  uint8_t colour[4] = { r, g, b, a };
   if ( 2 == n_channels ) { colour[1] = a; } // 2-channel is usually RedAlpha, not RG.
 
   for ( int i = 0, col = 0; i < len; i++ ) {
@@ -212,57 +270,86 @@ int apg_pixfont_str_into_image( const char* ascii_str, unsigned char* image, int
     if ( col_max > 0 && col >= col_max ) {
       y_cursor += _font_img_h * thickness;
       x_cursor = col = 0;
-      if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
+      if ( ' ' == ascii_str[i]) { continue; } // Skip spaces after wrap.
     }
-    if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return.
-    if ( ' ' == ascii_str[i] ) {
-      x_cursor += 5 * thickness; // leave a gap
-      col++;
-      continue;
-    }
-    int additional_i = 0;
-    uint32_t atlas_index      = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
+    if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return. Note that space isn't ignored/skipped because we sometimes drawn them e.g. underlines.
+    int additional_i     = 0;
+    uint32_t codepoint = _atlas_index_for_sequence( &ascii_str[i], &additional_i );
     i += additional_i;
-    int spacing_px = _get_spacing_for_codepoint( atlas_index );
-    atlas_index -= 33;
+    int spacing_px         = _get_spacing_for_codepoint( codepoint );
+    int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
+    uint32_t atlas_index = codepoint > 32 ? codepoint - 33 : 0; // Strip 'atlas' has no space graphics. Maybe it should. For space this gives a giant number and this works kinda by accident.
+    int max_x_offset = 0;
+    // For each gyph in the thin strip of letters image.
     for ( int y = 0; y < _font_img_h; y++ ) {
-      for ( int x = 0; x < spacing_px; x++ ) {
+      for ( int x = 0; x < white_part_spacing; x++ ) {
         int atlas_x       = atlas_index * 6 + x;
         int atlas_y       = y;
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
-        if ( _font_img[atlas_img_idx] > 0x00 ) {
+        // 0 is top of glyph subimage, 10 is the baseline.
+        if ( ( codepoint > 32 && _font_img[atlas_img_idx] > 0x00 ) || //
+            ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || //
+            ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) //
+         ) {
+          // Fatten if necessary.
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
-              int image_x     = x_cursor + x * thickness + x_th;
-              int image_y     = y_cursor + y * thickness + y_th;
-              int out_img_idx = w * image_y + image_x;
+              int image_x  = x_cursor + x * thickness + x_th;
+              int image_y  = y_cursor + y * thickness + y_th;
+              int x_offset = 0;
+              if ( APG_PIXFONT_STYLE_ITALIC == style ) {
+                x_offset = 7 - y / 2; // Bottom left (y 14 and 15) dont move. Every 2 px up from that move 1. Max x is 6 + 7 + outline (14).
+                max_x_offset = x_offset > max_x_offset ? x_offset : max_x_offset;
+              } else if ( APG_PIXFONT_STYLE_BOLD == style ) {
+                x_offset = image_x % 1;
+              }
+
+              int out_img_idx = w * image_y + image_x + x_offset;
               if ( image_x >= w || image_y >= h ) { continue; }
               for ( int c = 0; c < n_channels; c++ ) { image[out_img_idx * n_channels + c] = colour[c]; }
-            }
-          }
-        } // endif colours
-      }   // endfor glyph x
-    }     // endfor glyph y
-    x_cursor += spacing_px * thickness;
+              if ( APG_PIXFONT_STYLE_BOLD == style ) {
+                for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + 1 ) * n_channels + c] = colour[c]; }
+                max_x_offset = 1;
+              }
+              if ( ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) { // Already looping over thickness so just need one offset here.
+                int extra_ul_px = add_outline ? thickness : thickness - 1;
+                for ( int c = 0; c < n_channels; c++ ) { image[( out_img_idx + extra_ul_px ) * n_channels + c] = colour[c]; }
+              } // endif underline.
+            } // endfor x thickness.
+          } // endfor y thickness.
+        } // endif colours.
+      } // endfor glyph x.
+    } // endfor glyph y.
+    x_cursor += spacing_px * thickness; // TODO use actual max x written to above
+    x_cursor = ( style == APG_PIXFONT_STYLE_BOLD || style == APG_PIXFONT_STYLE_UNDERLINE ) ? x_cursor + max_x_offset : x_cursor;
     col++;
   } // endfor chars in str
 
-	// NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
+  // NOTE(Anton) this is verbose because i have to do a whole 'nother loop order and y neighbour direction if the image memory is vertically flipped.
   if ( add_outline ) {
-			for ( int y = h - 1; y >= 0; y-- ) {
-				for ( int x = w - 1; x >= 0; x-- ) {
-					if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
-					if ( y > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-					if ( x > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-					if ( y > 0 && x > 0 ) {
-						if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) { _apply_outline( image, w * y + x, n_channels ); continue; }
-					}
-				} // endforx
-			} //endfor y
-  } // endfor outline
+    for ( int y = h - 1; y >= 0; y-- ) {
+      for ( int x = w - 1; x >= 0; x-- ) {
+        if ( _is_img_idx_coloured( image, n_channels * ( w * y + x ), n_channels ) ) { continue; }
+        if ( y > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + x ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+        if ( x > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * y + ( x - 1 ) ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+        if ( y > 0 && x > 0 ) {
+          if ( _is_img_idx_coloured( image, n_channels * ( w * ( y - 1 ) + ( x - 1 ) ), n_channels ) ) {
+            _apply_outline( image, w * y + x, n_channels );
+            continue;
+          }
+        }
+      } // endforx
+    }   // endfor y
+  }     // endfor outline
   return APG_PIXFONT_SUCCESS;
 }
