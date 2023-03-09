@@ -39,8 +39,8 @@ cd ..
 #
 echo "building apg_console tests..."
 cd apg_console
-#cp ../apg_pixfont/apg_pixfont.c ./
-#cp ../apg_pixfont/apg_pixfont.h ./
+cp ../apg_pixfont/apg_pixfont.c ./
+cp ../apg_pixfont/apg_pixfont.h ./
 $CC $FLAGS tests/main.c apg_console.c apg_pixfont.c -I ./
 cd ..
 
