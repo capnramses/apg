@@ -34,7 +34,7 @@ int main() {
     apg_pixfont_word_wrap_str( str, 10 );
 
     // FIND SIZE REQUIRED FOR TEXT IMAGE
-    bool result = apg_pixfont_image_size_for_str( str, &w, &h, thickness[i], outlines[i], APG_PIXFONT_STYLE_REGULAR, 10 );
+    bool result = apg_pixfont_image_size_for_str( str, &w, &h, thickness[i], outlines[i], APG_PIXFONT_STYLE_ITALIC, 10 );
     if ( !result ) {
       fprintf( stderr, "ERROR: sizing string image %i\n", i );
       return 1;
@@ -42,7 +42,7 @@ int main() {
 
     // CREATE TEXT IMAGE
     unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
-    result = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], APG_PIXFONT_STYLE_REGULAR, 10 );
+    result = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], APG_PIXFONT_STYLE_ITALIC, 10 );
     if ( !result ) {
       fprintf( stderr, "ERROR: creating string image %i\n", i );
       return 1;
