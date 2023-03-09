@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int cell_dims[2] = { 16, 16 }; // ~1MB per 256-char sheet. Prefer power-of-two sizes, but not essential.
+int cell_dims[2] = { 32, 32 }; // ~1MB per 256-char sheet. Prefer power-of-two sizes, but not essential.
 
 bool draw_atlas( const char* filename, int padding_px, int thickness, int add_outline, apg_pixfont_style_t style ) {
   int max_w = 0, max_h = 0;
@@ -88,7 +88,7 @@ int main() {
   const char* atlas_strikethrough_str = "atlas_strikethrough.png";
   // Find max dimensions per character and check that font will fit in atlas.
   int padding_px            = 4;
-  int thickness             = 1;
+  int thickness             = 2;
   int add_outline           = 1;
   apg_pixfont_style_t style = APG_PIXFONT_STYLE_REGULAR;
 
