@@ -25,60 +25,112 @@ static int _apg_pixfont_strnlen( const char* str, int maxlen ) {
   return i;
 }
 
-// TODO(Anton) replace with unicode codepoint scans and then a lookup table for supported unicode
-// does not handle spacing for ' ' or '\n' - those must be handled before calling this function
-// additional_bytes_processed - if 2+ bytes formed a single glyph then additional_bytes_processed == 1+
+#define MASK_FIRST_ONE   128 // 128 or 10000000
+#define MASK_FIRST_TWO   192 // 192 or 11000000
+#define MASK_FIRST_THREE 224 // 224 or 11100000
+#define MASK_FIRST_FOUR  240 // 240 or 11110000
+#define MASK_FIRST_FIVE  248 // 248 or 11111000
+static uint32_t _utf8_to_cp( const char* mbs, int* sz ) {
+  assert( mbs && sz );
+  if ( !mbs || !sz ) { return 0; }
+  *sz = 0;
+  if ( '\0' == mbs[0] ) { return 0; }
+  uint8_t first_byte = (uint8_t)mbs[0];
+  if ( first_byte < MASK_FIRST_ONE ) {
+    *sz = 1;
+    return (uint32_t)mbs[0];
+  }
+  if ( first_byte < MASK_FIRST_THREE ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) {  return 0; }
+    uint8_t part_a     = first_byte << 3;             // shift 110xxxxx to xxxxx000
+    uint8_t part_b     = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint32_t codepoint = (uint32_t)part_a << 3;       // 00000000 00000000 00000000 xxxxx000 << 3 = 00000000 00000000 00000xxx xx000000
+    codepoint |= (uint32_t)part_b;                    // 00000000 00000000 00000xxx xx000000 | pb = 00000000 00000000 00000xxx xxxxxxxx
+    *sz = 2;
+    return codepoint;
+  }
+  if ( first_byte < MASK_FIRST_FOUR ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t third_byte = (uint8_t)mbs[2];
+    if ( third_byte < MASK_FIRST_ONE || third_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t part_a = first_byte << 4;             // shift 1110xxxx to xxxx0000
+    uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+		(void)part_b; // unused
+		(void)part_c; // unused
+
+    uint32_t codepoint = (uint32_t)part_a << 2;
+    codepoint = ( codepoint | (uint32_t)second_byte ) << 6;
+    codepoint |= (uint32_t)third_byte;
+    *sz = 3;
+    return codepoint;
+  }
+  if ( first_byte < MASK_FIRST_FIVE ) {
+    uint8_t second_byte = (uint8_t)mbs[1];
+    if ( second_byte < MASK_FIRST_ONE || second_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t third_byte = (uint8_t)mbs[2];
+    if ( third_byte < MASK_FIRST_ONE || third_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t fourth_byte = (uint8_t)mbs[3];
+    if ( fourth_byte < MASK_FIRST_ONE || fourth_byte >= MASK_FIRST_TWO ) { return 0; }
+    uint8_t part_a = first_byte << 4;             // shift 1110xxxx to xxxx0000
+    uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint8_t part_d = fourth_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
+    uint32_t codepoint = (uint32_t)part_a << 1;
+    codepoint = ( codepoint | (uint32_t)part_b ) << 6;
+    codepoint = ( codepoint | (uint32_t)part_c ) << 6;
+    codepoint |= (uint32_t)part_d;
+    *sz = 4;
+    return codepoint;
+  }
+  return 0;
+}
+
 static uint32_t _atlas_index_for_sequence( const char* sequence, int* additional_bytes_processed ) {
   assert( sequence && additional_bytes_processed );
 
   int len              = _apg_pixfont_strnlen( sequence, APG_PIXFONT_MAX_STRLEN );
   uint32_t atlas_index = '?';
-
-  *additional_bytes_processed = 0;
-
   uint8_t first_byte = (uint8_t)sequence[0];
-
+  *additional_bytes_processed = 0;
   if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; }
-
-  if ( 0xC3 == first_byte && len > 1 ) {
-    uint8_t second_byte = (uint8_t)sequence[1];
-    // clang-format off
-    switch( second_byte ) {
-      case 0x84: { atlas_index = '~' + 1; } break; // big A umlaut
-      case 0x81: { atlas_index = '~' + 2; } break; // big A acute
-      case 0x86: { atlas_index = '~' + 3; } break; // big Ash (AE)
-      case 0x90: { atlas_index = '~' + 4; } break; // big Eth (-D)
-      case 0x8B: { atlas_index = '~' + 5; } break; // big E umlaut
-      case 0x89: { atlas_index = '~' + 6; } break; // big E acute
-      case 0x8F: { atlas_index = '~' + 7; } break; // big I umlaut
-      case 0x8D: { atlas_index = '~' + 8; } break; // big I acute
-      case 0x96: { atlas_index = '~' + 9; } break; // big O umlaut
-      case 0x93: { atlas_index = '~' + 10; } break; // big O acute
-      case 0x9E: { atlas_index = '~' + 11; } break; // big Thorn (|D)
-      case 0x9C: { atlas_index = '~' + 12; } break; // big U umlaut
-      case 0x9A: { atlas_index = '~' + 13; } break; // big U acute
-      case 0x9D: { atlas_index = '~' + 14; } break; // big Y acute
-      case 0x9F: { atlas_index = '~' + 15; } break; // small doppel S
-      case 0xA4: { atlas_index = '~' + 16; } break; // small a umlaut
-      case 0xA1: { atlas_index = '~' + 17; } break; // small a acute
-      case 0xA6: { atlas_index = '~' + 18; } break; // small ae umlaut
-      case 0xB0: { atlas_index = '~' + 19; } break; // small eth (-d)
-      case 0xAB: { atlas_index = '~' + 20; } break; // small e umlaut
-      case 0xA9: { atlas_index = '~' + 21; } break; // small e acute
-      case 0xAF: { atlas_index = '~' + 22; } break; // small i umlaut
-      case 0xAD: { atlas_index = '~' + 23; } break; // small i acute
-      case 0xB6: { atlas_index = '~' + 24; } break; // small o umlaut
-      case 0xB3: { atlas_index = '~' + 25; } break; // small o acute
-      case 0xBE: { atlas_index = '~' + 26; } break; // small thorn (|d)
-      case 0xBC: { atlas_index = '~' + 27; } break; // small u umlaut
-      case 0xBA: { atlas_index = '~' + 28; } break; // small u acute
-      case 0xBD: { atlas_index = '~' + 29; } break; // small y acute
+  if ( len > 1 ) {
+    uint32_t codepoint = _utf8_to_cp( sequence, additional_bytes_processed );
+    switch( codepoint ) {
+      case 0xC1: { atlas_index = '~' + 2; } break; // big A acute
+      case 0xC4: { atlas_index = '~' + 1; } break; // big A umlaut
+      case 0xC6: { atlas_index = '~' + 3; } break; // big Ash Æ
+      case 0xC9: { atlas_index = '~' + 6; } break; // big E acute
+      case 0xCB: { atlas_index = '~' + 5; } break; // big E umlaut
+      case 0xCD: { atlas_index = '~' + 8; } break; // big I acute
+      case 0xCF: { atlas_index = '~' + 7; } break; // big I umlaut
+      case 0xD0: { atlas_index = '~' + 4; } break; // big Eth Ð
+      case 0xD3: { atlas_index = '~' + 10; } break; // big O acute
+      case 0xD6: { atlas_index = '~' + 9; } break; // big O umlaut
+      case 0xDA: { atlas_index = '~' + 13; } break; // big U acute
+      case 0xDC: { atlas_index = '~' + 12; } break; // big U umlaut
+      case 0xDD: { atlas_index = '~' + 14; } break; // big Y acute
+      case 0xDE: { atlas_index = '~' + 11; } break; // big Thorn Þ
+      case 0xDF: { atlas_index = '~' + 15; } break; // small scharfus S ß
+      case 0xE1: { atlas_index = '~' + 17; } break; // small a acute
+      case 0xE4: { atlas_index = '~' + 16; } break; // small a umlaut
+      case 0xE6: { atlas_index = '~' + 18; } break; // small ash æ
+      case 0xE9: { atlas_index = '~' + 21; } break; // small e acute
+      case 0xEB: { atlas_index = '~' + 20; } break; // small e umlaut
+      case 0xED: { atlas_index = '~' + 23; } break; // small i acute
+      case 0xEF: { atlas_index = '~' + 22; } break; // small i umlaut
+      case 0xF0: { atlas_index = '~' + 19; } break; // small eth ð
+      case 0xF3: { atlas_index = '~' + 25; } break; // small o acute
+      case 0xF6: { atlas_index = '~' + 24; } break; // small o umlaut
+      case 0xFA: { atlas_index = '~' + 28; } break; // small u acute
+      case 0xFC: { atlas_index = '~' + 27; } break; // small u umlaut
+      case 0xFD: { atlas_index = '~' + 29; } break; // small y acute
+      case 0xFE: { atlas_index = '~' + 26; } break; // small thorn þ
       default: atlas_index = '?'; break;
     }
-    // clang-format on
-    *additional_bytes_processed = 1; // already handled next byte
   }
-
   return atlas_index;
 }
 
@@ -226,7 +278,7 @@ int apg_pixfont_str_into_image(                                       //
     i += additional_i;
     int spacing_px         = _get_spacing_for_codepoint( codepoint );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
-    uint32_t atlas_index = codepoint - 33; // Strip 'atlas' has no space graphics. Maybe it should.
+    uint32_t atlas_index = codepoint > 32 ? codepoint - 33 : 0; // Strip 'atlas' has no space graphics. Maybe it should. For space this gives a giant number and this works kinda by accident.
     int max_x_offset = 0;
     // For each gyph in the thin strip of letters image.
     for ( int y = 0; y < _font_img_h; y++ ) {
@@ -235,8 +287,11 @@ int apg_pixfont_str_into_image(                                       //
         int atlas_y       = y;
         int atlas_img_idx = _font_img_w * atlas_y + atlas_x;
         // 0 is top of glyph subimage, 10 is the baseline.
-        if ( _font_img[atlas_img_idx] > 0x00 || ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) ) {
-          // Fatten if necessary
+        if ( ( codepoint > 32 && _font_img[atlas_img_idx] > 0x00 ) || //
+            ( APG_PIXFONT_STYLE_UNDERLINE == style && y == 12 ) || //
+            ( APG_PIXFONT_STYLE_STRIKETHROUGH == style && y == 8 ) //
+         ) {
+          // Fatten if necessary.
           for ( int y_th = 0; y_th < thickness; y_th++ ) {
             for ( int x_th = 0; x_th < thickness; x_th++ ) {
               int image_x  = x_cursor + x * thickness + x_th;

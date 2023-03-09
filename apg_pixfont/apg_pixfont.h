@@ -85,7 +85,8 @@ Technical Details:
 
 TODO:
 ==============================================================
-- Support more glyphs - e.g. French { ç â à }
+- Support more glyphs - e.g. French { ç â à }, and put them in Unicode order.
+- Fix up ampersand, quotation marks, etc glyphs, as from gfx_expmts repo.
 
 History:
 ==============================================================
