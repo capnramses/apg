@@ -1,5 +1,5 @@
 /* test_pixfont.cpp - Test program for apg_pixfont.
-C++ Implementation
+C++ Implementation ( to make sure I got C header compatibility right ).
 See apg_pixfont.h for library licence and instructions.
 Anton Gerdelan 2019
 ============================================================== */
@@ -25,39 +25,43 @@ int main() {
   const int n_chans[N_TEST_STRINGS]            = { 1, 2, 3, 4, 4, 4, 4, 4 };
   int thickness[N_TEST_STRINGS]                = { 1, 1, 1, 1, 2, 3, 10, 1 };
   bool outlines[N_TEST_STRINGS]                = { false, true, false, true, true, true, true, true };
-  const char* output_filenames[N_TEST_STRINGS] = { "0.png", "1.png", "2.png", "3.png", "4.png", "5.png", "6.png", "7.png" };
 
-  for ( int i = 0; i < N_TEST_STRINGS; i++ ) {
-    int w = 0, h = 0;
+  for ( int s = 0; s < 5; s++ ) {
+    apg_pixfont_style_t style = static_cast<apg_pixfont_style_t>(s);
+    for ( int i = 0; i < N_TEST_STRINGS; i++ ) {
+      int w = 0, h = 0;
 
-    char* str = strdup( test_strings[i] );
-    apg_pixfont_word_wrap_str( str, 10 );
+      char* str = strdup( test_strings[i] );
+      apg_pixfont_word_wrap_str( str, 10 );
 
-    // FIND SIZE REQUIRED FOR TEXT IMAGE
-    bool result = apg_pixfont_image_size_for_str( str, &w, &h, thickness[i], outlines[i], APG_PIXFONT_STYLE_ITALIC, 10 );
-    if ( !result ) {
-      fprintf( stderr, "ERROR: sizing string image %i\n", i );
-      return 1;
+      // FIND SIZE REQUIRED FOR TEXT IMAGE
+      bool result = apg_pixfont_image_size_for_str( str, &w, &h, thickness[i], outlines[i], style, 10 );
+      if ( !result ) {
+        fprintf( stderr, "ERROR: sizing string image %i\n", i );
+        return 1;
+      }
+
+      // CREATE TEXT IMAGE
+      unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
+      result = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], style, 10 );
+      if ( !result ) {
+        fprintf( stderr, "ERROR: creating string image %i\n", i );
+        return 1;
+      }
+
+      // WRITE OUTPUT TO FILE
+      char tmp[256];
+      sprintf( tmp, "%i.png", s * N_TEST_STRINGS + i );
+      result = stbi_write_png( tmp, w, h, n_chans[i], text_img, w * n_chans[i] );
+      if ( !result ) {
+        fprintf( stderr, "ERROR: writing string image %i\n", i );
+        return 1;
+      }
+
+      // FREE IMAGE MEMORY
+      free( text_img );
+      free( str );
     }
-
-    // CREATE TEXT IMAGE
-    unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
-    result = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], APG_PIXFONT_STYLE_ITALIC, 10 );
-    if ( !result ) {
-      fprintf( stderr, "ERROR: creating string image %i\n", i );
-      return 1;
-    }
-
-    // WRITE OUTPUT TO FILE
-    result = stbi_write_png( output_filenames[i], w, h, n_chans[i], text_img, w * n_chans[i] );
-    if ( !result ) {
-      fprintf( stderr, "ERROR: writing string image %i\n", i );
-      return 1;
-    }
-
-    // FREE IMAGE MEMORY
-    free( text_img );
-    free( str );
   }
 
   // convert a font image file to C array for pasting into apg_pixfont.c
