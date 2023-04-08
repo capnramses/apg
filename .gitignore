@@ -8,6 +8,8 @@
 apg.log
 *.wav
 out.*
+apg_console/apg_pixfont.c
+apg_console/apg_pixfont.h
 apg_console/testoutput.png
 apg_console/testuserenteredtext.png
 apg_bmp/tests_fuzzing/fuzz_24bpp_outputs/
