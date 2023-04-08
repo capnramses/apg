@@ -4,7 +4,7 @@ Author:   Anton Gerdelan  <antonofnote at gmail>  @capnramses
 URL:      https://github.com/capnramses/apg
 Licence:  See bottom of corresponding header file.
 Language: C99.
-Version:  0.1
+Version:  0.2
 ==================================================================================================
 */
 
