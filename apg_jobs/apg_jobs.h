@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.2 (2021/12/20)
+ * Version   | 0.2.3
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -61,6 +61,10 @@
 #define APG_JOBS_EXPORT
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 /** Forward-declaration of internal-use context struct. */
@@ -108,6 +112,10 @@ APG_JOBS_EXPORT bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.
  */
 APG_JOBS_EXPORT void apg_jobs_wait( apg_jobs_pool_t* pool_ptr );
+
+#ifdef __cplusplus
+}
+#endif /* CPP */
 
 /*
 -------------------------------------------------------------------------------------
