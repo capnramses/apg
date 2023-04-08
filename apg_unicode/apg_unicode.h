@@ -1,7 +1,7 @@
 /* apg_unicode
 Unicode <-> UTF-8 Multibyte String Functions for C & C++
 Anton Gerdelan
-Version: 0.2. 3 May 2020.
+Version: 0.2.2
 Licence: see bottom of file.
 C89 ( Implementation is C99 )
 
@@ -21,10 +21,15 @@ Further Reading:
 * I based Arabic cursive look-up table on the medial and final forms available in https://www.unicode.org/charts/PDF/UFE70.pdf
 
 History:
-* 0.2. 3 May 2020 Dug up unicode files from Project Storm and brushed off the dust.
+* 0.2.0 3 May 2020 Dug up unicode files from Project Storm and brushed off the dust.
 */
 
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define APG_UNICODE_MAX_STR 2048 // max length of string. for avoiding infinite loops.
@@ -81,6 +86,10 @@ NOTE: Searches string from front-to-back so not efficient for long strings.
 Could instead be implemented to progressively look at last 4 bytes for unicode indicators.
 */
 void apg_utf8_trim_end( char* buf, int n );
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
 -------------------------------------------------------------------------------------

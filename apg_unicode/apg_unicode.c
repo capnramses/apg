@@ -1,7 +1,7 @@
 /* apg_unicode
 Unicode <-> UTF-8 Multibyte String Functions for C & C++
 Anton Gerdelan
-Version: 0.2. 3 May 2020.
+Version: 0.2.2
 Licence: see apg_unicode.h
 C99
 */
