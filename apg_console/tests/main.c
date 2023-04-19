@@ -10,7 +10,7 @@ bool anton_func( const char* arg_str ) {
   return true;
 }
 
-int main() {
+int main( void ) {
 
   // resolving a prior bug where text wouldn't print until a \n was entered
   apg_c_append_user_entered_text( "does this print without a slash n?" );

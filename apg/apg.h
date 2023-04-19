@@ -296,7 +296,7 @@ LOG FILES
 #endif
 
 /** Open/refresh a new log file and print timestamp. */
-void apg_start_log();
+void apg_start_log( void );
 
 /** Write a log entry. */
 void apg_log( const char* message, ... ) ATTRIB_PRINTF( 1, 2 );
@@ -839,7 +839,7 @@ LOG FILES IMPLEMENTATION
 =================================================================================================*/
 #define APG_LOG_FILE "apg.log" /* file name for log */
 
-void apg_start_log() {
+void apg_start_log( void ) {
   FILE* file = fopen( APG_LOG_FILE, "w" ); /* NOTE it was getting massive with "a" */
   if ( !file ) {
     fprintf( stderr, "ERROR: could not open APG_LOG_FILE log file %s for writing\n", APG_LOG_FILE );
@@ -973,7 +973,7 @@ void apg_print_trace( FILE* stream ) {
 } /* endfunc apg_print_trace() */
 
 /* to deliberately cause a sigsegv: call a function containing bad ptr: int *foo = (int*)-1; */
-void apg_start_crash_handler() {
+void apg_start_crash_handler( void ) {
   signal( SIGSEGV, _crash_handler );
   signal( SIGABRT, _crash_handler ); /* assert */
   signal( SIGILL, _crash_handler );

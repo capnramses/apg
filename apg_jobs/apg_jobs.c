@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.3
+ * Version   | 0.2.4
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Language  | C99
  * Files     | 2
@@ -379,7 +379,7 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
 /** Further OS examples:
  * https://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
  */
-unsigned int apg_jobs_n_logical_procs() {
+unsigned int apg_jobs_n_logical_procs( void ) {
 #ifdef _WIN32
   SYSTEM_INFO sys_info;
   GetSystemInfo( &sys_info );

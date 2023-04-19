@@ -37,7 +37,7 @@ void work_cb( void* arg_ptr ) {
   fprintf( stderr, "ending job, old=%d, val=%d\n", old, *val );
 }
 
-int main() {
+int main( void ) {
   // similar to `lscpu` command, where my machine has 1 socket with 4 cores per socket
   // and 2 threads per core (8 logical, 4 physical).
   int n_procs = apg_jobs_n_logical_procs();

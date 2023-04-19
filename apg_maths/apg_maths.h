@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
 History:
+v0.16.1 2023/04/19 - Minor tweaks for compiler warnings.
 v0.16  06 Apr 2022 - Added mul_vec2_f().
 v0.15  02 Feb 2022 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
 v0.14  18 Jan 2022 - Added a couple of vec2 functions.
@@ -190,7 +191,7 @@ vec3 reject_vec3( vec3 a, vec3 b );
    Basic Matrix Functions
 =============================================================================================== */
 
-mat4 identity_mat4();
+mat4 identity_mat4( void );
 
 mat4 mul_mat4_mat4( mat4 a, mat4 b );
 

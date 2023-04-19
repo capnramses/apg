@@ -4,7 +4,7 @@ Author:   Anton Gerdelan  <antonofnote at gmail>  @capnramses
 URL:      https://github.com/capnramses/apg
 Licence:  See bottom of corresponding header file.
 Language: C99.
-Version:  0.2
+Version:  0.2.1
 ==================================================================================================
 */
 
@@ -211,7 +211,7 @@ void apg_plot_y_axis_colour( uint8_t r, uint8_t g, uint8_t b ) {
 #define _APG_PLOT_TEST_PX_Y 512
 #define _APG_PLOT_TEST_N 32
 
-int main() {
+int main( void ) {
   // Init some test data. I want to plot n values, between 0 ant 2pi on x. Any value of n is fine.
   float xy_array[_APG_PLOT_TEST_N * 2];
   for ( int i = 0; i < _APG_PLOT_TEST_N; i++ ) {

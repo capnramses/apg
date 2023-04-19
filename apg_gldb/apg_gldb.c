@@ -1,5 +1,5 @@
 /*
-OpenGL Debug Drawing Functions
+OpenGL Debug Drawing Functions v0.4.1
 https://github.com/capnramses/opengl_debug_draw
 Anton Gerdelan <antonofnote@gmail.com>
 LICENCE - See bottom of header file.
@@ -39,9 +39,9 @@ static const char* gl_db_lines_fs_str =
   "  gl_FragColor = fc;\n"
   "}";
 
-void apg_gldb_reset_lines() { _count_lines = 0; }
+void apg_gldb_reset_lines( void ) { _count_lines = 0; }
 
-bool apg_gldb_init() {
+bool apg_gldb_init( void ) {
   // vao for drawing properties of lines
   glGenVertexArrays( 1, &_lines_vao );
   glBindVertexArray( _lines_vao );
@@ -85,14 +85,14 @@ bool apg_gldb_init() {
   return true;
 }
 
-void apg_gldb_free() {
+void apg_gldb_free( void ) {
   glDeleteBuffers( 1, &_lines_vbo );
   glDeleteVertexArrays( 1, &_lines_vao );
   // attached shaders have prev been flagged to delete so will also be deleted
   glDeleteProgram( _lines_shader_program );
 }
 
-int apg_gldb_add_line( float* start_xyz, float* end_xyz, float* colour_rgba ) {
+int apg_gldb_add_line( const float* start_xyz, const float* end_xyz, const float* colour_rgba ) {
   if ( _count_lines >= APG_GLDB_MAX_LINES ) {
     fprintf( stderr, "ERROR: too many apg_gldb lines\n" );
     return -1;
@@ -122,7 +122,7 @@ int apg_gldb_add_line( float* start_xyz, float* end_xyz, float* colour_rgba ) {
   return _count_lines++;
 }
 
-int apg_gldb_add_normal( float* n_xyz, float* pos_xyz, float scale, float* colour_rgba ) {
+int apg_gldb_add_normal( const float* n_xyz, const float* pos_xyz, float scale, const float* colour_rgba ) {
   if ( _count_lines >= APG_GLDB_MAX_LINES ) {
     fprintf( stderr, "ERROR: too many apg_gldb lines\n" );
     return -1;
@@ -156,7 +156,7 @@ int apg_gldb_add_normal( float* n_xyz, float* pos_xyz, float scale, float* colou
   return _count_lines++;
 }
 
-int apg_gldb_add_pos( float* pos_xyz, float scale, float* colour_rgba ) {
+int apg_gldb_add_pos( const float* pos_xyz, float scale, const float* colour_rgba ) {
   int rid = -1;
   float start[3], end[3];
 
@@ -185,7 +185,7 @@ int apg_gldb_add_pos( float* pos_xyz, float scale, float* colour_rgba ) {
   return rid;
 }
 
-int apg_gldb_add_aabb( float* min_xyz, float* max_xyz, float* colour_rgba ) {
+int apg_gldb_add_aabb( const float* min_xyz, const float* max_xyz, const float* colour_rgba ) {
   int rid = -1;
   float start[3], end[3];
 
@@ -244,7 +244,7 @@ int apg_gldb_add_aabb( float* min_xyz, float* max_xyz, float* colour_rgba ) {
   return rid;
 }
 
-int apg_gldb_add_rad_circle( float* centre_xyz, float radius, float* colour_rgba ) {
+int apg_gldb_add_rad_circle( const float* centre_xyz, float radius, const float* colour_rgba ) {
   int rid = -1;
   float start[3], end[3];
   // 3 radius lines in a cross first
@@ -273,39 +273,40 @@ int apg_gldb_add_rad_circle( float* centre_xyz, float radius, float* colour_rgba
   int segs = 12;
   // x,y around z loop
   for ( int i = 0; i < segs; i++ ) {
-    start[0] = centre_xyz[0] + radius * cos( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
-    start[1] = centre_xyz[1] + radius * sin( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
+    start[0] = centre_xyz[0] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
+    start[1] = centre_xyz[1] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
     start[2] = centre_xyz[2];
-    end[0]   = centre_xyz[0] + radius * cos( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
-    end[1]   = centre_xyz[1] + radius * sin( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    end[0]   = centre_xyz[0] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    end[1]   = centre_xyz[1] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
     end[2]   = centre_xyz[2];
     apg_gldb_add_line( start, end, colour_rgba );
   }
   // x,z around y loop
   for ( int i = 0; i < segs; i++ ) {
-    start[0] = centre_xyz[0] + radius * cos( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
+    start[0] = centre_xyz[0] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
     start[1] = centre_xyz[1];
-    start[2] = centre_xyz[2] + radius * sin( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
-    end[0]   = centre_xyz[0] + radius * cos( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    start[2] = centre_xyz[2] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
+    end[0]   = centre_xyz[0] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
     end[1]   = centre_xyz[1];
-    end[2]   = centre_xyz[2] + radius * sin( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    end[2]   = centre_xyz[2] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
     apg_gldb_add_line( start, end, colour_rgba );
   }
   // y,z around xloop
   for ( int i = 0; i < segs; i++ ) {
     start[0] = centre_xyz[0];
-    start[1] = centre_xyz[1] + radius * cos( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
-    start[2] = centre_xyz[2] + radius * sin( 2.0f * APG_GLDB_PI * (float)i / (float)segs );
+    start[1] = centre_xyz[1] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
+    start[2] = centre_xyz[2] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)i / (float)segs );
     end[0]   = centre_xyz[0];
-    end[1]   = centre_xyz[1] + radius * cos( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
-    end[2]   = centre_xyz[2] + radius * sin( 2.0f * APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    end[1]   = centre_xyz[1] + radius * cosf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
+    end[2]   = centre_xyz[2] + radius * sinf( 2.0f * (float)APG_GLDB_PI * (float)( i + 1 ) / (float)segs );
     apg_gldb_add_line( start, end, colour_rgba );
   }
 
   return rid;
 }
 
-int apg_gldb_add_frustum( float* ftl, float* ftr, float* fbl, float* fbr, float* ntl, float* ntr, float* nbl, float* nbr, float* colour_rgba ) {
+int apg_gldb_add_frustum( const float* ftl, const float* ftr, const float* fbl, const float* fbr, const float* ntl, const float* ntr, const float* nbl,
+  const float* nbr, const float* colour_rgba ) {
   int rid = -1;
   float start[3], end[3];
   start[0] = ftl[0];
@@ -397,7 +398,7 @@ int apg_gldb_add_frustum( float* ftl, float* ftr, float* fbl, float* fbr, float*
   return rid;
 }
 
-bool apg_gldb_mod_line( uint32_t line_id, float* start_xyz, float* end_xyz, float* colour_rgba ) {
+bool apg_gldb_mod_line( uint32_t line_id, const float* start_xyz, const float* end_xyz, const float* colour_rgba ) {
   if ( line_id >= _count_lines ) {
     fprintf( stderr, "ERROR: modifying apg_gldb line - bad ID\n" );
     return false;
@@ -427,7 +428,7 @@ bool apg_gldb_mod_line( uint32_t line_id, float* start_xyz, float* end_xyz, floa
   return true;
 }
 
-bool apg_gldb_mod_aabb( uint32_t line_id, float* min_xyz, float* max_xyz, float* colour_rgba ) {
+bool apg_gldb_mod_aabb( uint32_t line_id, const float* min_xyz, const float* max_xyz, const float* colour_rgba ) {
   if ( line_id + 12 > _count_lines ) {
     fprintf( stderr, "ERROR: modifying apg_gldb AABB - bad line ID\n" );
     return false;
@@ -491,7 +492,8 @@ bool apg_gldb_mod_aabb( uint32_t line_id, float* min_xyz, float* max_xyz, float*
   return true;
 }
 
-bool apg_gldb_mod_frustum( uint32_t line_id, float* ftl, float* ftr, float* fbl, float* fbr, float* ntl, float* ntr, float* nbl, float* nbr, float* colour_rgba ) {
+bool apg_gldb_mod_frustum( uint32_t line_id, const float* ftl, const float* ftr, const float* fbl, const float* fbr, const float* ntl, const float* ntr,
+  const float* nbl, const float* nbr, const float* colour_rgba ) {
   if ( line_id + 12 > _count_lines ) {
     fprintf( stderr, "ERROR: modifying apg_gldb frustum - bad line ID\n" );
     return false;
@@ -588,7 +590,7 @@ bool apg_gldb_mod_frustum( uint32_t line_id, float* ftl, float* ftr, float* fbl,
   return true;
 }
 
-void apg_gldb_update_cam( float* PV_mat4 ) {
+void apg_gldb_update_cam( const float* PV_mat4 ) {
   glUseProgram( _lines_shader_program );
   glUniformMatrix4fv( _PV_loc, 1, GL_FALSE, PV_mat4 );
 }

@@ -32,8 +32,9 @@ TODO:
  * Maybe add tics to axes. Possibly also an optional apg_pixel_font text or so.
 ==================================================================================================
 History:
-  0.2     - 20 JUL 2022 - Export symbols and renamed to apg_plot because its shorter and cooler.
-  0.1     - 20 JUL 2022 - First version in apg libraries. Pulled from hobby project and tidied up.
+  0.2.1   - 2023/04/19 - Minor compiler warning tweaks.
+  0.2     - 2022/07/20 - Export symbols and renamed to apg_plot because its shorter and cooler.
+  0.1     - 2022/07/20 - First version in apg libraries. Pulled from hobby project and tidied up.
 ==================================================================================================
 */
 
