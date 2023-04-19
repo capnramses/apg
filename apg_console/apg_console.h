@@ -8,19 +8,20 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
-  v0.13 - 2022/09/23 - Updated API to match new apg_pixfont.
-  v0.12 - 2021/10/03 - Fix to missing nul-terminator in long string copies.
-  v0.11 - 2021/06/09 - Fixes to warnings reported by MSVC.
-  v0.10 - 2021/06/05 - Fixed strncat warnings.
-  v0.9  - 2020/11/08 - Added functions to iteratively scroll through history like in BaSh.
-  v0.8  - 2020/09/13 - Removed assert on append empty string. Reduced max str len to suit shorter consoles.
-  v0.7  - 2020/08/09 - Fixed bug where counter of number of built in commands was too high by 1. Updated docs in this file.
-  v0.6  - 2020/08/08 - Fixed issue/bug where dumping to stdout didn't print current user entered text if history was empty.
-  v0.5  - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
-  v0.4  - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
-  v0.3  - 2020/06/07 - Doubled length of tmp strings to avoid truncation warnings.
-  v0.2  - 2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
-  v0.1  - 2020/01/06 - Reduced interface. Moved from stored float cvars to addresses of existing vars. Data type is also specified for bool/int/uint/float support.
+  v0.13.1 - 2023/04/19 - Small function prototype fixes.
+  v0.13   - 2022/09/23 - Updated API to match new apg_pixfont.
+  v0.12   - 2021/10/03 - Fix to missing nul-terminator in long string copies.
+  v0.11   - 2021/06/09 - Fixes to warnings reported by MSVC.
+  v0.10   - 2021/06/05 - Fixed strncat warnings.
+  v0.9    - 2020/11/08 - Added functions to iteratively scroll through history like in BaSh.
+  v0.8    - 2020/09/13 - Removed assert on append empty string. Reduced max str len to suit shorter consoles.
+  v0.7    - 2020/08/09 - Fixed bug where counter of number of built in commands was too high by 1. Updated docs in this file.
+  v0.6    - 2020/08/08 - Fixed issue/bug where dumping to stdout didn't print current user entered text if history was empty.
+  v0.5    - 2020/08/08 - apc_c_printf_rgba() to set the colour of particular lines. History text is now grey by default, and cursor text is white.
+  v0.4    - 2020/08/08 - Added printf-style variadic arguments and renamed apc_c_print() to apc_c_printf().
+  v0.3    - 2020/06/07 - Doubled length of tmp strings to avoid truncation warnings.
+  v0.2    - 2020/01/04 - Moved to apg libraries repository. Minor tweaks from testing in a game integration.
+  v0.1    - 2020/01/06 - Reduced interface. Moved from stored float cvars to addresses of existing vars. Data type is also specified for bool/int/uint/float support.
 
 Instructions
 ============
@@ -125,10 +126,10 @@ PARAMS - hist is the number of entries back from the most recent command entered
 void apg_c_reuse_hist( int hist_steps );
 
 /* Call this function on i.e. user hitting cursor up arrow to replicate BaSh history scrolling. Calls apg_c_reuse_hist() with the appropriate history item. */
-void apg_c_reuse_hist_back_one();
+void apg_c_reuse_hist_back_one( void );
 
 /* Call this function on i.e. user hitting cursor down arrow to replicate BaSh history scrolling. */
-void apg_c_reuse_hist_ahead_one();
+void apg_c_reuse_hist_ahead_one( void );
 
 void apg_c_clear_user_entered_text( void );
 
@@ -195,7 +196,7 @@ rendering API
 bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, uint8_t* background_colour );
 
 // RETURNS true if console has changed since last call to apg_c_draw_to_image_mem() and can be painted again
-bool apg_c_image_redraw_required();
+bool apg_c_image_redraw_required( void );
 
 #ifdef __cplusplus
 }

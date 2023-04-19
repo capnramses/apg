@@ -12,7 +12,7 @@ Language: C99
 
 #define N_STORE 666
 
-int main() {
+int main( void ) {
   printf( "===========================================\n" );
   {
     apg_hash_table_t table = apg_hash_table_create( 128 );

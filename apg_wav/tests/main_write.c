@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 
-int main() {
+int main( void ) {
   int n_chans         = 1;
   int sample_rate     = 11025;
   int n_samples       = 1024;

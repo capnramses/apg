@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h> // memset
 
-int main() {
+int main( void ) {
   printf( "testing C99 version of maths library\n" );
 
   // vec2 v2, v2b;

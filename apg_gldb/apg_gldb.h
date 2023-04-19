@@ -23,9 +23,11 @@ USAGE INSTRUCTIONS
  6. Call apg_gldb_free() when done i.e. at the end of your program.
 
 HISTORY
-  0.1 - 11 Jun 2015 - First version.
-  0.2 - 16 Jun 2015 - Feature complete v. original spec.
-  0.3 - 13 May 2020 - Tidied API and docs. Added _mod_ function for AABB and frustum.
+  0.4.1 - 2023/04/19  - Compiler warning tweaks.
+  0.4   - 18 May 2020 - const.
+  0.3   - 13 May 2020 - Tidied API and docs. Added _mod_ function for AABB and frustum.
+  0.2   - 16 Jun 2015 - Feature complete v. original spec.
+  0.1   - 11 Jun 2015 - First version.
 
 TODO
  - Recreate test/example program.
@@ -40,10 +42,10 @@ TODO
 #define APG_GLDB_MAX_LINES 10000
 
 /* Reserves memory for drawing and creates GPU resources. */
-bool apg_gldb_init();
+bool apg_gldb_init( void );
 
 /* Frees all allocated memory and GPU resources. */
-void apg_gldb_free();
+void apg_gldb_free( void );
 
 /* Creates a new debug line in world coordinate space.
 PARAMS
@@ -51,7 +53,7 @@ PARAMS
   colour_rgba        - Colour to draw the line.
 RETURNS the line id.
 */
-int apg_gldb_add_line( float* start_xyz, float* end_xyz, float* colour_rgba );
+int apg_gldb_add_line( const float* start_xyz, const float* end_xyz, const float* colour_rgba );
 
 /* Creates a line with a colour that goes from black to coloured in direction of a normal.
 PARAMS
@@ -61,12 +63,12 @@ PARAMS
   colour_rgba - Colour to draw the line.
 RETURNS the line id.
 */
-int apg_gldb_add_normal( float* n_xyz, float* pos_xyz, float scale, float* colour_rgba );
+int apg_gldb_add_normal( const float* n_xyz, const float* pos_xyz, const float scale, const float* colour_rgba );
 
 /* Creates 3 lines in a cross with a colour to show a position.
 RETURNS the first of 3 contiguous line ids.
 */
-int apg_gldb_add_pos( float* pos_xyz, float scale, float* colour_rgba );
+int apg_gldb_add_pos( const float* pos_xyz, const float scale, const float* colour_rgba );
 
 /* Draws a box for this axis-aligned bounding box.
 PARAMS
@@ -75,23 +77,24 @@ PARAMS
   colour_rgba - Colour to render the lines.
 RETURNS the first of 12 contiguous line ids
 */
-int apg_gldb_add_aabb( float* min_xyz, float* max_xyz, float* colour_rgba );
+int apg_gldb_add_aabb( const float* min_xyz, const float* max_xyz, const float* colour_rgba );
 
 /* Draws a circle+radius to represent a sphere.
 RETURNS the first of 39 line ids
 */
-int apg_gldb_add_rad_circle( float* centre_xyz, float radius, float* colour_rgba );
+int apg_gldb_add_rad_circle( const float* centre_xyz, float radius, const float* colour_rgba );
 
 /* Takes 8 xyz corner points for given camera frustum and draws a box whenever apg_gldb_draw() is called.
 Most camera code already extracts points from matrices so that is not repeated here.
 RETURNS first line's id.
 */
-int apg_gldb_add_frustum( float* ftl, float* ftr, float* fbl, float* fbr, float* ntl, float* ntr, float* nbl, float* nbr, float* colour_rgba );
+int apg_gldb_add_frustum( const float* ftl, const float* ftr, const float* fbl, const float* fbr, const float* ntl, const float* ntr, const float* nbl,
+  const float* nbr, const float* colour_rgba );
 
 /* Modify or move a line previously added.
 RETURNS false if line_id wasn't valid.
 */
-bool apg_gldb_mod_line( uint32_t line_id, float* start_xyz, float* end_xyz, float* colour_rgba );
+bool apg_gldb_mod_line( uint32_t line_id, const float* start_xyz, const float* end_xyz, const float* colour_rgba );
 
 /* Modify or move an axis-aligned bounding box previously added via apg_gldb_add_aabb().
 PARAMS
@@ -102,18 +105,19 @@ PARAMS
 RETURNS false if line_id wasn't valid.
 TODO(Anton) - the impl of this should modifier the buffer in one op, not individual calls to apg_gldb_mod_line().
 */
-bool apg_gldb_mod_aabb( uint32_t line_id, float* min_xyz, float* max_xyz, float* colour_rgba );
+bool apg_gldb_mod_aabb( uint32_t line_id, const float* min_xyz, const float* max_xyz, const float* colour_rgba );
 
-bool apg_gldb_mod_frustum( uint32_t line_id, float* ftl, float* ftr, float* fbl, float* fbr, float* ntl, float* ntr, float* nbl, float* nbr, float* colour_rgba );
+bool apg_gldb_mod_frustum( uint32_t line_id, const float* ftl, const float* ftr, const float* fbl, const float* fbr, const float* ntl, const float* ntr,
+  const float* nbl, const float* nbr, const float* colour_rgba );
 
 /* Wipes all the lines for redrawing. Doesn't actually delete the buffer - call apg_gldb_free() do release allocated graphics resources. */
-void apg_gldb_reset_lines();
+void apg_gldb_reset_lines( void );
 
 /* Updates the camera matrix so that line points given are defined as being in world coordinate space.
 PARAMS
   matrix - A 16 float column-major matrix as 1D array in column order.
 */
-void apg_gldb_update_cam( float* PV_mat4 );
+void apg_gldb_update_cam( const float* PV_mat4 );
 
 /* Draws the lines.
 PARAMS

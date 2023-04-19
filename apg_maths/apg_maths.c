@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.16
+Version: 0.16.1
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -116,7 +116,7 @@ vec3 reject_vec3( vec3 a, vec3 b ) {
    Basic Matrix Functions
 =============================================================================================== */
 
-mat4 identity_mat4() {
+mat4 identity_mat4( void ) {
   mat4 r  = { { 0 } };
   r.m[0]  = 1.0f;
   r.m[5]  = 1.0f;

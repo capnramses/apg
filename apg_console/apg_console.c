@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.13
+Version:  0.13.1
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -64,8 +64,6 @@ static void apg_c_strncat( char* dst, const char* src, const int dest_max_len, c
   int dst_len         = apg_c_strnlen( dst, dest_max_len );
   dst[dst_len]        = '\0'; // just in case it wasn't already terminated before max length
   int remaining_space = dest_max_len - dst_len;
-  if ( remaining_space <= 0 ) { return; }
-  if ( remaining_space <= 0 ) { return; }
   const int n = remaining_space < src_max_copy ? remaining_space : src_max_copy; // use src_max if smaller
   strncat( dst, src, n - 1 );                                                    // strncat manual guarantees null termination.
 }
@@ -80,17 +78,17 @@ static void _apg_c_command_hist_append( const char* c_user_entered_text ) {
   if ( _c_command_history_n >= APG_C_MAX_COMMAND_HIST ) { _c_command_history_n = APG_C_MAX_COMMAND_HIST - 1; }
 }
 
-static void _help() {
+static void _help( void ) {
   apg_c_printf( "APG_C by Anton Gerdelan. Autocomplete supported. Built-in functions are:" );
   for ( int i = 0; i < APG_C_N_BUILT_IN_COMMANDS; i++ ) { apg_c_printf( "%s", _c_built_in_commands[i] ); }
 }
 
-static void _list_c_vars() {
+static void _list_c_vars( void ) {
   apg_c_printf( "=====c_vars=====" );
   for ( uint32_t i = 0; i < _n_c_vars; i++ ) { apg_c_printf( "%s", _c_vars[i].str ); }
 }
 
-static void _list_c_funcs() {
+static void _list_c_funcs( void ) {
   apg_c_printf( "=====c_funcs=====" );
   for ( uint32_t i = 0; i < _n_c_funcs; i++ ) { apg_c_printf( "%s", _c_funcs[i].str ); }
 }
@@ -281,13 +279,13 @@ void apg_c_reuse_hist( int hist_steps ) {
   _c_redraw_required = true;
 }
 
-void apg_c_reuse_hist_back_one() {
+void apg_c_reuse_hist_back_one( void ) {
   _hist_curr_rewind_idx++;
   if ( _hist_curr_rewind_idx >= _c_command_history_n ) { _hist_curr_rewind_idx = _c_command_history_n - 1; }
   apg_c_reuse_hist( _hist_curr_rewind_idx );
 }
 
-void apg_c_reuse_hist_ahead_one() {
+void apg_c_reuse_hist_ahead_one( void ) {
   _hist_curr_rewind_idx--;
   if ( _hist_curr_rewind_idx < 0 ) { _hist_curr_rewind_idx = 0; }
   apg_c_reuse_hist( _hist_curr_rewind_idx );
@@ -308,7 +306,7 @@ void apg_c_clear_user_entered_text( void ) {
 }
 
 // WARNING(Anton) - assumes string is ASCII
-void apg_c_autocomplete() {
+void apg_c_autocomplete( void ) {
   size_t len = strlen( _c_user_entered_text );
   if ( 0 == len ) { return; }
 
@@ -521,4 +519,4 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
   return true;
 }
 
-bool apg_c_image_redraw_required() { return _c_redraw_required; }
+bool apg_c_image_redraw_required( void ) { return _c_redraw_required; }

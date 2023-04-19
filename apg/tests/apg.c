@@ -366,7 +366,7 @@ LOG FILES IMPLEMENTATION
 =================================================================================================*/
 #define APG_LOG_FILE "apg.log" /* file name for log */
 
-void apg_start_log() {
+void apg_start_log( void ) {
   FILE* file = fopen( APG_LOG_FILE, "w" ); /* NOTE it was getting massive with "a" */
   if ( !file ) {
     fprintf( stderr, "ERROR: could not open APG_LOG_FILE log file %s for writing\n", APG_LOG_FILE );

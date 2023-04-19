@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int main() {
+int main( void ) {
   const char* input_buffer  = "ABBCCCDDDDEEEEEFFFFFFGGGGGGGHHHHHHHHIIIIIIIII";
   char* decompressed_buffer = NULL;
 

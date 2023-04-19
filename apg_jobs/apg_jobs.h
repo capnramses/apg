@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.3
+ * Version   | 0.2.4
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -77,7 +77,7 @@ APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* conte
 typedef void ( *apg_jobs_work )( void* args_ptr );
 
 /** @return The number of logical processors on the system. */
-APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs();
+APG_JOBS_EXPORT unsigned int apg_jobs_n_logical_procs( void );
 
 /** Start the jobs system and its threads.
  * @param pool_ptr       The pool pointed to will be initialised by this function. Must not be NULL.
