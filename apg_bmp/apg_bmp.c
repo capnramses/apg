@@ -54,6 +54,8 @@ typedef struct _bmp_dib_BITMAPINFOHEADER_t {
   uint32_t bitmask_r;
   uint32_t bitmask_g;
   uint32_t bitmask_b;
+  // TODO(Anton) bitmask_a; is here in v4 and v5.
+  // Note(Anton) v4 and v5 have gamma curve and sRGB information here. 
 } _bmp_dib_BITMAPINFOHEADER_t;
 #pragma pack( pop )
 
@@ -182,7 +184,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     has_palette = true;
     n_src_chans = 1;
     break;
-  default: // this includes 2bpp and 16bpp
+  default: // This includes 0 (PNG and JPG) and 16.
     free( record.data );
     return NULL;
   } // endswitch
