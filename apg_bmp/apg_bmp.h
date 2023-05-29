@@ -67,6 +67,7 @@ Not desired:   Build systems, language & code style changes, large PRs.
 
 Version History
 -------------------------------------------------------------------------------
+  3.4.0   - 2023 May. 29. RLE compression support added.
   3.3.1   - 2023 Feb.  1. Fixed type casting warnings from MSVC.
   3.3     - 2023 Jan. 11. Fixed bug: images with alpha channel were y-flipped.
   3.2     - 2022 Mar. 22. Minor signed/unsigned tweaks to constants.

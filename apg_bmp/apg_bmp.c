@@ -1,7 +1,7 @@
 /*****************************************************************************\
 apg_bmp - BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3.3.1
+Version: 3.4.0
 Licence: see apg_bmp.h
 C99
 \*****************************************************************************/
@@ -131,6 +131,7 @@ static uint32_t _bitscan( uint32_t dword ) {
   return 0;
 }
 
+// TODO(Anton) - use stat ftello to allow >2GB files? and dir stat? Snippets in apg.h.
 unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans ) {
   if ( !filename || !w || !h || !n_chans ) { return NULL; }
 
