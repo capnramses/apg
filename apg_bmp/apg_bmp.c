@@ -109,6 +109,8 @@ static bool _validate_file_hdr( _bmp_file_header_t* file_hdr_ptr, size_t file_sz
 static bool _validate_dib_hdr( _bmp_dib_BITMAPINFOHEADER_t* dib_hdr_ptr, size_t file_sz ) {
   if ( !dib_hdr_ptr ) { return false; }
   if ( _BMP_FILE_HDR_SZ + dib_hdr_ptr->this_header_sz > file_sz ) { return false; }
+  // TODO(Anton) a 32-bit image is allowed to use BI_RGB for compression. Then high bit (alpha) is ignored.
+  // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header
   if ( ( 32 == dib_hdr_ptr->bpp || 16 == dib_hdr_ptr->bpp ) && ( BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method ) ) {
     return false;
   }
