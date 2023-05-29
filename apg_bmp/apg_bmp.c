@@ -62,12 +62,12 @@ typedef enum _bmp_compression_t {
   BI_RLE8           = 1,
   BI_RLE4           = 2,
   BI_BITFIELDS      = 3,
-  BI_JPEG           = 4,
-  BI_PNG            = 5,
+  BI_JPEG           = 4,  // Not supported.
+  BI_PNG            = 5,  // Not supported.
   BI_ALPHABITFIELDS = 6,
-  BI_CMYK           = 11,
-  BI_CMYKRLE8       = 12,
-  BI_CMYRLE4        = 13
+  BI_CMYK           = 11, // Not supported.
+  BI_CMYKRLE8       = 12, // Not supported.
+  BI_CMYRLE4        = 13  // Not supported.
 } _bmp_compression_t;
 
 /** Convenience struct and file->memory function. */
@@ -110,7 +110,8 @@ static bool _validate_dib_hdr( _bmp_dib_BITMAPINFOHEADER_t* dib_hdr_ptr, size_t 
   if ( ( 32 == dib_hdr_ptr->bpp || 16 == dib_hdr_ptr->bpp ) && ( BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method ) ) {
     return false;
   }
-  if ( BI_RGB != dib_hdr_ptr->compression_method && BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method ) {
+  if ( BI_RGB != dib_hdr_ptr->compression_method && BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method &&
+       BI_RLE8 != dib_hdr_ptr->compression_method && BI_RLE4 != dib_hdr_ptr->compression_method ) {
     return false;
   }
   // NOTE(Anton) using abs() in the if-statement was blowing up on large negative numbers. switched to labs()
@@ -211,7 +212,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     unpadded_row_sz = width % 2 > 0 ? width / 2 + 1 : width / 2; // Find how many whole bytes required for this bit width,
   }
   if ( 1 == dib_hdr_ptr->bpp ) {
-    unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8; // Find how many whole bytes required for this bit width,
+    unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8;                        // Find how many whole bytes required for this bit width,
   }
   uint32_t row_padding_sz = 0 == unpadded_row_sz % 4 ? 0 : 4 - ( unpadded_row_sz % 4 ); // NOTE(Anton) didn't expect operator precedence of - over %
 
@@ -276,6 +277,17 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
       free( dst_img_ptr );
       return NULL;
     }
+
+    if ( BI_RLE8 == dib_hdr_ptr->compression_method ) {
+      // If byte pair is 00 followed by 03-FF -> 'absolute mode'.
+      //   00, n_bytes_following, n bytes, 00
+      //   Note that we must terminate the run with 00. Validate this.
+      // Otherwise 'encoded mode'.
+      //   If first byte is 00 then second byte: { 0=EOL, 1=EObitmap, 2=deltaPosition}.
+      //   With delta position the next 2 bytes give right and up offset, respectively.
+      //   This means move the 'paint cursor' for the following bytes.
+    } // TODO }else{
+
     size_t src_byte_idx = 0;
     for ( uint32_t r = 0; r < height; r++ ) {
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
@@ -297,6 +309,12 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
 
     // == 4-bpp (16-colour) -> 24-bit RGB ==
   } else if ( 4 == dib_hdr_ptr->bpp && has_palette ) {
+
+    if ( BI_RLE4 == dib_hdr_ptr->compression_method ) {
+      // TODO
+    } // TODO }else{
+
+
     size_t src_byte_idx = 0;
     for ( uint32_t r = 0; r < height; r++ ) {
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
