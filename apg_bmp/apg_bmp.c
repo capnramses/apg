@@ -114,8 +114,12 @@ static bool _validate_dib_hdr( _bmp_dib_BITMAPINFOHEADER_t* dib_hdr_ptr, size_t 
   if ( ( 32 == dib_hdr_ptr->bpp || 16 == dib_hdr_ptr->bpp ) && ( BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method ) ) {
     return false;
   }
-  if ( BI_RGB != dib_hdr_ptr->compression_method && BI_BITFIELDS != dib_hdr_ptr->compression_method && BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method &&
-       BI_RLE8 != dib_hdr_ptr->compression_method && BI_RLE4 != dib_hdr_ptr->compression_method ) {
+  if ( BI_RGB != dib_hdr_ptr->compression_method &&            //
+       BI_BITFIELDS != dib_hdr_ptr->compression_method &&      //
+       BI_ALPHABITFIELDS != dib_hdr_ptr->compression_method && //
+       BI_RLE8 != dib_hdr_ptr->compression_method &&           //
+       BI_RLE4 != dib_hdr_ptr->compression_method              //
+  ) {
     return false;
   }
   // NOTE(Anton) using abs() in the if-statement was blowing up on large negative numbers. switched to labs()
@@ -213,19 +217,17 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
   // Work out if any padding how much to skip at end of each row.
   uint32_t unpadded_row_sz = width * n_src_chans;
   // Bit-encoded palette indices have different padding properties.
-  if ( 4 == dib_hdr_ptr->bpp ) {
-    unpadded_row_sz = width % 2 > 0 ? width / 2 + 1 : width / 2; // Find how many whole bytes required for this bit width,
-  }
-  if ( 1 == dib_hdr_ptr->bpp ) {
-    unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8;                        // Find how many whole bytes required for this bit width,
-  }
-  uint32_t row_padding_sz = 0 == unpadded_row_sz % 4 ? 0 : 4 - ( unpadded_row_sz % 4 ); // NOTE(Anton) didn't expect operator precedence of - over %
+  if ( 4 == dib_hdr_ptr->bpp ) { unpadded_row_sz = width % 2 > 0 ? width / 2 + 1 : width / 2; } // Find how many whole bytes required for this bit width.
+  if ( 1 == dib_hdr_ptr->bpp ) { unpadded_row_sz = width % 8 > 0 ? width / 8 + 1 : width / 8; } // Find how many whole bytes required for this bit width.
+  uint32_t row_padding_sz = 0 == unpadded_row_sz % 4 ? 0 : 4 - ( unpadded_row_sz % 4 );         // NOTE(Anton) didn't expect operator precedence of - over %
 
   // Another file size integrity check: partially validate source image data size,
   // 'image_data_offset' is by row padded to 4 bytes and is either colour data or palette indices.
-  if ( file_hdr_ptr->image_data_offset + ( unpadded_row_sz + row_padding_sz ) * height > record.sz ) {
-    free( record.data );
-    return NULL;
+  if ( BI_RLE8 != dib_hdr_ptr->compression_method && BI_RLE4 != dib_hdr_ptr->compression_method ) {
+    if ( file_hdr_ptr->image_data_offset + ( unpadded_row_sz + row_padding_sz ) * height > record.sz ) {
+      free( record.data );
+      return NULL;
+    }
   }
 
   // Find which bit number each colour channel starts at, so we can separate colours out.
@@ -276,26 +278,62 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
 
     // == 8-bpp -> 24-bit RGB ==
   } else if ( 8 == dib_hdr_ptr->bpp && has_palette ) {
-    // Validate indices (body of image data) fits in file.
-    if ( file_hdr_ptr->image_data_offset + height * width > record.sz ) {
-      free( record.data );
-      free( dst_img_ptr );
-      return NULL;
-    }
-
     if ( BI_RLE8 == dib_hdr_ptr->compression_method ) {
-      // Compressed:
-      size_t n_pixels = width * height;
-      
-      // If byte pair is 00 followed by 03-FF -> 'absolute mode'.
-      //   00, n_bytes_following, n bytes, 00
-      //   Note that we must terminate the run with 00. Validate this.
-      // Otherwise 'encoded mode'.
-      //   If first byte is 00 then second byte: { 0=EOL, 1=EObitmap, 2=deltaPosition}.
-      //   With delta position the next 2 bytes give right and up offset, respectively.
-      //   This means move the 'paint cursor' for the following bytes.
+      // RLE Compressed:
+      size_t row            = 0;
+      size_t dst_pixels_idx = ( height - 1 - row ) * dst_stride_sz;
+      // Iterate over the "Colour-index array".
+      for ( size_t byte_idx = 0; byte_idx + 1 < record.sz; /*TODO*/ ) {
+        uint8_t byte_a = src_img_ptr[byte_idx++];
+        uint8_t byte_b = src_img_ptr[byte_idx++];
+        // Absolute_mode run:
+        if ( 0x00 == byte_a && byte_b >= 0x03 ) {
+          for ( int fol_i = 0; fol_i < byte_b; fol_i++ ) {
+            uint8_t colour_index          = src_img_ptr[byte_idx++];
+            dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[colour_index * 4 + 2]; // Red
+            dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[colour_index * 4 + 1]; // Green
+            dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[colour_index * 4 + 0]; // Blue
+          }
+          // TODO(Anton) validate OOB.
+          if ( 0 != byte_idx % 2 ) { byte_idx++; } // In absolute mode, each run must be zero-padded to end on a 16-bit word boundary.
+          continue;
+        }
+        // Encoded mode:
+        //   - Escapes:
+        if ( 0x00 == byte_a && 0x00 == byte_b ) { // "End line".
+          row++;
+          dst_pixels_idx = ( height - 1 - row ) * dst_stride_sz;
+          // TODO - what if cols extends over row, also increment row?
+        } else if ( 0x00 == byte_a && 0x01 == byte_b ) { // "End of bitmap".
+          break;                                         // break `Iterate over the "Colour-index array".`
+        } else if ( 0x00 == byte_a && 0x02 == byte_b ) { // "Delta position".
+          // The 2 bytes following the escape contain unsigned values indicating the offset to the right and up of the next pixel from the current position.
+          // TODO(Anton) validate OOB.
+          // uint8_t x = src_img_ptr[byte_idx++];
+          // uint8_t y = src_img_ptr[byte_idx++];
+          // TODO store for subsequent pixels?
+          // TODO or just do 1 more pixel?
+          assert( "at the delta thing" && false ); // TODO
+        }
+        //   - Normal 2-byte pair: First byte=count, second byte=index.
+        for ( int count_i = 0; count_i < byte_a; count_i++ ) {
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[byte_b * 4 + 2]; // Red
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[byte_b * 4 + 1]; // Green
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[byte_b * 4 + 0]; // Blue
+        }
+
+      } // endfor Iterate over the "Colour-index array".
+
     } else {
       // Uncompressed:
+
+      // Validate indices (body of image data) fits in file.
+      if ( file_hdr_ptr->image_data_offset + height * width > record.sz ) {
+        free( record.data );
+        free( dst_img_ptr );
+        return NULL;
+      }
+
       size_t src_byte_idx = 0;
       for ( uint32_t r = 0; r < height; r++ ) {
         size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
@@ -314,7 +352,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
         }
         src_byte_idx += row_padding_sz;
       }
-    }
+    } // endif RLE/Uncompressed 24-bit RGB.
 
     // == 4-bpp (16-colour) -> 24-bit RGB ==
   } else if ( 4 == dib_hdr_ptr->bpp && has_palette ) {
