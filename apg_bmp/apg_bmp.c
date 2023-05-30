@@ -276,6 +276,23 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
       src_byte_idx += row_padding_sz;
     }
 
+
+    /* TODO
+    
+    1. fix up remaining TODOs.
+    2. maybe leave out 4-bit RLE for now. Not sure how to get a test sample other than from MSN docs.
+    3. Validate sizes where e.g. byte_idx increases inside loop.
+    4. Validate row widths where e.g. a line end is missing.
+    5. Handle files where EOF is missing.
+    6. Check when EOF escape is sent that all w*h were written.
+    7. Maybe just don't support the weird delta escape since I don't have decent docs/examples and I
+       don't think it will be used for many cases except for old files.
+    8. Use in antonkraft for some experience before release.
+    9. Fuzz it on HDD (not SSD) with some new example RLE images.
+   10. Main repo Readme update.
+   11. Release/notes announce.
+    */
+
     // == 8-bpp -> 24-bit RGB ==
   } else if ( 8 == dib_hdr_ptr->bpp && has_palette ) {
     if ( BI_RLE8 == dib_hdr_ptr->compression_method ) {

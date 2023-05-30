@@ -18,8 +18,7 @@ Instructions
 
 Advantages
 -------------------------------------------------------------------------------
-- The implementation is fast, simple, and supports more formats than most
-  BMP reader libraries.
+- Fast, simple, and supports more sub-formats than most BMP libraries.
 - The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
 - The reader is robust to large files and malformed files, and will return
   any valid partial data in an image.
@@ -33,12 +32,13 @@ Current Limitations
 - 16-bit images not supported (don't have any samples to test on).
 - No support for interleaved channel bit layouts;
   e.g. RGB101010 RGB555 RGB565.
-- No support for compressed BMP images, although in practice these are
-  not used.
+- 4-bit variation of RLE compression not supported (yet).
 - Images with alpha channel are written in BITMAPINFOHEADER format for maximum
   backwards-compatibility. For wider alpha support in other apps the 124-bit v5
   header could be used instead. Your own apps using apg_bmp_read() will still
   read the alpha channel correctly.
+- Gamma curves from v4 and v5 bitmap headers are ignored.
+- Images over 2GB are not supported, but could be added if needed.
 
 FAQ
 -------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
 Q. Why won't this compile in my C++ project?
 
 This is a C library, just make sure the apg_bmp.c file is set to compile as C,
-not C++, and the compiled object file will compile in with your C++ program.
+not C++. Then the compiled object file will compile in with your C++ program.
 
 Q. Are you open to pull requests?
 
@@ -67,7 +67,7 @@ Not desired:   Build systems, language & code style changes, large PRs.
 
 Version History
 -------------------------------------------------------------------------------
-  3.4.0   - 2023 May. 29. RLE compression support added.
+  3.4.0   - 2023 May. 29. 8-bit RLE compression support added.
   3.3.1   - 2023 Feb.  1. Fixed type casting warnings from MSVC.
   3.3     - 2023 Jan. 11. Fixed bug: images with alpha channel were y-flipped.
   3.2     - 2022 Mar. 22. Minor signed/unsigned tweaks to constants.
