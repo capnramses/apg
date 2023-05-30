@@ -54,8 +54,8 @@ typedef struct _bmp_dib_BITMAPINFOHEADER_t {
   uint32_t bitmask_r;
   uint32_t bitmask_g;
   uint32_t bitmask_b;
-  // TODO(Anton) bitmask_a; is here in v4 and v5.
-  // Note(Anton) v4 and v5 have gamma curve and sRGB information here. 
+  // bitmask_a; is here in v4 and v5, but not earlier.
+  // Note(Anton) v4 and v5 have gamma curve and sRGB information here.
 } _bmp_dib_BITMAPINFOHEADER_t;
 #pragma pack( pop )
 
@@ -284,6 +284,9 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     }
 
     if ( BI_RLE8 == dib_hdr_ptr->compression_method ) {
+      // Compressed:
+      size_t n_pixels = width * height;
+      
       // If byte pair is 00 followed by 03-FF -> 'absolute mode'.
       //   00, n_bytes_following, n bytes, 00
       //   Note that we must terminate the run with 00. Validate this.
@@ -291,34 +294,33 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
       //   If first byte is 00 then second byte: { 0=EOL, 1=EObitmap, 2=deltaPosition}.
       //   With delta position the next 2 bytes give right and up offset, respectively.
       //   This means move the 'paint cursor' for the following bytes.
-    } // TODO }else{
+    } else {
+      // Uncompressed:
+      size_t src_byte_idx = 0;
+      for ( uint32_t r = 0; r < height; r++ ) {
+        size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
+        for ( uint32_t c = 0; c < width; c++ ) {
+          // "most palettes are 4 bytes in RGB0 order but 3 for..." - it was actually BRG0 in old images -- Anton
+          uint8_t index = src_img_ptr[src_byte_idx]; // 8-bit index value per pixel.
 
-    size_t src_byte_idx = 0;
-    for ( uint32_t r = 0; r < height; r++ ) {
-      size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
-      for ( uint32_t c = 0; c < width; c++ ) {
-        // "most palettes are 4 bytes in RGB0 order but 3 for..." - it was actually BRG0 in old images -- Anton
-        uint8_t index = src_img_ptr[src_byte_idx]; // 8-bit index value per pixel.
-
-        if ( palette_offset + index * 4 + 2 >= record.sz ) {
-          free( record.data );
-          return dst_img_ptr;
+          if ( palette_offset + index * 4 + 2 >= record.sz ) {
+            free( record.data );
+            return dst_img_ptr;
+          }
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 2];
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 1];
+          dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 0];
+          src_byte_idx++;
         }
-        dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 2];
-        dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 1];
-        dst_img_ptr[dst_pixels_idx++] = palette_data_ptr[index * 4 + 0];
-        src_byte_idx++;
+        src_byte_idx += row_padding_sz;
       }
-      src_byte_idx += row_padding_sz;
     }
 
     // == 4-bpp (16-colour) -> 24-bit RGB ==
   } else if ( 4 == dib_hdr_ptr->bpp && has_palette ) {
-
     if ( BI_RLE4 == dib_hdr_ptr->compression_method ) {
       // TODO
     } // TODO }else{
-
 
     size_t src_byte_idx = 0;
     for ( uint32_t r = 0; r < height; r++ ) {
