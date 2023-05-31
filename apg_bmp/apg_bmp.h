@@ -1,9 +1,18 @@
+
+/* TODO
+9. Fuzz it on HDD (not SSD) with some new example RLE images.
+10. Main repo Readme update.
+11. Release/notes announce.
+*/
+
 /*****************************************************************************\
 apg_bmp - A BMP File Reader/Writer Library
+-------------------------------------------------------------------------------
 Original author: Anton Gerdelan
 Project URL:     https://github.com/capnramses/apg
 Licence:         See bottom of file.
 Language:        C89 ( Implementation is C99 )
+-------------------------------------------------------------------------------
 
 Contributors
 -------------------------------------------------------------------------------
@@ -12,62 +21,66 @@ Contributors
 
 Instructions
 -------------------------------------------------------------------------------
-- Just drop this header, and the matching .c file into your project.
-- If in a C++ project set these files to build as C, not C++.
-- To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
+  - Just drop this header, and the matching .c file into your project.
+  - If in a C++ project set these files to build as C, not C++.
+  - To get debug printouts during parsing define APG_BMP_DEBUG_OUTPUT.
 
-Advantages
+Features
 -------------------------------------------------------------------------------
-- Fast, simple, and supports more sub-formats than most BMP libraries.
-- The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
-- The reader is robust to large files and malformed files, and will return
-  any valid partial data in an image.
-- Reader supports 32bpp (with alpha channel), 24bpp, 8bpp, 4bpp, and 1bpp
-  monochrome BMP images.
-- Reader handles indexed BMP images using a colour palette.
-- Writer supports 32bpp RGBA and 24bpp uncompressed RGB images.
+  - Fast, simple, and supports more sub-formats than most BMP libraries.
+  - The reader function is fuzzed with AFL https://lcamtuf.coredump.cx/afl/.
+  - The reader is robust to large files and malformed files, and will, in some
+    cases, return any valid partial data in an image.
+  - Reader supports 32bpp (with alpha channel), 24bpp, 8bpp, 4bpp, and 1bpp
+    monochrome BMP images.
+  - Reader handles indexed BMP images using a colour palette.
+  - Reader supports 8-bit and 4-bit RLE compression.
+  - Writer supports 32bpp RGBA and 24bpp uncompressed RGB images.
 
 Current Limitations
 -------------------------------------------------------------------------------
-- 16-bit images not supported (don't have any samples to test on).
-- No support for interleaved channel bit layouts;
-  e.g. RGB101010 RGB555 RGB565.
-- 4-bit variation of RLE compression not supported (yet).
-- Images with alpha channel are written in BITMAPINFOHEADER format for maximum
-  backwards-compatibility. For wider alpha support in other apps the 124-bit v5
-  header could be used instead. Your own apps using apg_bmp_read() will still
-  read the alpha channel correctly.
-- Gamma curves from v4 and v5 bitmap headers are ignored.
-- Images over 2GB are not supported, but could be added if needed.
+  - Because I don't have any samples to test on, the following are not supported:
+    - 16-bit images.
+    - Interleaved channel bit layouts; e.g. RGB101010 RGB555 RGB565.
+    - Delta position escape codes in RLE.
+  - Alpha channels are written in BITMAPINFOHEADER, which covers most cases,
+    and supports older software. For wider alpha support in other apps the v5
+    header could be used.
+  - Gamma curves from v4 and v5 bitmap headers are ignored.
+  - Maximum image dimensions are set to 65536*65536 as a safe maximum for
+    interoperability with other software. See _BMP_MAX_DIMS to change this.
+  - Images over 2GB are not supported, but could be by replacing ftell/fseek
+    with platform-specific #ifdefs for 64-bit equivalents (ftello, stat, etc.).
 
 FAQ
 -------------------------------------------------------------------------------
 Q. What makes this image loader special? Why would I use it?
 
-This library started as a curiosity project, to see if I could read really old
-BMP files, and understand the format. It was then used as an example for a
-security class learning fuzzing. Because it was fuzzed it was used in some very
-large projects as an image loader. There are many other BMP loaders out there,
-but this one is pretty small and fast, and can handle some very old formats
-that are not broadly supported. There is a blog post about it here:
-https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
+  This library started as a curiosity project, to see if I could read really
+  old BMP files, and understand the format. It was then used as an example for
+  a security class learning fuzzing. Because it was fuzzed it was used in some
+  very large projects as an image loader. There are many other BMP loaders,
+  but this one is pretty small and fast, and can handle some very old formats
+  that are not broadly supported. There is a blog post about it here:
+  https://antongerdelan.net/blog/formatted/2020_03_24_apg_bmp.html
 
 Q. Why won't this compile in my C++ project?
 
-This is a C library, just make sure the apg_bmp.c file is set to compile as C,
-not C++. Then the compiled object file will compile in with your C++ program.
+  This is a C library, just make sure the apg_bmp.c file is set to compile as
+  C, not C++. Then the compiled object file will compile in with your C++
+  program.
 
 Q. Are you open to pull requests?
 
-Yes, but it's not being actively worked on, so turn-around time may be slow.
-If the PR is accepted, I'll add you to the Contributors list.
+  Yes, but it's not being actively worked on, so turn-around time may be slow.
+  If the PR is accepted, I'll add you to the Contributors list.
 
 Welcome:       Bug fixes, BMP feature-handling improvement.
 Not desired:   Build systems, language & code style changes, large PRs.
 
 Version History
 -------------------------------------------------------------------------------
-  3.4.0   - 2023 May. 29. 8-bit RLE compression support added.
+  3.4.0   - 2023 May. 31. 8-bit and 4-bit RLE compression support added.
   3.3.1   - 2023 Feb.  1. Fixed type casting warnings from MSVC.
   3.3     - 2023 Jan. 11. Fixed bug: images with alpha channel were y-flipped.
   3.2     - 2022 Mar. 22. Minor signed/unsigned tweaks to constants.
