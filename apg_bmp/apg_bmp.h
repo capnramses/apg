@@ -1,10 +1,3 @@
-
-/* TODO
-9. Fuzz it on HDD (not SSD) with some new example RLE images.
-10. Main repo Readme update.
-11. Release/notes announce.
-*/
-
 /*****************************************************************************\
 apg_bmp - A BMP File Reader/Writer Library
 -------------------------------------------------------------------------------
