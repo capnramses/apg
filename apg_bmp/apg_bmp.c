@@ -282,9 +282,10 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
         // Encoded mode:
         //   - Escapes:
         if ( 0x00 == byte_a && 0x00 == byte_b ) { // "End line".
+          col = 0;
           row++;
+          if ( row >= height ) { goto apg_bmp_read_error; }
           dst_pixels_idx = ( height - 1 - row ) * dst_stride_sz;
-          col            = 0;
           continue;
         } else if ( 0x00 == byte_a && 0x01 == byte_b ) { // "End of bitmap".
           break;                                         // break `Iterate over the "Colour-index array".`
@@ -386,6 +387,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
         if ( 0x00 == byte_a && 0x00 == byte_b ) { // "End line".
           col = 0;
           row++;
+          if ( row >= height ) { goto apg_bmp_read_error; }
           dst_pixels_idx = ( height - 1 - row ) * dst_stride_sz;
           continue;
         } else if ( 0x00 == byte_a && 0x01 == byte_b ) { // "End of bitmap".
@@ -536,9 +538,18 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
       size_t dst_pixels_idx = ( height - 1 - r ) * dst_stride_sz;
       for ( uint32_t c = 0; c < width; c++ ) {
         // Re-orders from BGR to RGB.
-        if ( n_dst_chans > 3 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 3]; }
-        if ( n_dst_chans > 2 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 2]; }
-        if ( n_dst_chans > 1 ) { dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 1]; }
+        if ( n_dst_chans > 3 ) {
+          if ( dst_pixels_idx > dst_img_sz || src_byte_idx + 3 > src_img_sz ) { goto apg_bmp_read_error; }
+          dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 3];
+        }
+        if ( n_dst_chans > 2 ) {
+          if ( dst_pixels_idx > dst_img_sz || src_byte_idx + 2 > src_img_sz ) { goto apg_bmp_read_error; }
+          dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 2];
+        }
+        if ( n_dst_chans > 1 ) {
+          if ( dst_pixels_idx > dst_img_sz || src_byte_idx + 1 > src_img_sz ) { goto apg_bmp_read_error; }
+          dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx + 1];
+        }
         dst_img_ptr[dst_pixels_idx++] = src_img_ptr[src_byte_idx];
         src_byte_idx += n_src_chans;
       }
@@ -551,7 +562,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
 
 apg_bmp_read_error:
   if ( record.data ) { free( record.data ); }
-  if ( dst_img_ptr ) { free( record.data ); }
+  if ( dst_img_ptr ) { free( dst_img_ptr ); }
   return NULL;
 }
 
