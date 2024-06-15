@@ -1,12 +1,13 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.13.1
+Version:  0.14.0
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
 #include "apg_console.h"
-#include "apg_pixfont.h" // used for adding glyphs to image output
+#include "apg_pixfont.h" // Used for adding glyphs to image output.
+#include "apg_unicode.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -64,8 +65,8 @@ static void apg_c_strncat( char* dst, const char* src, const int dest_max_len, c
   int dst_len         = apg_c_strnlen( dst, dest_max_len );
   dst[dst_len]        = '\0'; // just in case it wasn't already terminated before max length
   int remaining_space = dest_max_len - dst_len;
-  const int n = remaining_space < src_max_copy ? remaining_space : src_max_copy; // use src_max if smaller
-  strncat( dst, src, n - 1 );                                                    // strncat manual guarantees null termination.
+  const int n         = remaining_space < src_max_copy ? remaining_space : src_max_copy; // use src_max if smaller
+  strncat( dst, src, n - 1 );                                                            // strncat manual guarantees null termination.
 }
 
 static void _apg_c_command_hist_append( const char* c_user_entered_text ) {
@@ -186,7 +187,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
       default: {
         apg_c_printf( "%s OTHER", one );
       } break; // some other data type
-      }        // endswitch
+      } // endswitch
       return true;
     }
 
@@ -224,7 +225,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
         *(float*)var_ptr = fval;
       } break;
       default: break; // do nothing for complex data types
-      }               // endswitch
+      } // endswitch
       return true;
     } else {
       apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: `%s` is not a recognised variable name.", one );
@@ -291,18 +292,31 @@ void apg_c_reuse_hist_ahead_one( void ) {
   apg_c_reuse_hist( _hist_curr_rewind_idx );
 }
 
-// WARNING(Anton) not unicode-aware!
 void apg_c_backspace( void ) {
   int uet_len = apg_c_strnlen( _c_user_entered_text, APG_C_STR_MAX );
   if ( uet_len < 1 ) { return; }
-  _c_user_entered_text[uet_len - 1] = '\0';
-  _c_redraw_required                = true;
+
+  // Find if last chars are part of a multi-byte sequence.
+  int last_cp_n = 0;
+  for ( int i = 0; i < uet_len; i += last_cp_n ) {
+    last_cp_n   = 0;
+    uint32_t cp = apg_utf8_to_cp( &_c_user_entered_text[i], &last_cp_n );
+    (void)cp;
+    assert( last_cp_n > 0 );
+    if ( 0 == last_cp_n ) {
+      last_cp_n = 1; // So the next instruction, truncating the string, won't overflow.
+      break;
+    }
+  }
+
+  _c_user_entered_text[uet_len - last_cp_n] = '\0';
+  _c_redraw_required                        = true;
 }
 
 void apg_c_clear_user_entered_text( void ) {
   _c_user_entered_text[0] = '\0';
   _c_redraw_required      = true;
-  _hist_curr_rewind_idx   = -1; // reset history rewind
+  _hist_curr_rewind_idx   = -1; // Reset history rewind.
 }
 
 // WARNING(Anton) - assumes string is ASCII

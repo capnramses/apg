@@ -6,5 +6,7 @@ SAN="-fsanitize=address -fsanitize=undefined"
 
 cp ../apg_pixfont/apg_pixfont.c ./
 cp ../apg_pixfont/apg_pixfont.h ./
+cp ../apg_unicode/apg_unicode.c ./
+cp ../apg_unicode/apg_unicode.h ./
 
-$CC $FLAGS $SAN tests/main.c apg_console.c apg_pixfont.c -I ./
+$CC $FLAGS $SAN tests/main.c apg_console.c apg_pixfont.c apg_unicode.c -I ./

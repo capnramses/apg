@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.14   - 2024/06/15 - Unicode-aware backspace.
   v0.13.1 - 2023/04/19 - Small function prototype fixes.
   v0.13   - 2022/09/23 - Updated API to match new apg_pixfont.
   v0.12   - 2021/10/03 - Fix to missing nul-terminator in long string copies.

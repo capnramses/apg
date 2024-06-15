@@ -41,7 +41,9 @@ echo "building apg_console tests..."
 cd apg_console
 cp ../apg_pixfont/apg_pixfont.c ./
 cp ../apg_pixfont/apg_pixfont.h ./
-$CC $FLAGS tests/main.c apg_console.c apg_pixfont.c -I ./
+cp ../apg_unicode/apg_unicode.c ./
+cp ../apg_unicode/apg_unicode.h ./
+$CC $FLAGS tests/main.c apg_console.c apg_pixfont.c apg_unicode.c -I ./
 cd ..
 
 # NOTE -- no tests for apg_gldb at the moment (opengl is a pain to set up on build servers)
