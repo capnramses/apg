@@ -82,7 +82,15 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
 
 uint32_t get_codepoint( int index ) {
   uint32_t codepoint = index + ' ';                        // Space is the glyph in the top-left (skip ASCII control codes).
+  
   if ( codepoint > 127 ) { codepoint += ( 0xA0 - 0x80 ); } // A0 includes Latin-1 Punctuation ans Symbols section.
+
+  // up to position 175 ( 11 rows of 16 )
+  // Extras
+  if ( 192 == index ) { codepoint = 0x0153; printf("got cp!\n");}
+  if ( 193 == index ) { codepoint = 0x0154; }
+  if ( 194 == index ) { codepoint = 0x01EA; }
+  if ( 195 == index ) { codepoint = 0x01EB; }
   return codepoint;
 }
 
