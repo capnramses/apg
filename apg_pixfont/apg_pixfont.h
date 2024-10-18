@@ -90,6 +90,7 @@ TODO:
 
 History:
 ==============================================================
+0.4.4 - 2024 Oct 18 - Outline is now a darker shade of text colour, not black.
 0.4.0 - 2024 Jun 15 - Most of Latin-1 character set included.
 0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools. Basic Unicode UTF-8 support.
 0.2.1 - 2022 Sep 26 - Readme correction.

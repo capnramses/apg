@@ -1,4 +1,4 @@
-/* apg_pixfont - C Pixel Font Utility v0.4.3
+/* apg_pixfont - C Pixel Font Utility v0.4.4
 C99 Implementation
 See header file for licence and instructions.
 Anton Gerdelan 2019
@@ -250,11 +250,12 @@ static bool _is_img_idx_coloured( const unsigned char* image, int idx, int n_cha
   return false;
 }
 
-// NOTE(Anton) could also user-specify an outline colour rather than all zero
+// Outline is dark rather than black so it can match text colour e.g. in a shader multiplication.
+// And so that in e.g. a 1-channel image it can be differentiated from the background.
 static void _apply_outline( unsigned char* image, int idx, int n_channels ) {
-  for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x00; }
-  if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // don't set alpha to 0
-  if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // don't set alpha to 0
+  for ( int c = 0; c < n_channels; c++ ) { image[idx * n_channels + c] = 0x33; }
+  if ( 2 == n_channels ) { image[idx * n_channels + 1] = 0xFF; } // Don't set alpha to 0.
+  if ( 4 == n_channels ) { image[idx * n_channels + 3] = 0xFF; } // Don't set alpha to 0.
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
