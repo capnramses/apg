@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.14.0
+Version:  0.15.0
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -319,6 +319,17 @@ void apg_c_clear_user_entered_text( void ) {
   _hist_curr_rewind_idx   = -1; // Reset history rewind.
 }
 
+static int _point_of_diff_strs( const char* str1, const char* str2 ) {
+  if ( !str1 || !str2 ) { return -1; }
+  int len1   = (int)strlen( str1 );
+  int len2   = (int)strlen( str2 );
+  int minlen = len1 < len2 ? len1 : len2;
+  for ( int i = 0; i < minlen; i++ ) {
+    if ( str1[i] != str2[i] ) { return i; }
+  }
+  return -1;
+}
+
 // WARNING(Anton) - assumes string is ASCII
 void apg_c_autocomplete( void ) {
   size_t len = strlen( _c_user_entered_text );
@@ -335,9 +346,12 @@ void apg_c_autocomplete( void ) {
   for ( int k = 0; k < token_span; k++ ) { token[k] = _c_user_entered_text[k + i]; }
   token[token_span] = '\0';
 
-  int n_matching        = 0;
-  int last_matching_idx = -1;
-  int section_matching  = -1;
+  char found[APG_C_STR_MAX];
+
+  int n_matching          = 0;
+  int last_matching_idx   = -1;
+  int section_matching    = -1;
+  int point_of_difference = -1;
   // check built-in funcs
   for ( int l = 0; l < APG_C_N_BUILT_IN_COMMANDS; l++ ) {
     char* res = strstr( _c_built_in_commands[l], token );
@@ -346,6 +360,12 @@ void apg_c_autocomplete( void ) {
       last_matching_idx = l;
       section_matching  = 0;
       apg_c_printf( "%s", _c_built_in_commands[l] );
+
+      if ( n_matching > 1 ) {
+        int pod             = _point_of_diff_strs( found, _c_built_in_commands[l] );
+        point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
+      }
+      strcpy( found, _c_built_in_commands[l] );
     }
   }
 
@@ -357,6 +377,12 @@ void apg_c_autocomplete( void ) {
       last_matching_idx = m;
       section_matching  = 1;
       apg_c_printf( "%s", _c_funcs[m].str );
+
+      if ( n_matching > 1 ) {
+        int pod             = _point_of_diff_strs( found, _c_funcs[m].str );
+        point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
+      }
+      strcpy( found, _c_funcs[m].str );
     }
   }
 
@@ -368,8 +394,15 @@ void apg_c_autocomplete( void ) {
       last_matching_idx = o;
       section_matching  = 2;
       apg_c_printf( "%s", _c_vars[o].str );
+
+      if ( n_matching > 1 ) {
+        int pod             = _point_of_diff_strs( found, _c_vars[o].str );
+        point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
+      }
+      strcpy( found, _c_vars[o].str );
     }
   }
+  // Autocomplete the whole token if there is exactly 1 possible match.
   if ( 1 == n_matching ) {
     switch ( section_matching ) {
     case 0: apg_c_strncat( _c_user_entered_text, &_c_built_in_commands[last_matching_idx][token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
@@ -377,6 +410,16 @@ void apg_c_autocomplete( void ) {
     case 2: apg_c_strncat( _c_user_entered_text, &_c_vars[last_matching_idx].str[token_span], APG_C_STR_MAX, APG_C_STR_MAX ); break;
     default: assert( false ); break;
     } // endswitch
+  } else if ( n_matching > 1 ) {
+    /* To be kind to the user in this case, autocomplete up to the point of difference:
+      mouse_[tab here]
+      mouse_cursor_mode   (first match)
+      mouse_cursor_show   (second match)
+                  ^ autocomplete up to here in the case
+    */
+    int uptoidx = point_of_difference < APG_C_STR_MAX - 1 ? point_of_difference : APG_C_STR_MAX - 1;
+    for ( int i = 0; i < uptoidx; i++ ) { _c_user_entered_text[i] = found[i]; }
+    _c_user_entered_text[uptoidx] = '\0';
   }
 }
 
