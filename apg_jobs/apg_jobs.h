@@ -49,7 +49,7 @@
  *
  * HISTORY
  * -------
- * 0.3 (2025/04/08) - apg_jobs_stats() added.
+ * 0.2.5 (2025/04/08) - apg_jobs_stats() added.
  * 0.2 (2021/08/28) - Compilation option to use native pthread library on Windows.
  * 0.1 (2021/08/26) - First functional version.
  */
