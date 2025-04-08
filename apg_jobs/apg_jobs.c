@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.4
+ * Version   | 0.2.5
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Language  | C99
  * Files     | 2
@@ -197,6 +197,10 @@ struct apg_jobs_pool_internal_t {
   int n_threads;
   /// Flag to stop threads.
   bool stop;
+
+  // stats.
+  int most_q;
+  int most_w;
 };
 
 /** Get the job at the front of the queue and adjust the queue.
@@ -226,7 +230,7 @@ static void* _worker_thread_func( void* args_ptr ) {
   apg_jobs_pool_t* pool_ptr = args_ptr;
   assert( pool_ptr );
 
-  _job_t job = ( _job_t ){ .args_ptr = NULL };
+  _job_t job = (_job_t){ .args_ptr = NULL };
 
   while ( true ) {
     {
@@ -253,6 +257,7 @@ static void* _worker_thread_func( void* args_ptr ) {
         fprintf( stderr, "ERROR: popping job from queue -- we have an unexpected exception/regression\n" );
       } else {
         pool_ptr->context_ptr->n_working++;
+        if ( pool_ptr->context_ptr->n_working > pool_ptr->context_ptr->most_w ) { pool_ptr->context_ptr->most_w = pool_ptr->context_ptr->n_working; }
       }
       pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
     }
@@ -344,6 +349,21 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
   return true;
 }
 
+bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* most_w, int* n_queued, int* queue_max_items, int* most_q ) {
+  if ( !pool_ptr ) { return false; }
+  if ( n_working ) { *n_working = pool_ptr->context_ptr->n_working; }
+  if ( n_threads ) { *n_threads = pool_ptr->context_ptr->n_threads; }
+  if ( most_w ) { *most_w = pool_ptr->context_ptr->most_w; }
+  if ( n_queued ) {
+    pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
+    *n_queued = pool_ptr->context_ptr->n_queued;
+    pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
+  }
+  if ( queue_max_items ) { *queue_max_items = pool_ptr->context_ptr->queue_max_items; }
+  if ( most_q ) { *most_q = pool_ptr->context_ptr->most_q; }
+  return true;
+}
+
 //
 //
 bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, void* args_ptr ) {
@@ -366,6 +386,7 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
       pool_ptr->context_ptr->queue_ptr[end_idx].args_ptr     = args_ptr;
       pool_ptr->context_ptr->queue_ptr[end_idx].job_func_ptr = job_func_ptr;
       pool_ptr->context_ptr->n_queued++;
+      if ( pool_ptr->context_ptr->n_queued > pool_ptr->context_ptr->most_q ) { pool_ptr->context_ptr->most_q = pool_ptr->context_ptr->n_queued; }
       // wake up all threads waiting for a job to be queued.
       pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
       pushed = true;
