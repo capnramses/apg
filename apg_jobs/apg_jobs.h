@@ -103,10 +103,12 @@ APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
  * @param pool_ptr        Pointer to the thread pool to use. May be NULL to ignore.
  * @param n_working       Number of threads that are currently working on a job. May be NULL to ignore.
  * @param n_threads       Number of live threads, counting those working and not working. May be NULL to ignore.
+ * @param most_w          The most threads from this pool that were active at the same time so far. May be NULL to ignore.
  * @param n_queued        Number of elements in queue_ptr where a job is stored. May be NULL to ignore.
  * @param queue_max_items Number of elements of space allocated in queue_ptr. May be NULL to ignore.
+ * @param most_q          The most jobs that were queued in this pool so far. May be NULL to ignore.
  */
-bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* n_queued, int* queue_max_items );
+bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* most_w, int* n_queued, int* queue_max_items, int* most_q );
 
 /** Add a job to the work queue. A worker thread will pick this up eventually and call your function with your argument.
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.

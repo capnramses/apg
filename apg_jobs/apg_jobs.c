@@ -197,6 +197,10 @@ struct apg_jobs_pool_internal_t {
   int n_threads;
   /// Flag to stop threads.
   bool stop;
+
+  // stats.
+  int most_q;
+  int most_w;
 };
 
 /** Get the job at the front of the queue and adjust the queue.
@@ -241,6 +245,7 @@ static void* _worker_thread_func( void* args_ptr ) {
       // stop thread if stop flag is raised, and before getting any more work.
       if ( pool_ptr->context_ptr->stop ) {
         pool_ptr->context_ptr->n_threads--;
+        printf( "threads=%i\n", pool_ptr->context_ptr->n_threads );
         // TODO(Anton) this feels like it could cause a problem if a wait() and a stop are combined since it's fired when the _first_ thread has finished.
         // TODO(Anton) use the same if(){} as below to test from n_working == 0 first so only the final thread to stop fires this signal?
         pthread_cond_signal( &pool_ptr->context_ptr->workers_finished_cond ); // signal that no threads are processing
@@ -253,6 +258,7 @@ static void* _worker_thread_func( void* args_ptr ) {
         fprintf( stderr, "ERROR: popping job from queue -- we have an unexpected exception/regression\n" );
       } else {
         pool_ptr->context_ptr->n_working++;
+        if ( pool_ptr->context_ptr->n_working > pool_ptr->context_ptr->most_w ) { pool_ptr->context_ptr->most_w = pool_ptr->context_ptr->n_working; }
       }
       pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
     }
@@ -264,6 +270,7 @@ static void* _worker_thread_func( void* args_ptr ) {
       pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
 
       pool_ptr->context_ptr->n_working--;
+      printf( "working=%i\n", pool_ptr->context_ptr->n_working );
       // if no threads are processing anything and there are no more jobs to be done then signal that
       if ( !pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_working == 0 && pool_ptr->context_ptr->n_queued == 0 ) {
         pthread_cond_signal( &pool_ptr->context_ptr->workers_finished_cond ); // signal that no threads are processing
@@ -344,16 +351,18 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
   return true;
 }
 
-bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* n_queued, int* queue_max_items ) {
+bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* most_w, int* n_queued, int* queue_max_items, int* most_q ) {
   if ( !pool_ptr ) { return false; }
   if ( n_working ) { *n_working = pool_ptr->context_ptr->n_working; }
   if ( n_threads ) { *n_threads = pool_ptr->context_ptr->n_threads; }
+  if ( most_w ) { *most_w = pool_ptr->context_ptr->most_w; }
   if ( n_queued ) {
     pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
     *n_queued = pool_ptr->context_ptr->n_queued;
     pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
   }
   if ( queue_max_items ) { *queue_max_items = pool_ptr->context_ptr->queue_max_items; }
+  if ( most_q ) { *most_q = pool_ptr->context_ptr->most_q; }
   return true;
 }
 
@@ -379,6 +388,7 @@ bool apg_jobs_push_job( apg_jobs_pool_t* pool_ptr, apg_jobs_work job_func_ptr, v
       pool_ptr->context_ptr->queue_ptr[end_idx].args_ptr     = args_ptr;
       pool_ptr->context_ptr->queue_ptr[end_idx].job_func_ptr = job_func_ptr;
       pool_ptr->context_ptr->n_queued++;
+      if ( pool_ptr->context_ptr->n_queued > pool_ptr->context_ptr->most_q ) { pool_ptr->context_ptr->most_q = pool_ptr->context_ptr->n_queued; }
       // wake up all threads waiting for a job to be queued.
       pthread_cond_broadcast( &pool_ptr->context_ptr->job_queued_signal );
       pushed = true;
