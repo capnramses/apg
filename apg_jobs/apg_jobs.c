@@ -270,7 +270,6 @@ static void* _worker_thread_func( void* args_ptr ) {
       pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
 
       pool_ptr->context_ptr->n_working--;
-      printf( "working=%i\n", pool_ptr->context_ptr->n_working );
       // if no threads are processing anything and there are no more jobs to be done then signal that
       if ( !pool_ptr->context_ptr->stop && pool_ptr->context_ptr->n_working == 0 && pool_ptr->context_ptr->n_queued == 0 ) {
         pthread_cond_signal( &pool_ptr->context_ptr->workers_finished_cond ); // signal that no threads are processing
