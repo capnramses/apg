@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.4
+ * Version   | 0.2.5
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Language  | C99
  * Files     | 2
@@ -226,7 +226,7 @@ static void* _worker_thread_func( void* args_ptr ) {
   apg_jobs_pool_t* pool_ptr = args_ptr;
   assert( pool_ptr );
 
-  _job_t job = ( _job_t ){ .args_ptr = NULL };
+  _job_t job = (_job_t){ .args_ptr = NULL };
 
   while ( true ) {
     {
@@ -341,6 +341,19 @@ bool apg_jobs_free( apg_jobs_pool_t* pool_ptr ) {
   free( pool_ptr->context_ptr );
   pool_ptr->context_ptr = NULL;
 
+  return true;
+}
+
+bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* n_queued, int* queue_max_items ) {
+  if ( !pool_ptr ) { return false; }
+  if ( n_working ) { *n_working = pool_ptr->context_ptr->n_working; }
+  if ( n_threads ) { *n_threads = pool_ptr->context_ptr->n_threads; }
+  if ( n_queued ) {
+    pthread_mutex_lock( &pool_ptr->context_ptr->queue_mutex );
+    *n_queued = pool_ptr->context_ptr->n_queued;
+    pthread_mutex_unlock( &pool_ptr->context_ptr->queue_mutex );
+  }
+  if ( queue_max_items ) { *queue_max_items = pool_ptr->context_ptr->queue_max_items; }
   return true;
 }
 

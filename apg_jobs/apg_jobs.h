@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.4
+ * Version   | 0.2.5
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -49,6 +49,7 @@
  *
  * HISTORY
  * -------
+ * 0.3 (2025/04/08) - apg_jobs_stats() added.
  * 0.2 (2021/08/28) - Compilation option to use native pthread library on Windows.
  * 0.1 (2021/08/26) - First functional version.
  */
@@ -71,7 +72,9 @@ extern "C" {
 APG_JOBS_EXPORT typedef struct apg_jobs_pool_internal_t apg_jobs_pool_internal_t;
 
 /** The main context struct for this library. Instantiate one of these on your main thread. */
-APG_JOBS_EXPORT typedef struct apg_jobs_pool_t { apg_jobs_pool_internal_t* context_ptr; } apg_jobs_pool_t;
+APG_JOBS_EXPORT typedef struct apg_jobs_pool_t {
+  apg_jobs_pool_internal_t* context_ptr;
+} apg_jobs_pool_t;
 
 /** All jobs for workers are defined as a function of this format. */
 typedef void ( *apg_jobs_work )( void* args_ptr );
@@ -94,6 +97,16 @@ APG_JOBS_EXPORT bool apg_jobs_init( apg_jobs_pool_t* pool_ptr, int n_workers, in
  * @return          False on any error.
  */
 APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
+
+/** Collect some statistics about the current state of the pool.
+ * @note                  Collecting the n_queued statistic requires mutex access, which may interfere with pool performance.
+ * @param pool_ptr        Pointer to the thread pool to use. May be NULL to ignore.
+ * @param n_working       Number of threads that are currently working on a job. May be NULL to ignore.
+ * @param n_threads       Number of live threads, counting those working and not working. May be NULL to ignore.
+ * @param n_queued        Number of elements in queue_ptr where a job is stored. May be NULL to ignore.
+ * @param queue_max_items Number of elements of space allocated in queue_ptr. May be NULL to ignore.
+ */
+bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* n_queued, int* queue_max_items );
 
 /** Add a job to the work queue. A worker thread will pick this up eventually and call your function with your argument.
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.
