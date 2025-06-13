@@ -127,4 +127,6 @@ $CC $FLAGS -I./ -Itests/ tests/main_write.c apg_wav.c -lm
 $CC $FLAGS -I./ -Itests/ tests/main_read.c apg_wav.c -lm
 cd ..
 
-printf '%b%s\n%s\n%s\n%b\n' $colour_pass $horiz_div "Compile Check PASSED" $horiz_div $colour_default
+printf '%b%s\n' $colour_pass $horiz_div
+printf '%b%s\n' $colour_pass "Compile Check PASSED"
+printf '%b%s\n%b\n' $colour_pass $horiz_div $colour_default
