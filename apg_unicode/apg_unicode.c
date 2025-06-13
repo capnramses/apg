@@ -1,7 +1,7 @@
 /* apg_unicode
 Unicode <-> UTF-8 Multibyte String Functions for C & C++
 Anton Gerdelan
-Version: 0.2.2
+Version: 0.2.3 3 May 2020.
 Licence: see apg_unicode.h
 C99
 */
@@ -117,8 +117,8 @@ uint32_t apg_utf8_to_cp( const char* mbs, int* sz ) {
     uint8_t part_b = second_byte & (uint8_t)0x3F; // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
     uint8_t part_c = third_byte & (uint8_t)0x3F;  // & with 0x3F (binary 00111111) to zero the first two bits from 10xxxxxx
 
-		(void)part_b; // unused
-		(void)part_c; // unused
+    (void)part_b; // unused
+    (void)part_c; // unused
 
     // 00000000 00000000 00000000 xxxx0000 << 2 = 00000000 00000000 000000xx xx000000
     uint32_t codepoint = (uint32_t)part_a << 2;
@@ -178,7 +178,7 @@ int apg_utf8_count_cp( const char* buf ) {
   int nbytes       = 0;
   for ( int i = 0; i < sz; i += nbytes ) {
     uint32_t code = apg_utf8_to_cp( &buf[current_byte], &nbytes );
-		(void)code; // unused
+    (void)code; // unused
     current_byte += nbytes;
     ncode_points++;
   }
@@ -191,13 +191,15 @@ void apg_utf8_reverse( char* out, const char* in ) {
 
   int sz        = strnlen( in, APG_UNICODE_MAX_STR );
   char* tmp_ptr = malloc( sz + 1 );
-  tmp_ptr[sz]   = 0;
+  assert( tmp_ptr && "ERROR: malloc failure in apg_unicode.\n" );
+  if ( !tmp_ptr ) { return; }
+  tmp_ptr[sz] = 0;
 
   int byte_idx = 0;
   while ( byte_idx < sz ) {
     int nbytes  = 0;
     uint32_t cp = apg_utf8_to_cp( &in[byte_idx], &nbytes );
-		(void)cp; // unused
+    (void)cp; // unused
     int out_idx = sz - byte_idx - nbytes;
     memcpy( &tmp_ptr[out_idx], &in[byte_idx], nbytes );
     byte_idx += nbytes;
@@ -378,7 +380,7 @@ void apg_utf8_trim_end( char* buf, int n ) {
   for ( int i = 0; current_byte < sz && i < APG_UNICODE_MAX_STR; i++ ) {
     int nbytes    = 0;
     uint32_t code = apg_utf8_to_cp( &buf[current_byte], &nbytes );
-		(void)code; // unused
+    (void)code; // unused
     current_byte += nbytes;
     current_code_point++;
     if ( current_code_point >= ncode_points - n ) {
@@ -392,8 +394,11 @@ void apg_utf8_trim_end( char* buf, int n ) {
 // unit tests for input and output of utf-8 encoding
 int main() {
   FILE* fp = fopen( "out.txt", "w" );
-  const char* test_string =
-    "Fáilte.Ő ΏΘ ЩӜ ݞ  ణ ആ ญ ᚉ ant😈n ᛋ € ✋ is Amazing ✌️ ぢぽ\n习乡乢乣乤乥书乧乨乩乪乫乬乭乮乯𠀀 ";
+  if ( !fp ) {
+    fprintf( stderr, "ERROR: opening out.txt for writing." );
+    return 1;
+  }
+  const char* test_string = "Fáilte.Ő ΏΘ ЩӜ ݞ  ణ ആ ญ ᚉ ant😈n ᛋ € ✋ is Amazing ✌️ ぢぽ\n习乡乢乣乤乥书乧乨乩乪乫乬乭乮乯𠀀 ";
   char string_b[5];
   string_b[0] = (char)0xEF;
   string_b[1] = (char)0xBF;
