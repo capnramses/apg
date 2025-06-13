@@ -5,7 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
-  1.14.0 - 12 Jun 2025. Removed unsafe functions like ctime().
+  1.14.1 - 12 Jun 2025. Removed unsafe functions like ctime().
   1.13.1 - 16 Feb 2023. Added comments to confusing part of rand() functions.
   1.13.0 - 16 Feb 2023. Removed scratch mem functions.
                         Added *_r thread-safe versions of rand() functions.
@@ -703,7 +703,7 @@ static int _dir_contents_count( const char* path ) {
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
+  snprintf( tmp, 2048, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
   do { count++; } while ( FindNextFile( hFind, &fdFile ) ); /* Find the next file. */
   FindClose( hFind );                                       /* Clean-up global state. */
@@ -745,7 +745,7 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
+  snprintf( tmp, 2048, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
   do {
     tmp[0] = '\0';
