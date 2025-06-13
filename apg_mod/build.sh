@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# any error code causes script to exit with error code (to its parent i.e the build all script).
+set -e
+
 # -fsanitize=address (not allowed with thread)
 SANS="-fsanitize=thread -fsanitize=undefined"
 FLAGS="-Wall -Wextra -pedantic"

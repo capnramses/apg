@@ -2,9 +2,14 @@
 // By Anton Gerdelan
 
 #include "apg_mod.h"
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#define APG_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
+#define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
+#define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
 
 /* because string.h doesn't always have strnlen() */
 static int apg_m_strnlen( const char* str, size_t maxlen ) {
