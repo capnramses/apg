@@ -1,22 +1,63 @@
 #include "apg.h"
+/* apg.h  Author's generic C utility functions.
+Author:   Anton Gerdelan  antongerdelan.net
+Licence:  See bottom of this file.
+Language: C89 interface, C99 implementation.
+
+Version History and Copyright
+-----------------------------
+  1.14.1 - 12 Jun 2025. Removed unsafe functions like ctime().
+  1.13.1 - 16 Feb 2023. Added comments to confusing part of rand() functions.
+  1.13.0 - 16 Feb 2023. Removed scratch mem functions.
+                        Added *_r thread-safe versions of rand() functions.
+                        Typedef for seed type in header.
+  1.12   - 24 Jan 2023. C/CPP header guard. CPP example.
+  1.11   - 11 Jan 2023. Fixed a crash bug when failing to read an entire file.
+  1.10   - xx Sep 2022. Cross-platform directory/filesystem functions.
+  1.9    - 10 Jun 2022. Large file support in file I/O.
+  1.8.1  - 28 Mar 2022. Casting precision fix to gbfs.
+  1.8    - 27 Mar 2022. Greedy BFS uses 64-bit integers (suited a project I used it in).
+  1.7    - 22 Mar 2022. Greedy BFS speed improvement using bsearch & memmove suffle.
+  1.6    - 13 Mar 2022. Greedy Best-First Search first implementation.
+  1.5    - 13 Mar 2022. Tidied MSVC build. Added a .bat file for building hash_test.c.
+  1.4    - 12 Mar 2022. Hash table functions.
+  1.3    - 11 Sep 2020. Fixed apg_file_to_str() portability issue.
+  1.2    - 15 May 2020. Updated timers for multi-platform use based on Professional Programming Tools book code. Updated test code.
+  1.1    -  4 May 2020. Added custom rand() functions.
+  1.0    -  8 May 2015. First version by Anton Gerdelan.
+
+Usage Instructions
+-----------------------------
+* Just copy-paste the snippets from this file that you want to use.
+* Or, to use all of it:
+  * In one file #define APG_IMPLEMENTATION above the #include.
+  * For backtraces on Windows you need to link against -limagehlp (MinGW/GCC), or /link imagehlp.lib (MSVC/cl.exe).
+    You can exclude this by:
+
+  #define APG_IMPLEMENTATION
+  #define APG_NO_BACKTRACES
+  #include apg.h
+
+* C++ example
+*/
 
 #include <assert.h>
 #include <math.h>   /* modff() */
-#include <signal.h> /* for crash handling */
+#include <signal.h> /* For crash handling. */
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #ifdef _WIN32
-#include <windows.h> /* for backtraces and timers */
+#include <windows.h> /* For backtraces and timers. */
 #ifndef APG_NO_BACKTRACES
 #include <dbghelp.h> /* SymInitialize */
 #endif
 #else
 #include <execinfo.h>
-#include <strings.h> /* for strcasecmp */
-#include <unistd.h>  /* linux-only? */
+#include <strings.h> /* For strcasecmp. */
+#include <unistd.h>  /* Linux-only? */
 #endif
 /* includes for timers */
 #ifdef _WIN32
@@ -26,14 +67,14 @@
 #else
 #include <sys/time.h>
 #endif
-/* fix used in bgfx and imgui to get around mingw not supplying alloca.h */
+/* Fix used in bgfx and imgui to get around mingw not supplying alloca.h. */
 #if defined( _MSC_VER ) || defined( __MINGW32__ )
 #include <malloc.h>
 #else
 #include <alloca.h>
 #endif
 #ifdef _MSC_VER
-// not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+/* not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in MinGW. */
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 #define strdup _strdup
@@ -48,7 +89,8 @@ void apg_srand( apg_rand_t seed ) { _srand_next = seed; }
 
 int apg_rand( void ) {
   _srand_next = _srand_next * 1103515245 + 12345;
-  return (int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+  // NB: casting to uint is deliberate here, otherwise we will return negative numbers.
+  return (unsigned int)( _srand_next / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
 float apg_randf( void ) { return (float)apg_rand() / (float)APG_RAND_MAX; }
@@ -59,7 +101,8 @@ int apg_rand_r( apg_rand_t* seed_ptr ) {
   assert( seed_ptr );
   if ( !seed_ptr ) { return 0; }
   *seed_ptr = *seed_ptr * 1103515245 + 12345;
-  return (int)( *seed_ptr / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
+  // NB: casting to uint is deliberate here, otherwise we will return negative numbers.
+  return (unsigned int)( *seed_ptr / ( ( APG_RAND_MAX + 1 ) * 2 ) ) % ( APG_RAND_MAX + 1 );
 }
 
 float apg_randf_r( apg_rand_t* seed_ptr ) {
@@ -75,16 +118,16 @@ static uint64_t _frequency = 1000000, _offset;
 
 void apg_time_init( void ) {
 #ifdef _WIN32
-  _frequency = 1000; // QueryPerformanceCounter default
+  _frequency = 1000; /* QueryPerformanceCounter default. */
   QueryPerformanceFrequency( (LARGE_INTEGER*)&_frequency );
   QueryPerformanceCounter( (LARGE_INTEGER*)&_offset );
 #elif __APPLE__
   mach_timebase_info_data_t info;
   mach_timebase_info( &info );
-  _frequency       = ( info.denom * 1e9 ) / info.numer;
-  _offset          = mach_absolute_time();
+  _frequency = ( info.denom * 1e9 ) / info.numer;
+  _offset    = mach_absolute_time();
 #else
-  _frequency = 1000000000; // nanoseconds
+  _frequency = 1000000000; /* Nanoseconds. */
   struct timespec ts;
   clock_gettime( CLOCK_MONOTONIC, &ts );
   _offset = (uint64_t)ts.tv_sec * (uint64_t)_frequency + (uint64_t)ts.tv_nsec;
@@ -110,7 +153,7 @@ double apg_time_s( void ) {
 /* NOTE: for linux -D_POSIX_C_SOURCE=199309L must be defined for glibc to get nanosleep() */
 void apg_sleep_ms( int ms ) {
 #ifdef _WIN32
-  Sleep( ms ); /* NOTE(Anton) may not need this since using gcc on Windows and usleep() works */
+  Sleep( ms ); /* May not need this since using GCC on Windows and usleep() works. */
 #elif _POSIX_C_SOURCE >= 199309L
   struct timespec ts;
   ts.tv_sec  = ms / 1000;
@@ -132,21 +175,29 @@ bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max )
   return true;
 }
 
-int apg_strnlen( const char* str, int maxlen ) {
-  int i = 0;
+size_t apg_strnlen( const char* str, size_t maxlen ) {
+  size_t i = 0;
   while ( i < maxlen && str[i] ) { i++; }
   return i;
 }
 
-void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
+void apg_strncat( char* dst, const char* src, const size_t dst_max, const size_t src_max ) {
   assert( dst && src );
 
-  int dst_len   = apg_strnlen( dst, dest_max );
-  dst[dst_len]  = '\0'; // just in case it wasn't already terminated before max length
-  int remainder = dest_max - dst_len;
-  if ( remainder <= 0 ) { return; }
-  const int n = dest_max < src_max ? dest_max : src_max; // use src_max if smaller
-  strncat( dst, src, n );                                // strncat manual guarantees null termination.
+  size_t dst_len      = apg_strnlen( dst, dst_max );
+  size_t src_len      = apg_strnlen( src, src_max );
+  size_t space_in_dst = dst_max - dst_len;
+
+  assert( src_len <= space_in_dst && "ERROR: Not enough space in destination string." );
+
+  dst[dst_len] = '\0'; /* Just in case it wasn't already terminated. */
+
+  if ( 0 == space_in_dst ) { return; }
+
+  size_t n = APG_MIN( space_in_dst, src_len ); /* Use src_max if smaller. */
+  memmove( &dst[dst_len], src, n );
+  size_t last_i = dst_len + n < dst_max ? dst_len + n : dst_max - 1;
+  dst[last_i]   = '\0';
 }
 
 /*=================================================================================================
@@ -168,7 +219,7 @@ bool apg_is_file( const char* path ) {
 
 bool apg_is_dir( const char* path ) {
   char tmp[2048];
-  { // Remove trailing slashes because Windows/MinGW stat() can't handle them.
+  { /* Remove trailing slashes because Windows/MinGW stat() can't handle them. */
     tmp[0] = '\0';
     apg_strncat( tmp, path, 2047, 2047 );
     int len = (int)strlen( tmp );
@@ -221,10 +272,10 @@ static int _dir_contents_count( const char* path ) {
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); // Specify a file mask. "*.*" means we want everything!
+  snprintf( tmp, 2048, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
-  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                                       // Clean-up global state.
+  do { count++; } while ( FindNextFile( hFind, &fdFile ) ); /* Find the next file. */
+  FindClose( hFind );                                       /* Clean-up global state. */
 #else                                                       /* POSIX (including MinGW on Windows) */
   struct dirent* entry;
   struct apg_stat_t path_stat;
@@ -233,7 +284,7 @@ static int _dir_contents_count( const char* path ) {
   while ( ( entry = readdir( folder ) ) ) {
     tmp[0] = '\0';
     apg_strncat( tmp, path, 2045, 2045 );
-    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } // Error - path string too long.
+    if ( !_fix_dir_slashes( tmp, 2047 ) ) { continue; } /* Error - path string too long. */
     apg_strncat( tmp, entry->d_name, 2047, 2047 );
     if ( 0 != apg_stat( tmp, &path_stat ) ) { continue; }
     if ( S_ISREG( path_stat.st_mode ) || S_ISDIR( path_stat.st_mode ) ) { count++; }
@@ -263,7 +314,7 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
+  snprintf( tmp, 2048, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
   do {
     tmp[0] = '\0';
@@ -276,8 +327,8 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
     new_entry.path     = strdup( fdFile.cFileName );
     ( *list_ptr )[n++] = new_entry;
   } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                         // Clean-up global state.
-#else                                         /* POSIX (including MinGW on Windows) */
+  FindClose( hFind ); // Clean-up global state.
+#else                 /* POSIX (including MinGW on Windows) */
   struct apg_stat_t path_stat;
   struct dirent* entry_ptr;
   DIR* folder = opendir( path_ptr );
@@ -366,15 +417,13 @@ LOG FILES IMPLEMENTATION
 =================================================================================================*/
 #define APG_LOG_FILE "apg.log" /* file name for log */
 
-void apg_start_log( void ) {
+void apg_log_start( void ) {
   FILE* file = fopen( APG_LOG_FILE, "w" ); /* NOTE it was getting massive with "a" */
   if ( !file ) {
     fprintf( stderr, "ERROR: could not open APG_LOG_FILE log file %s for writing\n", APG_LOG_FILE );
     return;
   }
-  time_t now = time( NULL );
-  char* date = ctime( &now );
-  fprintf( file, "\n------------ %s log. local time %s\n", APG_LOG_FILE, date );
+  fprintf( file, "\n------------ %s log. \n", APG_LOG_FILE );
   fclose( file );
 }
 
@@ -500,7 +549,7 @@ void apg_print_trace( FILE* stream ) {
 } /* endfunc apg_print_trace() */
 
 /* to deliberately cause a sigsegv: call a function containing bad ptr: int *foo = (int*)-1; */
-void apg_start_crash_handler() {
+void apg_start_crash_handler( void ) {
   signal( SIGSEGV, _crash_handler );
   signal( SIGABRT, _crash_handler ); /* assert */
   signal( SIGILL, _crash_handler );
@@ -522,6 +571,7 @@ void apg_deliberate_divzero() {
 }
 #endif /* APG_UNIT_TESTS */
 #endif /* APG_BACKTRACES */
+
 /*=================================================================================================
 COMMAND LINE PARAMETERS IMPLEMENTATION
 =================================================================================================*/
@@ -600,7 +650,7 @@ HASH TABLE
 =================================================================================================*/
 
 apg_hash_table_t apg_hash_table_create( uint32_t table_n ) {
-  apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
+  apg_hash_table_t table = (apg_hash_table_t){ .n = 0 };
   if ( table_n == 0 ) { return table; }
   table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
   if ( !table.list_ptr ) { return table; } // OOM error.
@@ -617,7 +667,7 @@ void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
     }
   }
   if ( table_ptr->list_ptr ) { free( table_ptr->list_ptr ); }
-  *table_ptr = ( apg_hash_table_t ){ .n = 0 };
+  *table_ptr = (apg_hash_table_t){ .n = 0 };
 }
 
 /** Return a hash index ( hash code ) for a single value key->table mapping.
@@ -681,7 +731,7 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
   return false;
 
 apg_hash_store_enter_key:
-  table_ptr->list_ptr[idx]        = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx]        = (apg_hash_table_element_t){ .value_ptr = value_ptr };
   table_ptr->list_ptr[idx].keystr = strdup( keystr ); // NOTE(Anton) Could use strndup here to guard against unterminated strings.
   table_ptr->count_stored++;
   if ( collision_ptr ) { *collision_ptr = *collision_ptr + collisions; }
@@ -752,8 +802,8 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
   int64_t ( *neighs_cb_ptr )( int64_t key, int64_t target_key, int64_t* neighs ), int64_t* reverse_path_ptr, int64_t* path_n, int64_t max_path_steps,
   apg_gbfs_node_t* evaluated_nodes_ptr, int64_t evaluated_nodes_max, int64_t* visited_set_ptr, int64_t visited_set_max, apg_gbfs_node_t* queue_ptr, int64_t queue_max ) {
   int64_t n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
-  visited_set_ptr[0] = start_key;                                                                                             // Mark start as visited
-  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key, target_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+  visited_set_ptr[0] = start_key;                                                                                           // Mark start as visited
+  queue_ptr[0]       = (apg_gbfs_node_t){ .h = h_cb_ptr( start_key, target_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
     apg_gbfs_node_t curr = queue_ptr[--n_queue];
@@ -785,11 +835,11 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
         n_visited_set++;
 
         int64_t our_h      = h_cb_ptr( neigh_keys[neigh_idx], target_key );
-        queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        queue_ptr[n_queue] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
         for ( int64_t i = 0; i < n_queue; i++ ) {
           if ( our_h > queue_ptr[i].h ) {
             memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
-            queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+            queue_ptr[i] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
             break;
           }
         } // endfor
@@ -821,3 +871,52 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
   } // endwhile queue not empty
   return false;
 }
+
+/*
+-------------------------------------------------------------------------------------
+This software is available under two licences - you may use it under either licence.
+-------------------------------------------------------------------------------------
+FIRST LICENCE OPTION
+
+>                                  Apache License
+>                            Version 2.0, January 2004
+>                         http://www.apache.org/licenses/
+>    Copyright 2019 Anton Gerdelan.
+>    Licensed under the Apache License, Version 2.0 (the "License");
+>    you may not use this file except in compliance with the License.
+>    You may obtain a copy of the License at
+>        http://www.apache.org/licenses/LICENSE-2.0
+>    Unless required by applicable law or agreed to in writing, software
+>    distributed under the License is distributed on an "AS IS" BASIS,
+>    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+>    See the License for the specific language governing permissions and
+>    limitations under the License.
+-------------------------------------------------------------------------------------
+SECOND LICENCE OPTION
+
+> This is free and unencumbered software released into the public domain.
+>
+> Anyone is free to copy, modify, publish, use, compile, sell, or
+> distribute this software, either in source code form or as a compiled
+> binary, for any purpose, commercial or non-commercial, and by any
+> means.
+>
+> In jurisdictions that recognize copyright laws, the author or authors
+> of this software dedicate any and all copyright interest in the
+> software to the public domain. We make this dedication for the benefit
+> of the public at large and to the detriment of our heirs and
+> successors. We intend this dedication to be an overt act of
+> relinquishment in perpetuity of all present and future rights to this
+> software under copyright law.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+> MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+> IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+> OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+> ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+> OTHER DEALINGS IN THE SOFTWARE.
+>
+> For more information, please refer to <http://unlicense.org>
+-------------------------------------------------------------------------------------
+*/
