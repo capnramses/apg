@@ -15,7 +15,7 @@ int main( int argc, char** argv ) {
   }
   const char* filename_ptr = argv[1];
 
-  apg_mod_t mod = ( apg_mod_t ){ .sample_data_ptrs[0] = NULL };
+  apg_mod_t mod = (apg_mod_t){ .sample_data_ptrs[0] = NULL };
   if ( !apg_mod_read_file( filename_ptr, &mod ) ) {
     fprintf( stderr, "ERROR: could not open file %s\n", filename_ptr );
     return 1;
@@ -30,7 +30,7 @@ int main( int argc, char** argv ) {
   for ( int i = 0; i < APG_MOD_N_SAMPLES; i++ ) {
     if ( 0 == mod.sample_sz_bytes[i] ) { continue; }
     char tmp[64];
-    sprintf( tmp, "sample%02i.wav", i );
+    snprintf( tmp, 64, "sample%02i.wav", i );
     uint32_t n_samples = mod.sample_sz_bytes[i] / sizeof( int16_t ); // not sure why this exists as a param if it can be derived from other params.
     bool ret           = apg_wav_write( tmp, mod.sample_data_ptrs[i], mod.sample_sz_bytes[i], 1, sample_rate_hz, n_samples, 16 );
     if ( !ret ) {

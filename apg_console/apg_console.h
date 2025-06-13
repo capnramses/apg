@@ -8,6 +8,7 @@ Contact:  <antongdl@protonmail.com>
 Website:  https://github.com/capnramses/apg - http://antongerdelan.net/
 Licence:  See bottom of this file.
 Version History:
+  v0.15.1 - 2025/06/13 - Replaced unsafe string functions.
   v0.15   - 2025/01/05 - Better autocomplete.
   v0.14   - 2024/06/15 - Unicode-aware backspace.
   v0.13.1 - 2023/04/19 - Small function prototype fixes.

@@ -14,7 +14,7 @@ Anton Gerdelan 2019
 int main() {
   const char* test_strings[N_TEST_STRINGS] = {
     "Hello, World!",                                                                                           //
-    "This is a line\nbreak - did it work?\n\n\n",                                                                    //
+    "This is a line\nbreak - did it work?\n\n\n",                                                              //
     "über spaß!",                                                                                              //
     "An bhfuil cead agam dul\ngo dtí an leithreas?",                                                           //
     "This is My Lovely, Big Heading",                                                                          //
@@ -22,12 +22,12 @@ int main() {
     "Nobody Needs\nText This\nHUGE!",                                                                          //
     "Small is ok but but VERYVERYVERYVERYVERYVERYVERYVERY long STRINGSINHERETHEYWONTSTOPSOLONGOMG to be here." //
   };
-  const int n_chans[N_TEST_STRINGS]            = { 1, 2, 3, 4, 4, 4, 4, 4 };
-  int thickness[N_TEST_STRINGS]                = { 1, 1, 1, 1, 2, 3, 10, 1 };
-  bool outlines[N_TEST_STRINGS]                = { false, true, false, true, true, true, true, true };
+  const int n_chans[N_TEST_STRINGS] = { 1, 2, 3, 4, 4, 4, 4, 4 };
+  int thickness[N_TEST_STRINGS]     = { 1, 1, 1, 1, 2, 3, 10, 1 };
+  bool outlines[N_TEST_STRINGS]     = { false, true, false, true, true, true, true, true };
 
   for ( int s = 0; s < 5; s++ ) {
-    apg_pixfont_style_t style = static_cast<apg_pixfont_style_t>(s);
+    apg_pixfont_style_t style = static_cast<apg_pixfont_style_t>( s );
     for ( int i = 0; i < N_TEST_STRINGS; i++ ) {
       int w = 0, h = 0;
 
@@ -43,7 +43,7 @@ int main() {
 
       // CREATE TEXT IMAGE
       unsigned char* text_img = (unsigned char*)calloc( 1, w * h * n_chans[i] );
-      result = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], style, 10 );
+      result                  = apg_pixfont_str_into_image( str, text_img, w, h, n_chans[i], 0xFF, 0x7F, 0x00, 0xFF, thickness[i], outlines[i], style, 10 );
       if ( !result ) {
         fprintf( stderr, "ERROR: creating string image %i\n", i );
         return 1;
@@ -51,7 +51,7 @@ int main() {
 
       // WRITE OUTPUT TO FILE
       char tmp[256];
-      sprintf( tmp, "%i.png", s * N_TEST_STRINGS + i );
+      snprintf( tmp, 256, "%i.png", s * N_TEST_STRINGS + i );
       result = stbi_write_png( tmp, w, h, n_chans[i], text_img, w * n_chans[i] );
       if ( !result ) {
         fprintf( stderr, "ERROR: writing string image %i\n", i );

@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.15.0
+Version:  0.15.1
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -47,10 +47,35 @@ static char _c_built_in_commands[APG_C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "
 static bool _c_redraw_required;
 
 /* because string.h doesn't always have strnlen() */
-static int apg_c_strnlen( const char* str, int maxlen ) {
-  int i = 0;
+static int apg_c_strnlen( const char* str, size_t maxlen ) {
+  size_t i = 0;
   while ( i < maxlen && str[i] ) { i++; }
   return i;
+}
+
+static void apg_c_strncat( char* dst, const char* src, const size_t dst_max, const size_t src_max ) {
+  assert( dst && src );
+
+  size_t dst_len      = apg_c_strnlen( dst, dst_max );
+  size_t src_len      = apg_c_strnlen( src, src_max );
+  size_t space_in_dst = dst_max - dst_len;
+
+  assert( src_len <= space_in_dst && "ERROR: Not enough space in destination string." );
+
+  dst[dst_len] = '\0'; /* Just in case it wasn't already terminated. */
+
+  if ( 0 == space_in_dst ) { return; }
+
+  size_t n = APG_MIN( space_in_dst, src_len ); /* Use src_max if smaller. */
+  memmove( &dst[dst_len], src, n );
+  size_t last_i = dst_len + n < dst_max ? dst_len + n : dst_max - 1;
+  dst[last_i]   = '\0';
+}
+
+static void apg_c_strncpy( char* dst, const size_t dst_max, const char* src ) {
+  size_t src_max = apg_c_strnlen( src, dst_max );
+  dst[0]         = '\0';
+  apg_c_strncat( dst, src, dst_max, src_max );
 }
 
 /* Custom strncat() without the annoying '\0' src truncation issues.
@@ -365,7 +390,7 @@ void apg_c_autocomplete( void ) {
         int pod             = _point_of_diff_strs( found, _c_built_in_commands[l] );
         point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
       }
-      strcpy( found, _c_built_in_commands[l] );
+      apg_c_strncpy( found, APG_C_STR_MAX, _c_built_in_commands[l] );
     }
   }
 
@@ -382,7 +407,7 @@ void apg_c_autocomplete( void ) {
         int pod             = _point_of_diff_strs( found, _c_funcs[m].str );
         point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
       }
-      strcpy( found, _c_funcs[m].str );
+      apg_c_strncpy( found, APG_C_STR_MAX, _c_funcs[m].str );
     }
   }
 
@@ -399,7 +424,7 @@ void apg_c_autocomplete( void ) {
         int pod             = _point_of_diff_strs( found, _c_vars[o].str );
         point_of_difference = pod < point_of_difference || point_of_difference < 0 ? pod : point_of_difference;
       }
-      strcpy( found, _c_vars[o].str );
+      apg_c_strncpy( found, APG_C_STR_MAX, _c_vars[o].str );
     }
   }
   // Autocomplete the whole token if there is exactly 1 possible match.
@@ -488,7 +513,7 @@ bool apg_c_register_func( const char* str, bool ( *fptr )( const char* arg_str )
   int idx = _console_find_func( str );
   if ( idx >= 0 ) { return false; }
   idx = _n_c_funcs++;
-  strncpy( _c_funcs[idx].str, str, APG_C_STR_MAX - 1 );
+  apg_c_strncpy( _c_funcs[idx].str, str, APG_C_STR_MAX - 1 );
   _c_funcs[idx].func_ptr = fptr;
 
   return true;
@@ -505,7 +530,7 @@ bool apg_c_register_var( const char* str, void* var_ptr, apg_c_var_datatype_t da
   idx = _console_find_func( str );
   if ( idx >= 0 ) { return false; }
   idx = _n_c_vars++;
-  strncpy( _c_vars[idx].str, str, APG_C_STR_MAX - 1 );
+  apg_c_strncpy( _c_vars[idx].str, str, APG_C_STR_MAX - 1 );
   _c_vars[idx].var_ptr  = var_ptr;
   _c_vars[idx].datatype = datatype;
   return true;
@@ -552,7 +577,7 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
   }
   { // draw user-entered text on the bottom of the image
     char uet_str[APG_C_STR_MAX];
-    strcpy( uet_str, "> " );
+    apg_c_strncpy( uet_str, APG_C_STR_MAX, "> " );
     apg_c_strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
     int bottom_row_idx = h * row_stride - ( row_height_px * row_stride );
     if ( bottom_row_idx < 0 ) { return false; } // not even space for one line
