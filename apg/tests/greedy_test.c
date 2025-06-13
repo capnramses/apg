@@ -50,7 +50,7 @@ apg_gbfs_node_t eval_ptr[512];
 int64_t visited_ptr[512];
 apg_gbfs_node_t queue_ptr[128];
 
-int main() {
+int main( void ) {
   int64_t reversed_path[2048], path_n = 0;
   apg_time_init();
   double cumulative_time = 0.0;

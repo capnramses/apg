@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+int main( void ) {
   FILE* f_ptr = fopen( "bigfile.dat", "wb" );
   if ( !f_ptr ) {
     fprintf( stderr, "ERROR opening file for writing\n" );
