@@ -82,8 +82,8 @@ static int _apg_gbfs_sort_vset_comp_cb( const void* a_ptr, const void* b_ptr ) {
 bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int ( *neighs_cb_ptr )( int key, int* neighs ), int* reverse_path_ptr, int* path_n,
   int max_path_steps, int* visited_set_ptr, int visited_set_max, apg_gbfs_node_t* evaluated_nodes_ptr, int evaluated_nodes_max, apg_gbfs_node_t* queue_ptr, int queue_max ) {
   int n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
-  visited_set_ptr[0] = start_key;                                                                                 // Mark start as visited
-  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+  visited_set_ptr[0] = start_key;                                                                               // Mark start as visited
+  queue_ptr[0]       = (apg_gbfs_node_t){ .h = h_cb_ptr( start_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     apg_gbfs_node_t curr;
     if ( _use_custom_sort || _use_qsort || _usebsearch ) {
@@ -136,7 +136,7 @@ bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int
       // parent_idx is n_evaluated_nodes because we /will/ add the parent to the end of that list shortly.
       if ( _use_qsort ) {
         visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queue.
-        queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        queue_ptr[n_queue++] = (apg_gbfs_node_t){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
         qsort( visited_set_ptr, n_visited_set, sizeof( int ), _apg_gbfs_sort_vset_comp_cb );  // smallest first
         qsort( queue_ptr, n_queue, sizeof( apg_gbfs_node_t ), _apg_gbfs_sort_queue_comp_cb ); // biggest towards start (reverse order) by .h value.
       } else if ( _use_custom_sort ) {
@@ -153,18 +153,18 @@ bool apg_gbfs2( int start_key, int target_key, int ( *h_cb_ptr )( int key ), int
         n_visited_set++;
 
         int our_h          = h_cb_ptr( neigh_keys[neigh_idx] );
-        queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        queue_ptr[n_queue] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
         for ( int i = 0; i < n_queue; i++ ) {
           if ( our_h > queue_ptr[i].h ) {
             memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
-            queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+            queue_ptr[i] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
             break;
           }
         } // endfor
         n_queue++;
       } else {
         visited_set_ptr[n_visited_set++] = neigh_keys[neigh_idx]; // If not already visited then mark as visited and add n to queu
-        queue_ptr[n_queue++] = ( apg_gbfs_node_t ){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        queue_ptr[n_queue++] = (apg_gbfs_node_t){ .h = h_cb_ptr( neigh_keys[neigh_idx] ), .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
       } // end else
       neigh_added = true;
     } // endfor neighbours
@@ -237,7 +237,7 @@ int main( int argc, char** argv ) {
       int start_pixel   = 0;
       int target_pixel  = w * h - 1; // NOTE: not the mem addr: * n_chans to get that.
       success           = apg_gbfs( start_pixel, target_pixel, _h_cb_ptr, _neighs_cb_ptr, reverse_path, &reverse_path_n, MAZE_PATH_MAX, evaluated_nodes_ptr,
-        evaluated_nodes_max, visited_set_ptr, visted_set_max, queue_ptr, queue_max );
+                  evaluated_nodes_max, visited_set_ptr, visted_set_max, queue_ptr, queue_max );
       double end_time   = apg_time_s();
       double elapsed    = end_time - start_time;
       cumulative_time += elapsed;
