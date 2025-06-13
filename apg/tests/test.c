@@ -24,7 +24,7 @@ int main( int argc, char** argv ) {
 
   int pn = apg_check_param( "hello" );
   printf( "the user param 'hello' was found at arg num %i (-1 indicates not found)\n", pn );
-  //if ( pn > 0 ) { return 0; }
+  // if ( pn > 0 ) { return 0; }
 
   uint32_t uval = APG_MAX( 110, 120 );
   printf( "uval = %u\n", uval );

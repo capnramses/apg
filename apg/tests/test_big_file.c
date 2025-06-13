@@ -4,7 +4,7 @@
 #define APG_IMPLEMENTATION
 #include "../apg.h"
 
-int main() {
+int main( void ) {
   apg_time_init();
 
   // Test file size independently first.
@@ -13,7 +13,7 @@ int main() {
 
   double start = apg_time_s();
 
-  apg_file_t record = ( apg_file_t ){ .sz = 0 };
+  apg_file_t record = (apg_file_t){ .sz = 0 };
   if ( !apg_read_entire_file( "bigfile.dat", &record ) ) {
     fprintf( stderr, "ERROR: reading file \n" );
     return 1;
@@ -24,8 +24,8 @@ int main() {
   printf( "File size as long int is % li\n     size as size_t is\t  %zu\nSize of long is\t\t  %zu\nSize of off_t is\t  %zu\n", (long int)record.sz, record.sz,
     sizeof( long ), sizeof( off_t ) );
   printf( "File read of size         %zu was successful.\n", record.sz );
-	printf( "size of long long %zu\n", sizeof(long long int ) );
-  
-  printf("File read took %lf seconds.\n", end );
+  printf( "size of long long %zu\n", sizeof( long long int ) );
+
+  printf( "File read took %lf seconds.\n", end );
   return 0;
 }

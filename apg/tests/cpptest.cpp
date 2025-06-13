@@ -14,7 +14,7 @@ g++ -o cpptest cpptest.cpp apg.o  -I ..
 
 #include <iostream>
 
-int main() {
+int main( void ) {
   apg_file_t record;
   bool cpp_found = apg_file_size( "cpptest.cpp" );
 

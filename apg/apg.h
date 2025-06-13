@@ -5,6 +5,7 @@ Language: C89 interface, C99 implementation.
 
 Version History and Copyright
 -----------------------------
+  1.14.1 - 12 Jun 2025. Removed unsafe functions like ctime().
   1.13.1 - 16 Feb 2023. Added comments to confusing part of rand() functions.
   1.13.0 - 16 Feb 2023. Removed scratch mem functions.
                         Added *_r thread-safe versions of rand() functions.
@@ -167,14 +168,14 @@ STRINGS
 bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max );
 
 /** Because string.h doesn't always have strnlen() */
-int apg_strnlen( const char* str, int maxlen );
+size_t apg_strnlen( const char* str, size_t maxlen );
 
 /** Custom strncat() without the annoying '\0' src truncation issues.
  * Resulting string is always '\0' truncated.
- * @param dest_max This is the maximum length the destination string is allowed to grow to.
+ * @param dst_max This is the maximum length, in bytes, the destination string is allowed to grow to.
  * @param src_max  This is the maximum number of bytes to copy from the source string.
  */
-void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max );
+void apg_strncat( char* dst, const char* src, const size_t dst_max, const size_t src_max );
 
 /*=================================================================================================
 FILES
@@ -296,7 +297,7 @@ LOG FILES
 #endif
 
 /** Open/refresh a new log file and print timestamp. */
-void apg_start_log( void );
+void apg_log_start( void );
 
 /** Write a log entry. */
 void apg_log( const char* message, ... ) ATTRIB_PRINTF( 1, 2 );
@@ -335,7 +336,7 @@ MEMORY
 =================================================================================================*/
 
 /** NB. `ULL` postfix is necessary or numbers ~4GB will be interpreted as integer constants and overflow. */
-#define APG_KILOBYTES( value ) ( (value)*1024ULL )
+#define APG_KILOBYTES( value ) ( ( value ) * 1024ULL )
 #define APG_MEGABYTES( value ) ( APG_KILOBYTES( value ) * 1024ULL )
 #define APG_GIGABYTES( value ) ( APG_MEGABYTES( value ) * 1024ULL )
 
@@ -554,8 +555,8 @@ void apg_time_init( void ) {
 #elif __APPLE__
   mach_timebase_info_data_t info;
   mach_timebase_info( &info );
-  _frequency       = ( info.denom * 1e9 ) / info.numer;
-  _offset          = mach_absolute_time();
+  _frequency = ( info.denom * 1e9 ) / info.numer;
+  _offset    = mach_absolute_time();
 #else
   _frequency = 1000000000; /* Nanoseconds. */
   struct timespec ts;
@@ -605,21 +606,29 @@ bool apg_strparmatch( const char* a, const char* b, size_t a_max, size_t b_max )
   return true;
 }
 
-int apg_strnlen( const char* str, int maxlen ) {
-  int i = 0;
+size_t apg_strnlen( const char* str, size_t maxlen ) {
+  size_t i = 0;
   while ( i < maxlen && str[i] ) { i++; }
   return i;
 }
 
-void apg_strncat( char* dst, const char* src, const int dest_max, const int src_max ) {
+void apg_strncat( char* dst, const char* src, const size_t dst_max, const size_t src_max ) {
   assert( dst && src );
 
-  int dst_len   = apg_strnlen( dst, dest_max );
-  dst[dst_len]  = '\0'; /* Just in case it wasn't already terminated before max length. */
-  int remainder = dest_max - dst_len;
-  if ( remainder <= 0 ) { return; }
-  const int n = dest_max < src_max ? dest_max : src_max; /* Use src_max if smaller. */
-  strncat( dst, src, n );                                /* strncat manual guarantees null termination. */
+  size_t dst_len      = apg_strnlen( dst, dst_max );
+  size_t src_len      = apg_strnlen( src, src_max );
+  size_t space_in_dst = dst_max - dst_len;
+
+  assert( src_len <= space_in_dst && "ERROR: Not enough space in destination string." );
+
+  dst[dst_len] = '\0'; /* Just in case it wasn't already terminated. */
+
+  if ( 0 == space_in_dst ) { return; }
+
+  size_t n = APG_MIN( space_in_dst, src_len ); /* Use src_max if smaller. */
+  memmove( &dst[dst_len], src, n );
+  size_t last_i = dst_len + n < dst_max ? dst_len + n : dst_max - 1;
+  dst[last_i]   = '\0';
 }
 
 /*=================================================================================================
@@ -694,7 +703,7 @@ static int _dir_contents_count( const char* path ) {
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
+  snprintf( tmp, 2048, "%s/*.*", path ); /* Specify a file mask. "*.*" means we want everything! */
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
   do { count++; } while ( FindNextFile( hFind, &fdFile ) ); /* Find the next file. */
   FindClose( hFind );                                       /* Clean-up global state. */
@@ -736,7 +745,7 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
 #ifdef _MSC_VER /* MSVC */
   WIN32_FIND_DATA fdFile;
   HANDLE hFind = NULL;
-  sprintf( tmp, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
+  snprintf( tmp, 2048, "%s/*.*", path_ptr ); // Specify a file mask. "*.*" means we want everything!
   if ( ( hFind = FindFirstFile( tmp, &fdFile ) ) == INVALID_HANDLE_VALUE ) { return count; }
   do {
     tmp[0] = '\0';
@@ -749,8 +758,8 @@ bool apg_dir_contents( const char* path_ptr, apg_dirent_t** list_ptr, int* n_lis
     new_entry.path     = strdup( fdFile.cFileName );
     ( *list_ptr )[n++] = new_entry;
   } while ( FindNextFile( hFind, &fdFile ) ); // Find the next file.
-  FindClose( hFind );                         // Clean-up global state.
-#else                                         /* POSIX (including MinGW on Windows) */
+  FindClose( hFind ); // Clean-up global state.
+#else                 /* POSIX (including MinGW on Windows) */
   struct apg_stat_t path_stat;
   struct dirent* entry_ptr;
   DIR* folder = opendir( path_ptr );
@@ -839,15 +848,13 @@ LOG FILES IMPLEMENTATION
 =================================================================================================*/
 #define APG_LOG_FILE "apg.log" /* file name for log */
 
-void apg_start_log( void ) {
+void apg_log_start( void ) {
   FILE* file = fopen( APG_LOG_FILE, "w" ); /* NOTE it was getting massive with "a" */
   if ( !file ) {
     fprintf( stderr, "ERROR: could not open APG_LOG_FILE log file %s for writing\n", APG_LOG_FILE );
     return;
   }
-  time_t now = time( NULL );
-  char* date = ctime( &now );
-  fprintf( file, "\n------------ %s log. local time %s\n", APG_LOG_FILE, date );
+  fprintf( file, "\n------------ %s log. \n", APG_LOG_FILE );
   fclose( file );
 }
 
@@ -1074,7 +1081,7 @@ HASH TABLE
 =================================================================================================*/
 
 apg_hash_table_t apg_hash_table_create( uint32_t table_n ) {
-  apg_hash_table_t table = ( apg_hash_table_t ){ .n = 0 };
+  apg_hash_table_t table = (apg_hash_table_t){ .n = 0 };
   if ( table_n == 0 ) { return table; }
   table.list_ptr = calloc( table_n, sizeof( apg_hash_table_element_t ) );
   if ( !table.list_ptr ) { return table; } // OOM error.
@@ -1091,7 +1098,7 @@ void apg_hash_table_free( apg_hash_table_t* table_ptr ) {
     }
   }
   if ( table_ptr->list_ptr ) { free( table_ptr->list_ptr ); }
-  *table_ptr = ( apg_hash_table_t ){ .n = 0 };
+  *table_ptr = (apg_hash_table_t){ .n = 0 };
 }
 
 /** Return a hash index ( hash code ) for a single value key->table mapping.
@@ -1155,7 +1162,7 @@ bool apg_hash_store( const char* keystr, void* value_ptr, apg_hash_table_t* tabl
   return false;
 
 apg_hash_store_enter_key:
-  table_ptr->list_ptr[idx]        = ( apg_hash_table_element_t ){ .value_ptr = value_ptr };
+  table_ptr->list_ptr[idx]        = (apg_hash_table_element_t){ .value_ptr = value_ptr };
   table_ptr->list_ptr[idx].keystr = strdup( keystr ); // NOTE(Anton) Could use strndup here to guard against unterminated strings.
   table_ptr->count_stored++;
   if ( collision_ptr ) { *collision_ptr = *collision_ptr + collisions; }
@@ -1226,8 +1233,8 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
   int64_t ( *neighs_cb_ptr )( int64_t key, int64_t target_key, int64_t* neighs ), int64_t* reverse_path_ptr, int64_t* path_n, int64_t max_path_steps,
   apg_gbfs_node_t* evaluated_nodes_ptr, int64_t evaluated_nodes_max, int64_t* visited_set_ptr, int64_t visited_set_max, apg_gbfs_node_t* queue_ptr, int64_t queue_max ) {
   int64_t n_visited_set = 1, n_queue = 1, n_evaluated_nodes = 0;
-  visited_set_ptr[0] = start_key;                                                                                             // Mark start as visited
-  queue_ptr[0]       = ( apg_gbfs_node_t ){ .h = h_cb_ptr( start_key, target_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
+  visited_set_ptr[0] = start_key;                                                                                           // Mark start as visited
+  queue_ptr[0]       = (apg_gbfs_node_t){ .h = h_cb_ptr( start_key, target_key ), .parent_idx = -1, .our_key = start_key }; // and add to queue.
   while ( n_queue > 0 ) {
     // curr is vertex in queue w/ smallest h. Smallest h is always at the end of the queue for easy deletion.
     apg_gbfs_node_t curr = queue_ptr[--n_queue];
@@ -1259,11 +1266,11 @@ bool apg_gbfs( int64_t start_key, int64_t target_key, int64_t ( *h_cb_ptr )( int
         n_visited_set++;
 
         int64_t our_h      = h_cb_ptr( neigh_keys[neigh_idx], target_key );
-        queue_ptr[n_queue] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+        queue_ptr[n_queue] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
         for ( int64_t i = 0; i < n_queue; i++ ) {
           if ( our_h > queue_ptr[i].h ) {
             memmove( &queue_ptr[i + 1], &queue_ptr[i], ( n_queue - i ) * sizeof( apg_gbfs_node_t ) );
-            queue_ptr[i] = ( apg_gbfs_node_t ){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
+            queue_ptr[i] = (apg_gbfs_node_t){ .h = our_h, .parent_idx = n_evaluated_nodes, .our_key = neigh_keys[neigh_idx] };
             break;
           }
         } // endfor

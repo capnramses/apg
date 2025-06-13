@@ -49,8 +49,8 @@ int main( int argc, char** argv ) {
   fwrite( out_ptr, out_sz, 1, fptr );
   fclose( fptr );
 
-	free( out_ptr );
-	free( record.data );
+  free( out_ptr );
+  free( record.data );
 
   return 0;
 }
