@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.15.1
+Version:  0.15.2
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -13,6 +13,10 @@ Licence:  See bottom of header file.
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define APG_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
+#define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
+#define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
 
 #define APG_C_MAX_COMMAND_HIST 16
 #define APG_C_HIST_TEXT_R 0xCC
@@ -76,22 +80,6 @@ static void apg_c_strncpy( char* dst, const size_t dst_max, const char* src ) {
   size_t src_max = apg_c_strnlen( src, dst_max );
   dst[0]         = '\0';
   apg_c_strncat( dst, src, dst_max, src_max );
-}
-
-/* Custom strncat() without the annoying '\0' src truncation issues.
-   Resulting string is always '\0' truncated.
-   PARAMS
-     dest_max_len - This is the maximum length the destination string is allowed to grow to.
-     src_max_copy - This is the maximum number of bytes to copy from the source string.
-*/
-static void apg_c_strncat( char* dst, const char* src, const int dest_max_len, const int src_max_copy ) {
-  assert( dst && src );
-
-  int dst_len         = apg_c_strnlen( dst, dest_max_len );
-  dst[dst_len]        = '\0'; // just in case it wasn't already terminated before max length
-  int remaining_space = dest_max_len - dst_len;
-  const int n         = remaining_space < src_max_copy ? remaining_space : src_max_copy; // use src_max if smaller
-  strncat( dst, src, n - 1 );                                                            // strncat manual guarantees null termination.
 }
 
 static void _apg_c_command_hist_append( const char* c_user_entered_text ) {
@@ -513,7 +501,7 @@ bool apg_c_register_func( const char* str, bool ( *fptr )( const char* arg_str )
   int idx = _console_find_func( str );
   if ( idx >= 0 ) { return false; }
   idx = _n_c_funcs++;
-  apg_c_strncpy( _c_funcs[idx].str, str, APG_C_STR_MAX - 1 );
+  apg_c_strncpy( _c_funcs[idx].str, APG_C_STR_MAX - 1, str );
   _c_funcs[idx].func_ptr = fptr;
 
   return true;
@@ -530,7 +518,7 @@ bool apg_c_register_var( const char* str, void* var_ptr, apg_c_var_datatype_t da
   idx = _console_find_func( str );
   if ( idx >= 0 ) { return false; }
   idx = _n_c_vars++;
-  apg_c_strncpy( _c_vars[idx].str, str, APG_C_STR_MAX - 1 );
+  apg_c_strncpy( _c_vars[idx].str, APG_C_STR_MAX - 1, str );
   _c_vars[idx].var_ptr  = var_ptr;
   _c_vars[idx].datatype = datatype;
   return true;
