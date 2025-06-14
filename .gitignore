@@ -54,6 +54,11 @@ apg_bmp/test_images/
 apg_maths/tests/tmp/
 apg_mod/*.raw
 apg_mod/*.mp3
+apg_pixfont/*_bold.png
+apg_pixfont/*_italic.png
+apg_pixfont/*_normal.png
+apg_pixfont/*_strikethrough.png
+apg_pixfont/*_underline.png
 apg_pixfont/utils/bake_font
 apg_pixfont/utils/create_atlas
 apg_pixfont/utils/*.png
