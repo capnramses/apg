@@ -83,13 +83,9 @@ Technical Details:
 ==============================================================
 - Implementation is C99, interface is C89.
 
-TODO:
-==============================================================
-- Support more glyphs - e.g. French { ç â à }, and put them in Unicode order.
-- Fix up ampersand, quotation marks, etc glyphs, as from gfx_expmts repo.
-
 History:
 ==============================================================
+0.5.0 - 2025 Jun 14 - Added 'short' second typeface, and added typeface argument to most functions (breaks older API).
 0.4.4 - 2024 Oct 18 - Outline is now a darker shade of text colour, not black.
 0.4.0 - 2024 Jun 15 - Most of Latin-1 character set included.
 0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools. Basic Unicode UTF-8 support.
@@ -122,6 +118,8 @@ typedef enum apg_pixfont_style_t {
   APG_PIXFONT_STYLE_UNDERLINE,
   APG_PIXFONT_STYLE_STRIKETHROUGH
 } apg_pixfont_style_t;
+
+typedef enum typeface_t { APG_PIXFONT_TYPEFACE_STANDARD, APG_PIXFONT_TYPEFACE_SHORT } typeface_t;
 
 /** Word-wrap a string at col_max by converting white-space to line breaks between words, where appropriate.
  *  Note that very long words are not split by this function; breaking those is handled inside the other functions, when drawing.
@@ -157,7 +155,15 @@ void apg_pixfont_word_wrap_str( char* str_ptr, int col_max );
  * To address this you could pad the image, or set OpenGL byte alignment to 1.
  * If you want power-of-two sized images then allocate the next power-of-two size up.
  */
-int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int thickness, int add_outline, apg_pixfont_style_t style, int col_max );
+int apg_pixfont_image_size_for_str( //
+  const char* ascii_str,            //
+  int* w, int* h,                   //
+  int thickness,                    //
+  int add_outline,                  //
+  apg_pixfont_style_t style,        //
+  int col_max,                      //
+  typeface_t typeface               //
+);
 
 /** Writes an ASCII string into an image using the pixel font.
  * Allocate image memory first and clear to a background colour as desired. The pixel font text writes over the top in white.
@@ -197,7 +203,8 @@ int apg_pixfont_str_into_image(                                       //
   int thickness,                                                      //
   int add_outline,                                                    //
   apg_pixfont_style_t style,                                          //
-  int col_max                                                         //
+  int col_max,                                                        //
+  typeface_t typeface                                                 //
 );
 
 #ifdef __cplusplus
