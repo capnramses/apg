@@ -5,9 +5,10 @@
  *
  * @brief Stand-alone utility program for updating apg_pixfont.c with a new hard-coded font image.
  *
- * Example use case:
- *   "Ah! I forgot to add ê to the typeface image...let's paint that into the reference image and then
- *   update the hard-coded version in the library."
+ * Example use cases:
+ *   * "Ah! I forgot to add 'ê' to the typeface image. Let's paint that into the reference image and
+ *     then update the hard-coded version in the library."
+ *   * "I want to use apg_pixfont.c with a completely a new font, in a different style, or at a different size."
  *
  * Input
  *   some_font_image.png
@@ -16,12 +17,15 @@
  *   A C array in text is written to stdout that can be copy-pasted over the font array in apg_pixfont.c code.
  *
  * Build
- *   cc -o bake_font bake_font_array.c -lm -I ../../third_party/
+ *   cc -o bake_font bake_font_array.c -lm -I ../../third_party/stb/
  *
  * Usage
  *   ./bake_font MY_IMAGE.png > some_code.c
  *
  * Licence: See bottom of this file.
+ * 
+ * History
+ *   - 2020 April 17 - First version.
  */
 
 #define STB_IMAGE_IMPLEMENTATION

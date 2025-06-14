@@ -1,20 +1,51 @@
-// Example utility to create a typical 16x16 cell atlas image using apg_pixelfont
-// by Anton Gerdelan 2023 Feb 26.
-//
-// Atlas contains ASCII codepoints 0x20-0x7F (skips control codes before space),
-// and then includes the Latin-1 supplement, excluding its control codes section also.
-// This leaves ~64 blanks at the end that could be repurposed.
-//
-// * Advantage to this? Images of pre-baked outlines or styles without requiring run-time generation.
-// * Does it need to be in a square image? No. Power of two dimensions are fine, but it might help with
-//   mipmaps on some setups, or work with existing software better than a strip.
-// * Could the main library just use these atlases? Yes, but I find it easier to hand-edit an atlas.
-//   There are some use-cases where baking that into code is handy for quick blit-to-screen one-off debugging.
-// * Could you just load 256 invidual glyphs of each style to memory? Yes, that would fit into texture arrays
-//   and avoid bleeding issues with mipmaps. There's plenty of padding for the glyphs here though. For thickness 2
-//   use 32x32px cells. This also looks a bit nicer for italics.
-
-// gcc .\create_atlas.c ..\apg_pixfont.c -I ..\ -I ..\..\third_party\stb\
+/**
+ * @file create_atlas.c
+ *
+ * @author Anton Gerdelan - @capnramses - <antongdl@protonmail.com>.
+ *
+ * @brief Stand-alone utility program to create a typical 16x16 cell atlas image (sheet of characters) using apg_pixelfont.
+ *
+ * Example use cases:
+ *   - Real-time graphical applications where you sample a pre-made atlas texture when rendering text.
+ *   - "I want to have pre-made atlas images with my font in various styles; outlined, bold, etc."
+ *
+ * Atlas contains ASCII codepoints 0x20-0x7F (skips control codes before space),
+ * and then includes the Latin-1 supplement, excluding its control codes section also.
+ * This leaves ~64 blanks at the end that could be repurposed.
+ *
+ *  Advantage to this?
+ *    - Images of pre-baked outlines or styles without requiring run-time generation.
+ *    - Does it need to be in a square image? No. Power of two dimensions are fine, but it might help with
+ *      mipmaps on some setups, or work with existing software better than a strip.
+ *    - Could the main library just use these atlases? Yes, but I find it easier to hand-edit an atlas.
+ *    - There are some use-cases where baking that into code is handy for quick blit-to-screen one-off debugging.
+ *    - Could you just load 256 invidual glyphs of each style to memory? Yes, that would fit into texture arrays
+ *      and avoid bleeding issues with mipmaps. There's plenty of padding for the glyphs here though. For thickness 2
+ *      use 32x32px cells. This also looks a bit nicer for italics.
+ *
+ * Input
+ *   some_font_image.png
+ *
+ * Output
+ *   A C array in text is written to stdout that can be copy-pasted over the font array in apg_pixfont.c code.
+ *
+ * Build
+ *   cc -o create_atlas ./create_atlas.c ../apg_pixfont.c -I ../ -I ../../third_party/stb/
+ *
+ * Usage
+ *   ./create_atlas [OPTIONS]
+ *
+ * Options include:
+ *   --prefix STRING
+ *     File name prefix.
+ *     Utility generates several style files called [prefix]_bold.png, [prefix]_underline.png, etc.
+ *     Default "atlas".
+ *
+ * Licence: See bottom of this file.
+ *
+ * History:
+ *   - 2023 Feb 26 - First version.
+ */
 
 #include "apg_pixfont.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -25,6 +56,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define GLYPHS_ACROSS 16 // Number of glyphs in each atlas row. Note: not the same as pixel width of each cell!
+#define GLYPHS_DOWN 16   // Number of glyphs in each atlas column. Note: not the same as pixel width of each cell!
+
 int cell_dims[2] = { 16, 16 }; // ~1MB per 256-char sheet. Prefer power-of-two sizes, but not essential.
 
 #define MASK_FIRST_ONE 128   // 128 or 10000000
@@ -32,6 +66,7 @@ int cell_dims[2] = { 16, 16 }; // ~1MB per 256-char sheet. Prefer power-of-two s
 #define MASK_FIRST_THREE 224 // 224 or 11100000
 #define MASK_FIRST_FOUR 240  // 240 or 11110000
 #define MASK_FIRST_FIVE 248  // 248 or 11111000
+
 int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
   assert( mbs );
   if ( !mbs ) {
@@ -126,13 +161,13 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apg_pixfo
     fprintf( stderr, "ERROR: malloc OOM\n" );
     return false;
   }
-  for ( int i = 0; i < 256; i++ ) {
+  for ( int i = 0; i < ( GLYPHS_ACROSS * GLYPHS_DOWN ); i++ ) {
     memset( subimg_ptr, 0, subimg_sz );
     uint32_t codepoint = get_codepoint( i );
     char tmp[5]        = { i - ' ', '\0' };
     if ( !apg_cp_to_utf8( codepoint, tmp ) ) { return false; }
-    uint32_t cell_col = i % 16;
-    uint32_t cell_row = i / 16;
+    uint32_t cell_col = i % GLYPHS_ACROSS;
+    uint32_t cell_row = i / GLYPHS_ACROSS;
     if ( !apg_pixfont_str_into_image( tmp, subimg_ptr, cell_dims[0], cell_dims[1], n_chans, 0xFF, 0xFF, 0xFF, 0xFF, thickness, add_outline, style, 0 ) ) {
       fprintf( stderr, "Bad result writing image for char %i '%c'\n", i, tmp[0] );
       continue;
@@ -142,38 +177,137 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apg_pixfo
     snprintf( subimg_str, 64, "images/%i.png", i );
     stbi_write_png( subimg_str, cell_dims[0], cell_dims[1], n_chans, subimg_ptr, cell_dims[0] * n_chans );
     */
-    size_t cell_row_offset = cell_row * 16 * cell_dims[0] * cell_dims[1] * n_chans;
+    size_t cell_row_offset = cell_row * GLYPHS_ACROSS * cell_dims[0] * cell_dims[1] * n_chans;
     size_t cell_col_offset = cell_col * cell_dims[0] * n_chans;
     for ( int y = 0; y < cell_dims[1]; y++ ) { // Copy one sub-image line at a time.
-      uint8_t* dst_ptr = atlas_ptr + cell_row_offset + cell_col_offset + y * 16 * cell_dims[0] * n_chans;
+      uint8_t* dst_ptr = atlas_ptr + cell_row_offset + cell_col_offset + y * GLYPHS_ACROSS * cell_dims[0] * n_chans;
       uint8_t* src_ptr = subimg_ptr + cell_dims[0] * n_chans * y;
       memcpy( dst_ptr, src_ptr, cell_dims[0] * n_chans );
     }
   }
-  int ret = stbi_write_png( filename, cell_dims[0] * 16, cell_dims[1] * 16, n_chans, atlas_ptr, cell_dims[0] * 16 * n_chans );
+  int ret = stbi_write_png( filename, cell_dims[0] * GLYPHS_ACROSS, cell_dims[1] * GLYPHS_DOWN, n_chans, atlas_ptr, cell_dims[0] * GLYPHS_ACROSS * n_chans );
   free( subimg_ptr );
   free( atlas_ptr );
   if ( !ret ) { return false; }
   return true;
 }
 
-int main() {
-  const char* atlas_str               = "atlas.png";
-  const char* atlas_bold_str          = "atlas_bold.png";
-  const char* atlas_italic_str        = "atlas_italic.png";
-  const char* atlas_underline_str     = "atlas_underline.png";
-  const char* atlas_strikethrough_str = "atlas_strikethrough.png";
+typedef enum arg_opt_name_t {
+  ARG_OPT_PREFIX, //
+  ARG_OPT_MAX     //
+} arg_opt_name_t;
+
+static const char* arg_options[] = {
+  "--prefix" //
+};
+
+int main( int argc, char** argv ) {
+  char prefix[256] = { 0 };
+  strncat( prefix, "atlas", 255 );
+
+  for ( int i = 1; i < argc; i++ ) {
+    for ( int j = 0; j < ARG_OPT_MAX; j++ ) {
+      if ( 0 == strncmp( argv[i], arg_options[j], 32 ) ) {
+        switch ( (arg_opt_name_t)j ) {
+        case ARG_OPT_PREFIX:
+          if ( i + 1 < argc ) {
+            prefix[0] = '\0';
+            strncat( prefix, argv[i + 1], 255 );
+            printf( "Using atlas filename prefix `%s`\n", prefix );
+            i++;
+          }
+          break;
+
+        default: break;
+        }
+      }
+    }
+  }
+
+  const char* atlas_normal_str        = "_normal.png";
+  const char* atlas_bold_str          = "_bold.png";
+  const char* atlas_italic_str        = "_italic.png";
+  const char* atlas_underline_str     = "_underline.png";
+  const char* atlas_strikethrough_str = "_strikethrough.png";
   // Find max dimensions per character and check that font will fit in atlas.
   int thickness   = 1;
   int add_outline = 1;
 
-  if ( !draw_atlas( atlas_str, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) { fprintf( stderr, "ERROR drawing regular atlas.\n" ); }
-  if ( !draw_atlas( atlas_bold_str, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) { fprintf( stderr, "ERROR drawing bold atlas.\n" ); }
-  if ( !draw_atlas( atlas_italic_str, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) { fprintf( stderr, "ERROR drawing italic atlas.\n" ); }
-  if ( !draw_atlas( atlas_underline_str, thickness, add_outline, APG_PIXFONT_STYLE_UNDERLINE ) ) { fprintf( stderr, "ERROR drawing underline atlas.\n" ); }
-  if ( !draw_atlas( atlas_strikethrough_str, thickness, add_outline, APG_PIXFONT_STYLE_STRIKETHROUGH ) ) {
-    fprintf( stderr, "ERROR drawing strikthrough atlas.\n" );
+  char op_filename[2048];
+  snprintf( op_filename, 2048, "%s%s", prefix, atlas_normal_str );
+  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) {
+    fprintf( stderr, "ERROR: Drawing regular atlas.\n" );
+    return 1;
+  }
+  snprintf( op_filename, 2048, "%s%s", prefix, atlas_bold_str );
+  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) {
+    fprintf( stderr, "ERROR: Drawing bold atlas.\n" );
+    return 1;
+  }
+  snprintf( op_filename, 2048, "%s%s", prefix, atlas_italic_str );
+  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) {
+    fprintf( stderr, "ERROR: Drawing italic atlas.\n" );
+    return 1;
+  }
+  snprintf( op_filename, 2048, "%s%s", prefix, atlas_underline_str );
+  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_UNDERLINE ) ) {
+    fprintf( stderr, "ERROR: Drawing underline atlas.\n" );
+    return 1;
+  }
+  snprintf( op_filename, 2048, "%s%s", prefix, atlas_strikethrough_str );
+  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_STRIKETHROUGH ) ) {
+    fprintf( stderr, "ERROR: Drawing strikthrough atlas.\n" );
+    return 1;
   }
   printf( "done\n" );
   return 0;
 }
+
+/*
+-------------------------------------------------------------------------------------
+This software is available under two licences - you may use it under either licence.
+-------------------------------------------------------------------------------------
+FIRST LICENCE OPTION
+
+>                                  Apache License
+>                            Version 2.0, January 2004
+>                         http://www.apache.org/licenses/
+>    Copyright 2019 Anton Gerdelan.
+>    Licensed under the Apache License, Version 2.0 (the "License");
+>    you may not use this file except in compliance with the License.
+>    You may obtain a copy of the License at
+>        http://www.apache.org/licenses/LICENSE-2.0
+>    Unless required by applicable law or agreed to in writing, software
+>    distributed under the License is distributed on an "AS IS" BASIS,
+>    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+>    See the License for the specific language governing permissions and
+>    limitations under the License.
+-------------------------------------------------------------------------------------
+SECOND LICENCE OPTION
+
+> This is free and unencumbered software released into the public domain.
+>
+> Anyone is free to copy, modify, publish, use, compile, sell, or
+> distribute this software, either in source code form or as a compiled
+> binary, for any purpose, commercial or non-commercial, and by any
+> means.
+>
+> In jurisdictions that recognize copyright laws, the author or authors
+> of this software dedicate any and all copyright interest in the
+> software to the public domain. We make this dedication for the benefit
+> of the public at large and to the detriment of our heirs and
+> successors. We intend this dedication to be an overt act of
+> relinquishment in perpetuity of all present and future rights to this
+> software under copyright law.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+> MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+> IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+> OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+> ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+> OTHER DEALINGS IN THE SOFTWARE.
+>
+> For more information, please refer to <http://unlicense.org>
+-------------------------------------------------------------------------------------
+*/
