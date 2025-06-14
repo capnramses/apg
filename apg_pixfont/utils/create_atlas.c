@@ -220,8 +220,6 @@ int main( int argc, char** argv ) {
 
         case ARG_OPT_TYPEFACE:
           if ( i + 1 < argc ) {
-            prefix[0] = '\0';
-            strncat( prefix, argv[i + 1], 255 );
             typeface = atoi( argv[i + 1] );
             assert( typeface == 0 || typeface == 1 );
             i++;
