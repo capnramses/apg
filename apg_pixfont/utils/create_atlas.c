@@ -23,12 +23,6 @@
  *      and avoid bleeding issues with mipmaps. There's plenty of padding for the glyphs here though. For thickness 2
  *      use 32x32px cells. This also looks a bit nicer for italics.
  *
- * Input
- *   some_font_image.png
- *
- * Output
- *   A C array in text is written to stdout that can be copy-pasted over the font array in apg_pixfont.c code.
- *
  * Build
  *   cc -o create_atlas ./create_atlas.c ../apg_pixfont.c -I ../ -I ../../third_party/stb/
  *
@@ -41,9 +35,13 @@
  *     Utility generates several style files called [prefix]_bold.png, [prefix]_underline.png, etc.
  *     Default "atlas".
  *
+ *   --typeface INT
+ *     0 - normal, 1 - short.
+ *
  * Licence: See bottom of this file.
  *
  * History:
+ *   - 2025 Jun 14 - Updated for short typeface support.
  *   - 2023 Feb 26 - First version.
  */
 
@@ -129,14 +127,14 @@ uint32_t get_codepoint( int index ) {
   return codepoint;
 }
 
-bool draw_atlas( const char* filename, int thickness, int add_outline, apg_pixfont_style_t style ) {
+bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_style_t style, apgpf_typeface_t typeface ) {
   int max_w = 0, max_h = 0;
   for ( int i = 0; i < 256; i++ ) {
     uint32_t codepoint = get_codepoint( i );
     char tmp[5]        = { i - ' ', '\0' };
     if ( !apg_cp_to_utf8( codepoint, tmp ) ) { return false; }
     int w = 0, h = 0;
-    if ( !apg_pixfont_image_size_for_str( tmp, &w, &h, thickness, add_outline, style, 0 ) ) { continue; }
+    if ( !apg_pixfont_image_size_for_str( tmp, &w, &h, thickness, add_outline, style, 0, typeface ) ) { continue; }
     max_w = w < max_w ? max_w : w;
     max_h = h < max_h ? max_h : h;
   }
@@ -168,7 +166,7 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apg_pixfo
     if ( !apg_cp_to_utf8( codepoint, tmp ) ) { return false; }
     uint32_t cell_col = i % GLYPHS_ACROSS;
     uint32_t cell_row = i / GLYPHS_ACROSS;
-    if ( !apg_pixfont_str_into_image( tmp, subimg_ptr, cell_dims[0], cell_dims[1], n_chans, 0xFF, 0xFF, 0xFF, 0xFF, thickness, add_outline, style, 0 ) ) {
+    if ( !apg_pixfont_str_into_image( tmp, subimg_ptr, cell_dims[0], cell_dims[1], n_chans, 0xFF, 0xFF, 0xFF, 0xFF, thickness, add_outline, style, 0, typeface ) ) {
       fprintf( stderr, "Bad result writing image for char %i '%c'\n", i, tmp[0] );
       continue;
     }
@@ -193,17 +191,20 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apg_pixfo
 }
 
 typedef enum arg_opt_name_t {
-  ARG_OPT_PREFIX, //
-  ARG_OPT_MAX     //
+  ARG_OPT_PREFIX,   //
+  ARG_OPT_TYPEFACE, //
+  ARG_OPT_MAX       //
 } arg_opt_name_t;
 
 static const char* arg_options[] = {
-  "--prefix" //
+  "--prefix",  //
+  "--typeface" //
 };
 
 int main( int argc, char** argv ) {
   char prefix[256] = { 0 };
   strncat( prefix, "atlas", 255 );
+  int typeface = 0;
 
   for ( int i = 1; i < argc; i++ ) {
     for ( int j = 0; j < ARG_OPT_MAX; j++ ) {
@@ -213,7 +214,16 @@ int main( int argc, char** argv ) {
           if ( i + 1 < argc ) {
             prefix[0] = '\0';
             strncat( prefix, argv[i + 1], 255 );
-            printf( "Using atlas filename prefix `%s`\n", prefix );
+            i++;
+          }
+          break;
+
+        case ARG_OPT_TYPEFACE:
+          if ( i + 1 < argc ) {
+            prefix[0] = '\0';
+            strncat( prefix, argv[i + 1], 255 );
+            typeface = atoi( argv[i + 1] );
+            assert( typeface == 0 || typeface == 1 );
             i++;
           }
           break;
@@ -223,6 +233,9 @@ int main( int argc, char** argv ) {
       }
     }
   }
+
+  printf( "Using atlas filename prefix `%s`\n", prefix );
+  printf( "Using typeface `%i`\n", typeface );
 
   const char* atlas_normal_str        = "_normal.png";
   const char* atlas_bold_str          = "_bold.png";
@@ -235,27 +248,27 @@ int main( int argc, char** argv ) {
 
   char op_filename[2048];
   snprintf( op_filename, 2048, "%s%s", prefix, atlas_normal_str );
-  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_REGULAR ) ) {
+  if ( !draw_atlas( op_filename, thickness, add_outline, APGPF_STYLE_REGULAR, (apgpf_typeface_t)typeface ) ) {
     fprintf( stderr, "ERROR: Drawing regular atlas.\n" );
     return 1;
   }
   snprintf( op_filename, 2048, "%s%s", prefix, atlas_bold_str );
-  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_BOLD ) ) {
+  if ( !draw_atlas( op_filename, thickness, add_outline, APGPF_STYLE_BOLD, (apgpf_typeface_t)typeface ) ) {
     fprintf( stderr, "ERROR: Drawing bold atlas.\n" );
     return 1;
   }
   snprintf( op_filename, 2048, "%s%s", prefix, atlas_italic_str );
-  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_ITALIC ) ) {
+  if ( !draw_atlas( op_filename, thickness, add_outline, APGPF_STYLE_ITALIC, (apgpf_typeface_t)typeface ) ) {
     fprintf( stderr, "ERROR: Drawing italic atlas.\n" );
     return 1;
   }
   snprintf( op_filename, 2048, "%s%s", prefix, atlas_underline_str );
-  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_UNDERLINE ) ) {
+  if ( !draw_atlas( op_filename, thickness, add_outline, APGPF_STYLE_UNDERLINE, (apgpf_typeface_t)typeface ) ) {
     fprintf( stderr, "ERROR: Drawing underline atlas.\n" );
     return 1;
   }
   snprintf( op_filename, 2048, "%s%s", prefix, atlas_strikethrough_str );
-  if ( !draw_atlas( op_filename, thickness, add_outline, APG_PIXFONT_STYLE_STRIKETHROUGH ) ) {
+  if ( !draw_atlas( op_filename, thickness, add_outline, APGPF_STYLE_STRIKETHROUGH, (apgpf_typeface_t)typeface ) ) {
     fprintf( stderr, "ERROR: Drawing strikthrough atlas.\n" );
     return 1;
   }

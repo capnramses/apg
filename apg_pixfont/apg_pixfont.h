@@ -1,105 +1,107 @@
-/* apg_pixfont - C Pixel Font Utility
-LICENCE: see bottom of this file
-By Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
+/**
+ * @file apg_pixfont.h
+ * @brief C Pixel Font Utility
+ * @author Anton Gerdelan - @capnramses - <antongdl@protonmail.com>
+ * LICENCE: see bottom of this file
+ *
+ * What Does It Do?
+ * ==============================================================
+ * - Given a string of text, renders it into an image, in pre-allocated memory, using an embedded pixel font.
+ * - Useful for quick & dirty text output in graphics software. eg FPS counters or debug-on-screen text, or pixel-art games.
+ * - Tells you how much memory to allocate for an image to fit a given string.
+ * - Can set the number of colour channels, and those colours, for the text.
+ * - Can add pixel art outlines to the text.
+ *
+ * What Doesn't It Do?
+ * ==============================================================
+ * - Contain a file output API. If you want to save to a file use stb_image_write or libpng etc.
+ * - Characters rendered are limited to those in the font - 1-byte-per-codepoint ASCII, and a limited selection of other Latin alphabet glyphs (basic accents,
+ * umlauts).
+ *
+ * Instructions:
+ * ==============================================================
+ * 1. Copy apg_pixfont.c and apg_pixfont.h into your project's source code files.
+ *    You don't need to copy the image file for the font - it's embedded in the C file.
+ *
+ * 2. Find out the required image dimensions
+ *
+ *     int w, h;              // Image dimensions.
+ *     int n_channels = 1;    // Greyscale image output.
+ *     int thickness = 1;     // Single-pixel thick glyph lines.
+ *     int col_max = 0;       // Maximum characters in a line. Zero means no limit.
+ *     bool outlines = false; // If true, also draw a partial outline.
+ *
+ *     apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines, col_max );
+ *
+ * 3. Allocate the memory
+ *
+ *     unsigned char* img_mem = (unsigned char*)malloc( w * h * n_channels );
+ *     memset( img_mem, 0x00, w * h * n_channels );
+ *
+ * 4. Then paint the string onto the memory
+ *
+ *     apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines, col_max );
+ *
+ * Advanced Tips:
+ * ==============================================================
+ * *. If you want characters to wrap around at some line limit, you can set `col_max` to some number. This will just do the following:
+ *
+ * From:
+ *
+ *      col max
+ *        |
+ * A verylongword.
+ *        |
+ *
+ * To:
+ *        |
+ * A verylo
+ * ngword.
+ *        |
+ *
+ * *. If you want words to wrap neatly at the end of a line, you can call the replace whitespace preceding
+ *   overlapping words with linebreaks. Do this before calling the functions in steps 2 and 3.
+ *
+ *     apg_pixfont_word_wrap_str( my_string, 60 );
+ *
+ * This will achieve the following:
+ *
+ * From:
+ *
+ *          col max
+ *             |
+ * A verylongword.
+ *             |
+ *
+ * To:
+ *             |
+ * A
+ * verylongword.
+ *             |
+ *
+ * ==============================================================
+ *
+ * Technical Details:
+ * ==============================================================
+ * - Implementation is C99, interface is C89.
+ *
+ * History:
+ * ==============================================================
+ * 0.4.4 - 2024 Oct 18 - Outline is now a darker shade of text colour, not black.
+ * 0.4.0 - 2024 Jun 15 - Most of Latin-1 character set included.
+ * 0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools. Basic Unicode UTF-8 support.
+ * 0.2.1 - 2022 Sep 26 - Readme correction.
+ * 0.2.0 - 2022 Sep 25 - Word-wrap function.
+ * 0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
+ * 0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
+ * 0.0.5 - 2021 Jan 31 - apg_pixfont_image_size_for_str() always returns even dimensions, padding a pixel if required. Helps image alignment.
+ * 0.0.4 - 2021 Jan 05 - Removed vflip again, to simplify code in several places.
+ * 0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
+ * 0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
+ * 0.0.1 - 2019 Aug 9  - Split into stand-alone library code.
+ * 0.0.0 - 2018        - First version by Anton, as part of voxel game project
+ */
 
-What Does It Do?
-==============================================================
-- Given a string of text, renders it into an image, in pre-allocated memory, using an embedded pixel font.
-- Useful for quick & dirty text output in graphics software. eg FPS counters or debug-on-screen text, or pixel-art games.
-- Tells you how much memory to allocate for an image to fit a given string.
-- Can set the number of colour channels, and those colours, for the text.
-- Can add pixel art outlines to the text.
-
-What Doesn't It Do?
-==============================================================
-- Contain a file output API. If you want to save to a file use stb_image_write or libpng etc.
-- Characters rendered are limited to those in the font - 1-byte-per-codepoint ASCII, and a limited selection of other Latin alphabet glyphs (basic accents,
-umlauts).
-
-Instructions:
-==============================================================
-1. Copy apg_pixfont.c and apg_pixfont.h into your project's source code files.
-   You don't need to copy the image file for the font - it's embedded in the C file.
-
-2. Find out the required image dimensions
-
-    int w, h;              // Image dimensions.
-    int n_channels = 1;    // Greyscale image output.
-    int thickness = 1;     // Single-pixel thick glyph lines.
-    int col_max = 0;       // Maximum characters in a line. Zero means no limit.
-    bool outlines = false; // If true, also draw a partial outline.
-
-    apg_pixfont_image_size_for_str( "my_string", &w, &h, thickness, outlines, col_max );
-
-3. Allocate the memory
-
-    unsigned char* img_mem = (unsigned char*)malloc( w * h * n_channels );
-    memset( img_mem, 0x00, w * h * n_channels );
-
-4. Then paint the string onto the memory
-
-    apg_pixfont_str_into_image( "my_string", img_mem, w, h, n_channels, 0xFF, 0x7F, 0x00, 0xFF, thickness, outlines, col_max );
-
-Advanced Tips:
-==============================================================
-*. If you want characters to wrap around at some line limit, you can set `col_max` to some number. This will just do the following:
-
-From:
-
-     col max
-       |
-A verylongword.
-       |
-
-To:
-       |
-A verylo
-ngword.
-       |
-
-*. If you want words to wrap neatly at the end of a line, you can call the replace whitespace preceding
-  overlapping words with linebreaks. Do this before calling the functions in steps 2 and 3.
-
-    apg_pixfont_word_wrap_str( my_string, 60 );
-
-This will achieve the following:
-
-From:
-
-         col max
-            |
-A verylongword.
-            |
-
-To:
-            |
-A
-verylongword.
-            |
-
-==============================================================
-
-Technical Details:
-==============================================================
-- Implementation is C99, interface is C89.
-
-History:
-==============================================================
-0.5.0 - 2025 Jun 14 - Added 'short' second typeface, and added typeface argument to most functions (breaks older API).
-0.4.4 - 2024 Oct 18 - Outline is now a darker shade of text colour, not black.
-0.4.0 - 2024 Jun 15 - Most of Latin-1 character set included.
-0.3.0 - 2023 Mar 09 - Bold/italic/underline/strikethrough style. '\n's at the end of strings trimmed. Atlas generation tools. Basic Unicode UTF-8 support.
-0.2.1 - 2022 Sep 26 - Readme correction.
-0.2.0 - 2022 Sep 25 - Word-wrap function.
-0.1.1 - 2022 Sep 22 - Tidied comments. Character-based wrap option.
-0.1.0 - 2022 Apr 23 - Carriage return \r is ignored.
-0.0.5 - 2021 Jan 31 - apg_pixfont_image_size_for_str() always returns even dimensions, padding a pixel if required. Helps image alignment.
-0.0.4 - 2021 Jan 05 - Removed vflip again, to simplify code in several places.
-0.0.3 - 2019 Aug 11 - Added vflip option back in, and reconciled with outline drawing block.
-0.0.2 - 2019 Aug 11 - Thickness (scaling) API, revised outlines code to suite, removed vertical flip option from interface.
-0.0.1 - 2019 Aug 9  - Split into stand-alone library code.
-0.0.0 - 2018        - First version by Anton, as part of voxel game project
-*/
 #ifndef _APG_PIXFONT_H_
 #define _APG_PIXFONT_H_
 
@@ -107,19 +109,19 @@ History:
 extern "C" {
 #endif
 
-#define APG_PIXFONT_FAILURE 0
-#define APG_PIXFONT_SUCCESS 1
-#define APG_PIXFONT_MAX_STRLEN 2048
+#define APGPF_FAILURE 0
+#define APGPF_SUCCESS 1
+#define APGPF_MAX_STRLEN 2048
 
-typedef enum apg_pixfont_style_t {
-  APG_PIXFONT_STYLE_REGULAR = 0,
-  APG_PIXFONT_STYLE_BOLD,
-  APG_PIXFONT_STYLE_ITALIC,
-  APG_PIXFONT_STYLE_UNDERLINE,
-  APG_PIXFONT_STYLE_STRIKETHROUGH
-} apg_pixfont_style_t;
+typedef enum apgpf_style_t {
+  APGPF_STYLE_REGULAR = 0,
+  APGPF_STYLE_BOLD,
+  APGPF_STYLE_ITALIC,
+  APGPF_STYLE_UNDERLINE,
+  APGPF_STYLE_STRIKETHROUGH
+} apgpf_style_t;
 
-typedef enum typeface_t { APG_PIXFONT_TYPEFACE_STANDARD, APG_PIXFONT_TYPEFACE_SHORT } typeface_t;
+typedef enum apgpf_typeface_t { APGPF_TYPEFACE_STANDARD = 0, APGPF_TYPEFACE_SHORT } apgpf_typeface_t;
 
 /** Word-wrap a string at col_max by converting white-space to line breaks between words, where appropriate.
  *  Note that very long words are not split by this function; breaking those is handled inside the other functions, when drawing.
@@ -146,7 +148,7 @@ void apg_pixfont_word_wrap_str( char* str_ptr, int col_max );
  * If the current line exceeds the character count then it will wrap to the next line.
  *
  * @return
- * `APG_PIXFONT_FAILURE` on error (zero-length strings, NULL pointer args), otherwise success.
+ * `APGPF_FAILURE` on error (zero-length strings, NULL pointer args), otherwise success.
  *
  * @note
  * Image widths returned will always tightly fit text size. You can, however, use a large image than this.
@@ -157,12 +159,13 @@ void apg_pixfont_word_wrap_str( char* str_ptr, int col_max );
  */
 int apg_pixfont_image_size_for_str( //
   const char* ascii_str,            //
-  int* w, int* h,                   //
+  int* w,                           //
+  int* h,                           //
   int thickness,                    //
   int add_outline,                  //
-  apg_pixfont_style_t style,        //
+  apgpf_style_t style,              //
   int col_max,                      //
-  typeface_t typeface               //
+  apgpf_typeface_t typeface         //
 );
 
 /** Writes an ASCII string into an image using the pixel font.
@@ -192,7 +195,7 @@ int apg_pixfont_image_size_for_str( //
  * If the current line exceeds the character count then it will wrap to the next line.
  *
  * @return
- *  Returns `APG_PIXFONT_FAILURE` on error, otherwise success.
+ *  Returns `APGPF_FAILURE` on error, otherwise success.
  */
 int apg_pixfont_str_into_image(                                       //
   const char* ascii_str,                                              //
@@ -202,9 +205,9 @@ int apg_pixfont_str_into_image(                                       //
   unsigned char r, unsigned char g, unsigned char b, unsigned char a, //
   int thickness,                                                      //
   int add_outline,                                                    //
-  apg_pixfont_style_t style,                                          //
+  apgpf_style_t style,                                                //
   int col_max,                                                        //
-  typeface_t typeface                                                 //
+  apgpf_typeface_t typeface                                           //
 );
 
 #ifdef __cplusplus
