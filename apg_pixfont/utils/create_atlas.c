@@ -46,6 +46,7 @@
  */
 
 #include "apg_pixfont.h"
+#include "apg_bmp.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include <stdbool.h>
@@ -128,15 +129,19 @@ uint32_t get_codepoint( int index ) {
 }
 
 bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_style_t style, apgpf_typeface_t typeface ) {
+  uint32_t widths[256]     = { 0 };
+  uint32_t codepoints[256] = { 0 };
+
   int max_w = 0, max_h = 0;
   for ( int i = 0; i < 256; i++ ) {
-    uint32_t codepoint = get_codepoint( i );
-    char tmp[5]        = { i - ' ', '\0' };
-    if ( !apg_cp_to_utf8( codepoint, tmp ) ) { return false; }
+    codepoints[i] = get_codepoint( i );
+    char tmp[5]   = { i - ' ', '\0' };
+    if ( !apg_cp_to_utf8( codepoints[i], tmp ) ) { return false; }
     int w = 0, h = 0;
     if ( !apg_pixfont_image_size_for_str( tmp, &w, &h, thickness, add_outline, style, 0, typeface ) ) { continue; }
-    max_w = w < max_w ? max_w : w;
-    max_h = h < max_h ? max_h : h;
+    max_w     = w < max_w ? max_w : w;
+    max_h     = h < max_h ? max_h : h;
+    widths[i] = w;
   }
   printf( "atlas style %i: glyph max_w,h = %ix%i cell pixel dims = %ix%i\n", (int)style, max_w, max_h, cell_dims[0], cell_dims[1] );
   // -2 below, is to account for +1 for outline and +1 for uneven number adjustment.
@@ -183,10 +188,48 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
       memcpy( dst_ptr, src_ptr, cell_dims[0] * n_chans );
     }
   }
-  int ret = stbi_write_png( filename, cell_dims[0] * GLYPHS_ACROSS, cell_dims[1] * GLYPHS_DOWN, n_chans, atlas_ptr, cell_dims[0] * GLYPHS_ACROSS * n_chans );
+  char bmp_fn[256];
+  snprintf( bmp_fn, 256, "%s.bmp", filename );
+  uint32_t ret = apg_bmp_write( bmp_fn, atlas_ptr, cell_dims[0] * GLYPHS_ACROSS, cell_dims[1] * GLYPHS_DOWN, n_chans );
+  // int ret = stbi_write_png( filename, cell_dims[0] * GLYPHS_ACROSS, cell_dims[1] * GLYPHS_DOWN, n_chans, atlas_ptr, cell_dims[0] * GLYPHS_ACROSS * n_chans );
   free( subimg_ptr );
   free( atlas_ptr );
-  if ( !ret ) { return false; }
+  if ( !ret ) {
+    fprintf( stderr, "ERROR writing atlas image `%s`.\n", bmp_fn );
+    return false;
+  }
+
+  { // Write spacing and codepoint info to a companion file.
+    char fn[256] = { 0 };
+    size_t n     = 0;
+    snprintf( fn, 256, "%s.agpf", filename );
+    FILE* f_ptr = fopen( fn, "wb" );
+    if ( !f_ptr ) {
+      fprintf( stderr, "ERROR: Opening file for writing `%s`\n", fn );
+      return false;
+    }
+    // Header.
+    char* magic       = "AGPF";
+    uint32_t version  = 1;
+    uint32_t count    = 256;
+    uint32_t reserved = 0;
+    n                 = fwrite( magic, 4, 1, f_ptr );
+    assert( 1 == n );
+    n = fwrite( &version, 4, 1, f_ptr );
+    assert( 1 == n );
+    n = fwrite( &count, 4, 1, f_ptr );
+    assert( 1 == n );
+    n = fwrite( &reserved, 4, 1, f_ptr );
+    assert( 1 == n );
+    // Body.
+    n = fwrite( widths, 4 * 256, 1, f_ptr );
+    assert( 1 == n );
+    n = fwrite( codepoints, 4 * 256, 1, f_ptr );
+    assert( 1 == n );
+
+    fclose( f_ptr );
+  }
+
   return true;
 }
 
@@ -235,11 +278,11 @@ int main( int argc, char** argv ) {
   printf( "Using atlas filename prefix `%s`\n", prefix );
   printf( "Using typeface `%i`\n", typeface );
 
-  const char* atlas_normal_str        = "_normal.png";
-  const char* atlas_bold_str          = "_bold.png";
-  const char* atlas_italic_str        = "_italic.png";
-  const char* atlas_underline_str     = "_underline.png";
-  const char* atlas_strikethrough_str = "_strikethrough.png";
+  const char* atlas_normal_str        = "_normal";
+  const char* atlas_bold_str          = "_bold";
+  const char* atlas_italic_str        = "_italic";
+  const char* atlas_underline_str     = "_underline";
+  const char* atlas_strikethrough_str = "_strikethrough";
   // Find max dimensions per character and check that font will fit in atlas.
   int thickness   = 1;
   int add_outline = 1;
