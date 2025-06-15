@@ -561,7 +561,8 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
     uint8_t b = _c_output_lines_rgba[line_idx * 4 + 2];
     uint8_t a = _c_output_lines_rgba[line_idx * 4 + 3];
 
-    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, r, g, b, a, thickness, outlines, APG_PIXFONT_STYLE_REGULAR, 0 );
+    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, r, g, b, a, thickness, outlines, APGPF_STYLE_REGULAR,
+      0, APGPF_TYPEFACE_STANDARD );
   }
   { // draw user-entered text on the bottom of the image
     char uet_str[APG_C_STR_MAX];
@@ -569,7 +570,8 @@ bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, ui
     apg_c_strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
     int bottom_row_idx = h * row_stride - ( row_height_px * row_stride );
     if ( bottom_row_idx < 0 ) { return false; } // not even space for one line
-    apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines, APG_PIXFONT_STYLE_REGULAR, 0 );
+    apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines,
+      APGPF_STYLE_REGULAR, 0, APGPF_TYPEFACE_STANDARD );
   }
 
   // set background colour wherever there is no text/outline
