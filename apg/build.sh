@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# any error code causes script to exit with error code
+set -e
+
 clang -o test_rle_compress_file.bin tests/rle_compress.c -I ./ -Wall -Wextra -pedantic -fsanitize=address -g
 clang -o test_rle_string.bin tests/rle_test.c -I ./ -Wall -Wextra -pedantic -fsanitize=address -g
 clang -o test_hash.bin tests/hash_test.c -I ./ -Wall -Wextra -pedantic -fsanitize=address -g

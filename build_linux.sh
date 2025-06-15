@@ -95,10 +95,7 @@ cd ..
 #
 echo "building apg_pixfont tests..."
 cd apg_pixfont
-$CPP -c tests/test_pixfont.cpp -o tests/test_pixfont.o -I ./ -I ../third_party/stb/
-$CC $FLAGS -c apg_pixfont.c -o apg_pixfont.o -I ./
-$CC $FLAGS $SAN -o test_pixfont.bin apg_pixfont.o tests/test_pixfont.o -lm
-$CC $SAN -o bakefont.bin utils/bake_font_array.c -I ../third_party/stb/ -lm
+bash ./build.sh
 cd ..
 
 #
