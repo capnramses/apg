@@ -2,7 +2,7 @@
  * @file apg_pixfont.h
  * @brief C Pixel Font Utility
  * @author Anton Gerdelan
- * @version v0.5.0
+ * @version v0.5.1
  *
  * C99 Implementation
  * See header file for licence and instructions.
@@ -168,6 +168,8 @@ static int _get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t type
   // Size here includes the blank space pixel following. So a single-column glyph returns 2.
 
   int default_w = 6; // Default to showing whole glyph cell, as it's easier to debug extra spacing that clipped-off pixels.
+
+  if ( codepoint < ' ' || 0x7F == codepoint ) { return 0; } // Control codes like \n and DEL.
 
   if ( APGPF_TYPEFACE_STANDARD == typeface ) {
     if ( '!' == codepoint || 0x27 == codepoint || '.' == codepoint || ':' == codepoint || 'l' == codepoint || '|' == codepoint || 0xA1 == codepoint ) {
