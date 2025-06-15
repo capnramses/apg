@@ -114,17 +114,16 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
   return 4;
 }
 
-uint32_t get_codepoint( int index ) {
-  uint32_t codepoint = index + ' '; // Space is the glyph in the top-left (skip ASCII control codes).
-
+uint32_t get_codepoint_for_atlas_index( int atlas_index ) {
+  uint32_t codepoint = atlas_index + ' ';                  // Space is the glyph in the top-left (skip ASCII control codes).
   if ( codepoint > 127 ) { codepoint += ( 0xA0 - 0x80 ); } // A0 includes Latin-1 Punctuation ans Symbols section.
-
   // up to position 175 ( 11 rows of 16 )
   // Extras
-  if ( 192 == index ) { codepoint = 0x0153; }
-  if ( 193 == index ) { codepoint = 0x0154; }
-  if ( 194 == index ) { codepoint = 0x01EA; }
-  if ( 195 == index ) { codepoint = 0x01EB; }
+  if ( 192 == atlas_index ) { codepoint = 0x0152; } // OE
+  if ( 193 == atlas_index ) { codepoint = 0x0153; } // oe
+  if ( 194 == atlas_index ) { codepoint = 0x01EA; } // O ogonek (tail)
+  if ( 195 == atlas_index ) { codepoint = 0x01EB; } // o ogonek (tail)
+  if ( atlas_index <= '~' ) { return codepoint; }
   return codepoint;
 }
 
@@ -134,7 +133,7 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
 
   int max_w = 0, max_h = 0;
   for ( int i = 0; i < 256; i++ ) {
-    codepoints[i] = get_codepoint( i );
+    codepoints[i] = get_codepoint_for_atlas_index( i );
     char tmp[5]   = { i - ' ', '\0' };
     if ( !apg_cp_to_utf8( codepoints[i], tmp ) ) { return false; }
     int w = 0, h = 0;
@@ -166,7 +165,7 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
   }
   for ( int i = 0; i < ( GLYPHS_ACROSS * GLYPHS_DOWN ); i++ ) {
     memset( subimg_ptr, 0, subimg_sz );
-    uint32_t codepoint = get_codepoint( i );
+    uint32_t codepoint = get_codepoint_for_atlas_index( i );
     char tmp[5]        = { i - ' ', '\0' };
     if ( !apg_cp_to_utf8( codepoint, tmp ) ) { return false; }
     uint32_t cell_col = i % GLYPHS_ACROSS;

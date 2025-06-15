@@ -115,44 +115,48 @@ static uint32_t _utf8_to_cp( const char* mbs, int* sz ) {
   return 0;
 }
 
-static uint32_t _atlas_index_for_sequence( const char* sequence, int* bytes_processed ) {
-  assert( sequence && bytes_processed );
+/** These are the order that glyphs for codepoints are written in the original image strip cells. e.g. pixfont.png. Where there are no gaps, and no space. */
+static uint32_t _strip_index_for_codepoint( uint32_t codepoint ) {
+  uint32_t strip_index = '?';
+  // ASCII
+  if ( codepoint >= ' ' && codepoint <= '~' ) { return codepoint; }
+  // Punctuation from Latin-1
+  switch ( codepoint ) {
+  case 0xA1: {
+    strip_index = '~' + 1;
+  } break; // Inverted exclamation mark.
+  case 0xA9: {
+    strip_index = '~' + 2;
+  } break; // Copyright sign.
+  case 0xAB: {
+    strip_index = '~' + 3;
+  } break; // Left double angle quotation mark.
+  case 0xBB: {
+    strip_index = '~' + 4;
+  } break; // Right double angle quotation mark.
+  case 0xBF: {
+    strip_index = '~' + 5;
+  } break; // Inverted question mark.
+  default: break;
+  }
+  // Letters and mathematical operators from Latin-1.
+  if ( codepoint >= 0xC0 && codepoint <= 0xFF ) { strip_index = codepoint - 0xC0 + '~' + 6; }
+  // Extras
+  if ( codepoint == 0x0152 ) { strip_index = 196; } // OE
+  if ( codepoint == 0x0153 ) { strip_index = 197; } // oe
+  if ( codepoint == 0x01EA ) { strip_index = 198; } // O tail
+  if ( codepoint == 0x01EB ) { strip_index = 199; } // o tail
 
-  int len              = _apg_pixfont_strnlen( sequence, APGPF_MAX_STRLEN );
-  uint32_t atlas_index = '?';
+  return strip_index;
+}
+
+static uint32_t _strip_index_for_sequence( const char* sequence, int* bytes_processed ) {
+  assert( sequence && bytes_processed );
   uint8_t first_byte   = (uint8_t)sequence[0];
   *bytes_processed     = 0;
   if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; }
-  if ( len > 1 ) {
-    uint32_t codepoint = _utf8_to_cp( sequence, bytes_processed );
-    // Punctuation from Latin-1
-    switch ( codepoint ) {
-    case 0xA1: {
-      atlas_index = '~' + 1;
-    } break; // Inverted exclamation mark.
-    case 0xA9: {
-      atlas_index = '~' + 2;
-    } break; // Copyright sign.
-    case 0xAB: {
-      atlas_index = '~' + 3;
-    } break; // Left double angle quotation mark.
-    case 0xBB: {
-      atlas_index = '~' + 4;
-    } break; // Right double angle quotation mark.
-    case 0xBF: {
-      atlas_index = '~' + 5;
-    } break; // Inverted question mark.
-    default: break;
-    }
-    // Letters and mathematical operators from Latin-1.
-    if ( codepoint >= 0xC0 && codepoint <= 0xFF ) { atlas_index = codepoint - 0xC0 + '~' + 6; }
-    // Extras
-    if ( codepoint == 0x0152 ) { atlas_index = 196; } // OE
-    if ( codepoint == 0x0153 ) { atlas_index = 197; } // oe
-    if ( codepoint == 0x01EA ) { atlas_index = 198; } // O ogonek (tail)
-    if ( codepoint == 0x01EB ) { atlas_index = 199; } // o ogonek (tail)
-  }
-  return atlas_index;
+  uint32_t codepoint = _utf8_to_cp( sequence, bytes_processed );
+  return _strip_index_for_codepoint( codepoint );
 }
 
 static int _get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t typeface ) {
@@ -194,6 +198,30 @@ static int _get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t type
     }
   }
   return default_w;
+}
+
+static uint32_t __get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t typeface ) {
+  // Size here includes the blank space pixel following. So a single-column glyph returns 2.
+
+  int strip_w = typeface == APGPF_TYPEFACE_STANDARD ? _font_img_w : _sh_font_img_w;
+  int strip_h = typeface == APGPF_TYPEFACE_STANDARD ? _font_img_h : _sh_font_img_h;
+  const unsigned char* strip_ptr = typeface == APGPF_TYPEFACE_STANDARD ? _font_img : _sh_font_img;
+  int cell_w = 6;
+  int strip_index = _strip_index_for_codepoint( codepoint );
+  int start_col = strip_index * cell_w;
+
+  // Reverse for earlier exit.
+  for ( int col = start_col + (cell_w - 1), w = 6; col >= start_col; col--, w-- ) {
+    // Greyscale 1-channel image. 1 byte per pixel.
+    for ( int row = 0; row < strip_h; row++ ) {
+      int px_idx = row * strip_w + col;
+      assert( px_idx < strip_w * strip_h);
+      if (strip_ptr[px_idx] > 0x00 ) { 
+        return w;
+      }
+    }
+  }
+  return 6;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,9 +278,9 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
       if ( ' ' == ascii_str[i] ) { continue; } // Skip spaces after wrap.
     }
     int bytes_read       = 0;
-    uint32_t atlas_index = _atlas_index_for_sequence( &ascii_str[i], &bytes_read );
+    uint32_t strip_index = _strip_index_for_sequence( &ascii_str[i], &bytes_read );
     if ( bytes_read > 1 ) { i += ( bytes_read - 1 ); }
-    x_cursor += _get_spacing_for_codepoint( atlas_index, typeface );
+    x_cursor += _get_spacing_for_codepoint( strip_index, typeface );
     x_cursor = ( style != APGPF_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
@@ -310,11 +338,11 @@ int apg_pixfont_str_into_image(                                       //
 ) {
   if ( !ascii_str || !image || n_channels < 1 || n_channels > 4 || thickness < 1 ) { return APGPF_FAILURE; }
 
-  int len                     = _apg_pixfont_strnlen( ascii_str, APGPF_MAX_STRLEN );
-  int x_cursor                = 0;
-  int y_cursor                = 0;
-  int typeface_img_h          = ( typeface == APGPF_TYPEFACE_STANDARD ) ? _font_img_h : _sh_font_img_h;
-  int typeface_img_w          = ( typeface == APGPF_TYPEFACE_STANDARD ) ? _font_img_w : _sh_font_img_w;
+  int len                           = _apg_pixfont_strnlen( ascii_str, APGPF_MAX_STRLEN );
+  int x_cursor                      = 0;
+  int y_cursor                      = 0;
+  int typeface_img_h                = ( typeface == APGPF_TYPEFACE_STANDARD ) ? _font_img_h : _sh_font_img_h;
+  int typeface_img_w                = ( typeface == APGPF_TYPEFACE_STANDARD ) ? _font_img_w : _sh_font_img_w;
   const unsigned char* typeface_img = ( typeface == APGPF_TYPEFACE_STANDARD ) ? _font_img : _sh_font_img;
 
   uint8_t colour[4] = { r, g, b, a };
@@ -335,21 +363,21 @@ int apg_pixfont_str_into_image(                                       //
     }
     if ( '\r' == ascii_str[i] ) { continue; } // Ignore carriage return. Note that space isn't ignored/skipped because we sometimes drawn them e.g. underlines.
     int bytes_read     = 0;
-    uint32_t codepoint = _atlas_index_for_sequence( &ascii_str[i], &bytes_read );
+    uint32_t codepoint = _strip_index_for_sequence( &ascii_str[i], &bytes_read );
     if ( bytes_read > 1 ) { i += ( bytes_read - 1 ); }
     int spacing_px         = _get_spacing_for_codepoint( codepoint, typeface );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
-    uint32_t atlas_index = codepoint > 32 ? codepoint - 33 : 0; // Strip 'atlas' has no space graphics. Maybe it should. For space this gives a giant number and
+    uint32_t strip_index = codepoint > 32 ? codepoint - 33 : 0; // Strip 'atlas' has no space graphics. Maybe it should. For space this gives a giant number and
                                                                 // this works kinda by accident.
     int max_x_offset = 0;
-    // For each gyph in the thin strip of letters image.
+    // For each glyph in the thin strip of letters image.
     for ( int y = 0; y < typeface_img_h; y++ ) {
       for ( int x = 0; x < white_part_spacing; x++ ) {
-        int atlas_x       = atlas_index * 6 + x;
-        int atlas_y       = y;
-        int atlas_img_idx = typeface_img_w * atlas_y + atlas_x;
+        int strip_x       = strip_index * 6 + x;
+        int strip_y       = y;
+        int strip_img_idx = typeface_img_w * strip_y + strip_x;
         // 0 is top of glyph subimage, 10 is the baseline.
-        if ( ( codepoint > 32 && typeface_img[atlas_img_idx] > 0x00 ) || //
+        if ( ( codepoint > 32 && typeface_img[strip_img_idx] > 0x00 ) || //
              ( APGPF_STYLE_UNDERLINE == style && y == 12 ) ||            //
              ( APGPF_STYLE_STRIKETHROUGH == style && y == 8 )            //
         ) {
