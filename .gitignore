@@ -64,3 +64,5 @@ apg_pixfont/utils/create_atlas
 apg_pixfont/utils/*.png
 apg_wav/out_vis.png
 apg_wav/out_vis2.png
+apg_pixfont/utils/apg_bmp.c
+apg_pixfont/utils/apg_bmp.h
