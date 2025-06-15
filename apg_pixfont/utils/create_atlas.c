@@ -140,7 +140,6 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
     if ( !apg_pixfont_image_size_for_str( tmp, &w, &h, thickness, add_outline, style, 0, typeface ) ) { continue; }
     max_w     = w < max_w ? max_w : w;
     max_h     = h < max_h ? max_h : h;
-    widths[i] = w;
   }
   printf( "atlas style %i: glyph max_w,h = %ix%i cell pixel dims = %ix%i\n", (int)style, max_w, max_h, cell_dims[0], cell_dims[1] );
   // -2 below, is to account for +1 for outline and +1 for uneven number adjustment.
@@ -174,6 +173,18 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
       fprintf( stderr, "Bad result writing image for char %i '%c'\n", i, tmp[0] );
       continue;
     }
+
+    // Check widths
+    int max_glyph_w = 0;
+    for ( int ch = 0; ch < cell_dims[1]; ch++ ) {
+      for ( int cw = 0; cw < cell_dims[0]; cw++ ) {
+        int px_idx = ch * cell_dims[0] + cw;
+        if ( subimg_ptr[px_idx * n_chans + 0] > 0 || subimg_ptr[px_idx * n_chans + 1] > 0 || subimg_ptr[px_idx * n_chans + 2] > 0 ) { max_glyph_w = cw > max_glyph_w ? cw : max_glyph_w; }
+      }
+    }
+    widths[i] = max_glyph_w + 1;
+    if ( ' ' == codepoint ) { widths[i] = APGPF_TYPEFACE_STANDARD == typeface ? 5 : 4; } // Space is a special case as nothing is drawn but it is stored in atlas and meta data.
+
     /* uncomment this bit to get a separate image for each glyph:
     char subimg_str[64];
     snprintf( subimg_str, 64, "images/%i.png", i );

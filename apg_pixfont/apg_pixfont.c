@@ -200,30 +200,6 @@ static int _get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t type
   return default_w;
 }
 
-static uint32_t __get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t typeface ) {
-  // Size here includes the blank space pixel following. So a single-column glyph returns 2.
-
-  int strip_w = typeface == APGPF_TYPEFACE_STANDARD ? _font_img_w : _sh_font_img_w;
-  int strip_h = typeface == APGPF_TYPEFACE_STANDARD ? _font_img_h : _sh_font_img_h;
-  const unsigned char* strip_ptr = typeface == APGPF_TYPEFACE_STANDARD ? _font_img : _sh_font_img;
-  int cell_w = 6;
-  int strip_index = _strip_index_for_codepoint( codepoint );
-  int start_col = strip_index * cell_w;
-
-  // Reverse for earlier exit.
-  for ( int col = start_col + (cell_w - 1), w = 6; col >= start_col; col--, w-- ) {
-    // Greyscale 1-channel image. 1 byte per pixel.
-    for ( int row = 0; row < strip_h; row++ ) {
-      int px_idx = row * strip_w + col;
-      assert( px_idx < strip_w * strip_h);
-      if (strip_ptr[px_idx] > 0x00 ) { 
-        return w;
-      }
-    }
-  }
-  return 6;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void apg_pixfont_word_wrap_str( char* str_ptr, int col_max ) {
   if ( !str_ptr || col_max <= 0 ) { return; }
