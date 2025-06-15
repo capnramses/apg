@@ -1,8 +1,13 @@
-/* apg_pixfont - C Pixel Font Utility v0.5.0
-C99 Implementation
-See header file for licence and instructions.
-Anton Gerdelan 2019
-============================================================== */
+/**
+ * @file apg_pixfont.h
+ * @brief C Pixel Font Utility
+ * @author Anton Gerdelan
+ * @version v0.5.0
+ *
+ * C99 Implementation
+ * See header file for licence and instructions.
+ */
+
 #include "apg_pixfont.h"
 #include <assert.h>
 #include <ctype.h>
@@ -152,8 +157,8 @@ static uint32_t _strip_index_for_codepoint( uint32_t codepoint ) {
 
 static uint32_t _strip_index_for_sequence( const char* sequence, int* bytes_processed ) {
   assert( sequence && bytes_processed );
-  uint8_t first_byte   = (uint8_t)sequence[0];
-  *bytes_processed     = 0;
+  uint8_t first_byte = (uint8_t)sequence[0];
+  *bytes_processed   = 0;
   if ( first_byte >= ' ' && first_byte <= '~' ) { return (uint32_t)first_byte; }
   uint32_t codepoint = _utf8_to_cp( sequence, bytes_processed );
   return _strip_index_for_codepoint( codepoint );
