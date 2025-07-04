@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.5
+ * Version   | 0.2.6
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Copyright | 2021, Anton Gerdelan
  * Language  | C99
@@ -108,7 +108,7 @@ APG_JOBS_EXPORT bool apg_jobs_free( apg_jobs_pool_t* pool_ptr );
  * @param queue_max_items Number of elements of space allocated in queue_ptr. May be NULL to ignore.
  * @param most_q          The most jobs that were queued in this pool so far. May be NULL to ignore.
  */
-bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* most_w, int* n_queued, int* queue_max_items, int* most_q );
+APG_JOBS_EXPORT bool apg_jobs_stats( const apg_jobs_pool_t* pool_ptr, int* n_working, int* n_threads, int* most_w, int* n_queued, int* queue_max_items, int* most_q );
 
 /** Add a job to the work queue. A worker thread will pick this up eventually and call your function with your argument.
  * @param pool_ptr     Pointer to the thread pool to use. Must not be NULL.
