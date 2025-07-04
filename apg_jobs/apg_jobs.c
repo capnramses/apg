@@ -3,7 +3,7 @@
  *
  * apg_jobs  | Threaded jobs/worker library.
  * --------- | ----------
- * Version   | 0.2.5
+ * Version   | 0.2.6
  * Authors   | Anton Gerdelan https://github.com/capnramses
  * Language  | C99
  * Files     | 2
