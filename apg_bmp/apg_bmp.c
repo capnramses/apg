@@ -1,7 +1,7 @@
 /*****************************************************************************\
 apg_bmp - BMP File Reader/Writer Implementation
 Anton Gerdelan
-Version: 3.4.0
+Version: 3.4.1
 Licence: see apg_bmp.h
 C99
 \*****************************************************************************/
@@ -63,8 +63,8 @@ typedef enum _bmp_compression_t {
   BI_RLE8           = 1,
   BI_RLE4           = 2,
   BI_BITFIELDS      = 3,
-  BI_JPEG           = 4,  // Not supported.
-  BI_PNG            = 5,  // Not supported.
+  BI_JPEG           = 4, // Not supported.
+  BI_PNG            = 5, // Not supported.
   BI_ALPHABITFIELDS = 6,
   BI_CMYK           = 11, // Not supported.
   BI_CMYKRLE8       = 12, // Not supported.
@@ -137,7 +137,7 @@ static uint32_t _bitscan( uint32_t dword ) {
 }
 
 unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int* n_chans ) {
-  _entire_file_t record = ( _entire_file_t ){ .data = NULL };
+  _entire_file_t record = (_entire_file_t){ .data = NULL };
   uint8_t* dst_img_ptr  = NULL;
 
   if ( !filename || !w || !h || !n_chans ) { goto apg_bmp_read_error; }
@@ -180,7 +180,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
     break;
   default: // This includes 0 (PNG and JPG) and 16.
     goto apg_bmp_read_error;
-  }        // endswitch.
+  } // endswitch.
 
   *n_chans = n_dst_chans;
   // NOTE(Anton) Some image formats are not allowed a palette - could check for a bad header spec here also.
@@ -334,8 +334,8 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
           src_byte_idx++;
         } // endfor col.
         src_byte_idx += row_padding_sz;
-      }   // endfor row.
-    }     // endif RLE/Uncompressed 24-bit RGB.
+      } // endfor row.
+    } // endif RLE/Uncompressed 24-bit RGB.
 
     // == 4-bpp (16-colour) -> 24-bit RGB ==
   } else if ( 4 == dib_hdr_ptr->bpp && has_palette ) {
@@ -434,7 +434,7 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
           }
         } // endwhile still pixels in encoded run.
 
-      }   // endwhile Iterate over the "Colour-index array".
+      } // endwhile Iterate over the "Colour-index array".
 
     } else {
       // 4-bit Uncompressed:
@@ -483,8 +483,8 @@ unsigned char* apg_bmp_read( const char* filename, int* w, int* h, unsigned int*
           src_byte_idx++;
         } // endfor col.
         src_byte_idx += row_padding_sz;
-      }   // endfor row.
-    }     // endif RLE4 or uncompressed 4-bit.
+      } // endfor row.
+    } // endif RLE4 or uncompressed 4-bit.
 
     // == 1-bpp -> 24-bit RGB ==
   } else if ( 1 == dib_hdr_ptr->bpp && has_palette ) {
@@ -577,13 +577,17 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
   if ( labs( w ) > _BMP_MAX_DIMS || labs( h ) > _BMP_MAX_DIMS ) { return 0; }
   if ( n_chans != 3 && n_chans != 4 ) { return 0; }
 
-  uint32_t height = labs( h );
-  uint32_t width  = labs( w );
+  uint32_t height = (uint32_t)labs( h );
+  uint32_t width  = (uint32_t)labs( w );
   // Work out if any padding how much to skip at end of each row.
   const uint32_t unpadded_row_sz      = width * n_chans;
   const uint32_t row_padding_sz       = 0 == unpadded_row_sz % 4 ? 0 : 4 - unpadded_row_sz % 4;
   const uint32_t row_sz               = unpadded_row_sz + row_padding_sz;
   const uint32_t dst_pixels_padded_sz = row_sz * height;
+
+#ifdef APG_BMP_DEBUG_OUTPUT
+  printf( "apg_bmp_debug:\n  unpadded_row_sz=%u\n  row_padding_sz=%u\n  row_sz=%u\n  dst_pixels_padded_sz=%u\n", unpadded_row_sz, row_padding_sz, row_sz, dst_pixels_padded_sz );
+#endif
 
   const size_t dib_hdr_sz = sizeof( _bmp_dib_BITMAPINFOHEADER_t );
   _bmp_file_header_t file_hdr;
@@ -624,9 +628,9 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
     uint8_t bgra[4]     = { 0, 0, 0, 0 };
 
     for ( uint32_t row = 0; row < height; row++ ) {
-      size_t src_byte_idx = ( height - 1 - row ) * n_chans * width;
+      size_t src_byte_idx = width * ( height - 1 - row ) * n_chans;
       for ( uint32_t col = 0; col < width; col++ ) {
-        for ( uint32_t chan = 0; chan < n_chans; chan++ ) { rgba[chan] = pixels_ptr[src_byte_idx++]; }
+        memcpy( rgba, &pixels_ptr[src_byte_idx], n_chans );
         if ( 3 == n_chans ) {
           bgra[0] = rgba[2];
           bgra[1] = rgba[1];
@@ -639,6 +643,7 @@ unsigned int apg_bmp_write( const char* filename, unsigned char* pixels_ptr, int
           bgra[3] = rgba[0]; // Alpha.
         }
         memcpy( &dst_pixels_ptr[dst_byte_idx], bgra, n_chans );
+        src_byte_idx += (size_t)n_chans;
         dst_byte_idx += (size_t)n_chans;
       } // endfor col
       if ( row_padding_sz > 0 ) {
