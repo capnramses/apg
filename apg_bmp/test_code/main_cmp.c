@@ -39,16 +39,16 @@ int main( int argc, char** argv ) {
       fprintf( stderr, "ERROR: stb Failed to load first image; `%s`\n", img_a );
       goto exit_fail;
     }
+    if ( w1 != x || h1 != y || (int)n_chans1 != n ) {
+      fprintf( stderr, "ERROR: Image 1 dims/chans (%ix%i @ %i) do not match stbi (%ix%i @ %i) \n!", w1, h1, n_chans1, x, y, n );
+      goto exit_fail;
+    }
     int r = memcmp( a_ptr, data1, w1 * h1 * n_chans1 );
     if ( r != 0 ) {
       fprintf( stderr, "ERROR: First image memcmp vs stbi was %i\n", r );
       goto exit_fail;
     }
     free( data1 );
-    if ( w1 != x || h1 != y || (int)n_chans1 != n ) {
-      fprintf( stderr, "ERROR: Image 1 dims/chans (%ix%i @ %i) do not match stbi (%ix%i @ %i) \n!", w1, h1, n_chans1, x, y, n );
-      goto exit_fail;
-    }
   }
   {
     int x = 0, y = 0, n = 0;
@@ -57,16 +57,16 @@ int main( int argc, char** argv ) {
       fprintf( stderr, "ERROR: stb Failed to load second image; `%s`\n", img_b );
       goto exit_fail;
     }
+    if ( w2 != x || h2 != y || (int)n_chans2 != n ) {
+      fprintf( stderr, "ERROR: Image 2 dims/chans (%ix%i @ %i) do not match stbi (%ix%i @ %i) \n!", w2, h2, n_chans2, x, y, n );
+      goto exit_fail;
+    }
     int r = memcmp( b_ptr, data2, w2 * h2 * n_chans2 );
     if ( r != 0 ) {
       fprintf( stderr, "ERROR: Second image memcmp vs stbi was %i\n", r );
       goto exit_fail;
     }
     free( data2 );
-    if ( w2 != x || h2 != y || (int)n_chans2 != n ) {
-      fprintf( stderr, "ERROR: Image 2 dims/chans (%ix%i @ %i) do not match stbi (%ix%i @ %i) \n!", w2, h2, n_chans2, x, y, n );
-      goto exit_fail;
-    }
   }
 
   {
