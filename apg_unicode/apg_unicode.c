@@ -1,7 +1,7 @@
 /* apg_unicode
 Unicode <-> UTF-8 Multibyte String Functions for C & C++
 Anton Gerdelan
-Version: 0.2.3 3 May 2020.
+Version: 0.2.3
 Licence: see apg_unicode.h
 C99
 */
@@ -191,9 +191,7 @@ void apg_utf8_reverse( char* out, const char* in ) {
 
   int sz        = strnlen( in, APG_UNICODE_MAX_STR );
   char* tmp_ptr = malloc( sz + 1 );
-  assert( tmp_ptr && "ERROR: malloc failure in apg_unicode.\n" );
-  if ( !tmp_ptr ) { return; }
-  tmp_ptr[sz] = 0;
+  tmp_ptr[sz]   = 0;
 
   int byte_idx = 0;
   while ( byte_idx < sz ) {
@@ -395,7 +393,7 @@ void apg_utf8_trim_end( char* buf, int n ) {
 int main() {
   FILE* fp = fopen( "out.txt", "w" );
   if ( !fp ) {
-    fprintf( stderr, "ERROR: opening out.txt for writing." );
+    fprintf( "ERROR: opening `out.txt` for writing.\n" );
     return 1;
   }
   const char* test_string = "Fáilte.Ő ΏΘ ЩӜ ݞ  ణ ആ ญ ᚉ ant😈n ᛋ € ✋ is Amazing ✌️ ぢぽ\n习乡乢乣乤乥书乧乨乩乪乫乬乭乮乯𠀀 ";
