@@ -1,12 +1,11 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.15.2
+Version:  0.18
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
 #include "apg_console.h"
-#include "apg_pixfont.h" // Used for adding glyphs to image output.
 #include "apg_unicode.h"
 #include <assert.h>
 #include <ctype.h>
@@ -14,19 +13,15 @@ Licence:  See bottom of header file.
 #include <stdlib.h>
 #include <string.h>
 
-#define APG_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
-#define APG_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
-#define APG_CLAMP( x, lo, hi ) ( APG_MIN( hi, APG_MAX( lo, x ) ) )
+#define APG_C_MIN( a, b ) ( ( a ) < ( b ) ? ( a ) : ( b ) )
+#define APG_C_MAX( a, b ) ( ( a ) > ( b ) ? ( a ) : ( b ) )
+#define APG_CLAMP( x, lo, hi ) ( APG_C_MIN( hi, APG_C_MAX( lo, x ) ) )
 
 #define APG_C_MAX_COMMAND_HIST 16
-#define APG_C_HIST_TEXT_R 0xCC
-#define APG_C_HIST_TEXT_G 0xCC
-#define APG_C_HIST_TEXT_B 0xCC
-#define APG_C_HIST_TEXT_A 0xFF
 
 typedef struct apg_c_func_t {
   char str[APG_C_STR_MAX];
-  // NOTE: the string arg is allowed to be NULL, meaning no argument given to function
+  // NOTE: the string arg is allowed to be NULL, meaning no argument given to function.
   bool ( *func_ptr )( const char* );
 } apg_c_func_t;
 
@@ -37,20 +32,17 @@ static apg_c_func_t _c_funcs[APG_C_FUNCS_MAX];
 static uint32_t _n_c_funcs;
 
 static char c_output_lines[APG_C_OUTPUT_LINES_MAX][APG_C_STR_MAX];
-static uint8_t _c_output_lines_rgba[APG_C_OUTPUT_LINES_MAX * 4];
 static int c_output_lines_oldest = -1, c_output_lines_newest = -1, c_n_output_lines = 0;
 static char _c_user_entered_text[APG_C_STR_MAX];
 static char _c_command_history[APG_C_MAX_COMMAND_HIST][APG_C_STR_MAX];
 static int _c_command_history_n         = 0;
 static int _c_latest_command_in_history = -1;
-static int _hist_curr_rewind_idx        = -1; // for scrolling through history with eg cursor up/down keys.
+static int _hist_curr_rewind_idx        = -1; // For scrolling through history with eg cursor up/down keys.
 
 #define APG_C_N_BUILT_IN_COMMANDS 4
 static char _c_built_in_commands[APG_C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "help", "clear", "list_vars", "list_funcs" };
 
-static bool _c_redraw_required;
-
-/* because string.h doesn't always have strnlen() */
+/* Because string.h doesn't always have strnlen(). */
 static int apg_c_strnlen( const char* str, size_t maxlen ) {
   size_t i = 0;
   while ( i < maxlen && str[i] ) { i++; }
@@ -70,7 +62,7 @@ static void apg_c_strncat( char* dst, const char* src, const size_t dst_max, con
 
   if ( 0 == space_in_dst ) { return; }
 
-  size_t n = APG_MIN( space_in_dst, src_len ); /* Use src_max if smaller. */
+  size_t n = APG_C_MIN( space_in_dst, src_len ); /* Use src_max if smaller. */
   memmove( &dst[dst_len], src, n );
   size_t last_i = dst_len + n < dst_max ? dst_len + n : dst_max - 1;
   dst[last_i]   = '\0';
@@ -107,8 +99,8 @@ static void _list_c_funcs( void ) {
   for ( uint32_t i = 0; i < _n_c_funcs; i++ ) { apg_c_printf( "%s", _c_funcs[i].str ); }
 }
 
-// returns index or -1 if did not find
-// NOTE(Anton) could replace with a hash table
+// Returns index or -1 if did not find.
+// NOTE(Anton) could replace with a hash table.
 static int _console_find_var( const char* str ) {
   assert( str );
 
@@ -137,7 +129,7 @@ static int _console_find_builtin_func( const char* str ) {
 }
 
 /* =======================================================================================================================
-user-entered text API. call these functions based on eg keyboard input.
+User-entered text API. call these functions based on eg keyboard input.
 ======================================================================================================================= */
 
 static bool _parse_user_entered_instruction( const char* str ) {
@@ -154,7 +146,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( NULL );
-      if ( !res ) { apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: function `%s` returned error.", one ); }
+      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -200,12 +192,12 @@ static bool _parse_user_entered_instruction( const char* str ) {
       default: {
         apg_c_printf( "%s OTHER", one );
       } break; // some other data type
-      } // endswitch
+      }        // endswitch
       return true;
     }
 
     // give up
-    apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: `%s` is not a recognised command or variable name.", one );
+    apg_c_printf( "ERROR: `%s` is not a recognised command or variable name.", one );
     return false;
   } break;
 
@@ -214,7 +206,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
     int func_idx = _console_find_func( one );
     if ( func_idx >= 0 ) {
       bool res = _c_funcs[func_idx].func_ptr( two ); // give 2nd token as arg string
-      if ( !res ) { apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: function `%s` returned error.", one ); }
+      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
       return true;
     }
 
@@ -238,16 +230,28 @@ static bool _parse_user_entered_instruction( const char* str ) {
         *(float*)var_ptr = fval;
       } break;
       default: break; // do nothing for complex data types
-      } // endswitch
+      }               // endswitch
       return true;
     } else {
-      apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: `%s` is not a recognised variable name.", one );
+      apg_c_printf( "ERROR: `%s` is not a recognised variable name.", one );
       return false;
     }
   } break;
 
   default: {
-    apg_c_printf_rgba( 0xFF, 0x00, 0x00, 0xFF, "ERROR: too many tokens in instruction." );
+    // Assume all other cases are callbacks with multiple args. These are just left in a string, with the function name trimmed off.
+    char combined_args[APG_C_STR_MAX] = { 0 };
+    int one_len                       = apg_c_strnlen( one, APG_C_STR_MAX );
+    if ( one_len < 1 ) { return false; }
+    apg_c_strncpy( combined_args, APG_C_STR_MAX, &str[one_len + 1] );
+    int func_idx = _console_find_func( one );
+    if ( func_idx >= 0 ) {
+      bool res = _c_funcs[func_idx].func_ptr( combined_args ); // give 2nd token as arg string
+      if ( !res ) { apg_c_printf( "ERROR: function `%s` returned error.", one ); }
+      return true;
+    }
+
+    apg_c_printf( "ERROR: too many tokens in instruction." );
     fprintf( stderr, "n=%i\n", n );
   } break;
   } // endswitch
@@ -279,10 +283,10 @@ bool apg_c_append_user_entered_text( const char* str ) {
       return parsed;
     }
   }
-
-  _c_redraw_required = true;
   return true;
 }
+
+const char* apg_c_get_user_entered_mbs( void ) { return _c_user_entered_text; }
 
 void apg_c_reuse_hist( int hist_steps ) {
   int32_t idx = _c_latest_command_in_history - hist_steps;
@@ -290,7 +294,6 @@ void apg_c_reuse_hist( int hist_steps ) {
   idx                     = idx % APG_C_MAX_COMMAND_HIST;
   _c_user_entered_text[0] = '\0';
   apg_c_strncat( _c_user_entered_text, _c_command_history[idx], APG_C_STR_MAX, APG_C_STR_MAX );
-  _c_redraw_required = true;
 }
 
 void apg_c_reuse_hist_back_one( void ) {
@@ -323,27 +326,32 @@ void apg_c_backspace( void ) {
   }
 
   _c_user_entered_text[uet_len - last_cp_n] = '\0';
-  _c_redraw_required                        = true;
 }
 
 void apg_c_clear_user_entered_text( void ) {
   _c_user_entered_text[0] = '\0';
-  _c_redraw_required      = true;
   _hist_curr_rewind_idx   = -1; // Reset history rewind.
+}
+
+void apg_c_get_user_entered_text( char* mbs, int max_len ) {
+  strncpy( mbs, _c_user_entered_text, max_len - 1 );
+  mbs[max_len - 1] = '\0';
 }
 
 static int _point_of_diff_strs( const char* str1, const char* str2 ) {
   if ( !str1 || !str2 ) { return -1; }
-  int len1   = (int)strlen( str1 );
-  int len2   = (int)strlen( str2 );
-  int minlen = len1 < len2 ? len1 : len2;
+  int len1          = (int)strlen( str1 );
+  int len2          = (int)strlen( str2 );
+  int minlen        = len1 < len2 ? len1 : len2;
+  int last_matching = 0;
   for ( int i = 0; i < minlen; i++ ) {
     if ( str1[i] != str2[i] ) { return i; }
+    last_matching = i + 1;
   }
-  return -1;
+  return last_matching;
 }
 
-// WARNING(Anton) - assumes string is ASCII
+// WARNING(Anton) - assumes string is ASCII.
 void apg_c_autocomplete( void ) {
   size_t len = strlen( _c_user_entered_text );
   if ( 0 == len ) { return; }
@@ -430,27 +438,32 @@ void apg_c_autocomplete( void ) {
       mouse_cursor_show   (second match)
                   ^ autocomplete up to here in the case
     */
-    int uptoidx = point_of_difference < APG_C_STR_MAX - 1 ? point_of_difference : APG_C_STR_MAX - 1;
-    for ( int i = 0; i < uptoidx; i++ ) { _c_user_entered_text[i] = found[i]; }
-    _c_user_entered_text[uptoidx] = '\0';
+    int up_to_idx = APG_C_MIN( point_of_difference, APG_C_STR_MAX - 1 );
+    for ( int i = 0; i < up_to_idx; i++ ) { _c_user_entered_text[i] = found[i]; }
+    _c_user_entered_text[up_to_idx] = '\0';
   }
 }
 
 /* =======================================================================================================================
-console output text API.
+Console output text API.
 ======================================================================================================================= */
 void apg_c_output_clear( void ) {
   c_output_lines_oldest = c_output_lines_newest = -1;
   c_n_output_lines                              = 0;
-  _c_redraw_required                            = true;
 }
 
 int apg_c_count_lines( void ) { return c_n_output_lines; }
 
-void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* message, ... ) {
+int apg_c_newest_line_idx( void ) { return c_output_lines_newest; }
+
+const char* apg_c_get_line_mbs( int line_idx ) {
+  if ( line_idx < 0 || line_idx >= c_n_output_lines ) { return NULL; }
+  return c_output_lines[line_idx];
+}
+
+void apg_c_printf( const char* message, ... ) {
   va_list argptr;
   char buffer[APG_C_STR_MAX];
-
   va_start( argptr, message );
   vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
   va_end( argptr );
@@ -462,20 +475,6 @@ void apg_c_printf_rgba( uint8_t r, uint8_t g, uint8_t b, uint8_t a, const char* 
   if ( -1 == c_output_lines_oldest ) { c_output_lines_oldest = c_output_lines_newest; }
   c_output_lines[c_output_lines_newest][0] = '\0';
   strncat( c_output_lines[c_output_lines_newest], buffer, APG_C_STR_MAX );
-
-  const uint8_t text_colour[4] = { r, g, b, a };
-  memcpy( &_c_output_lines_rgba[c_output_lines_newest * 4], text_colour, 4 );
-
-  _c_redraw_required = true;
-}
-
-void apg_c_printf( const char* message, ... ) {
-  va_list argptr;
-  char buffer[APG_C_STR_MAX];
-  va_start( argptr, message );
-  vsnprintf( buffer, APG_C_STR_MAX, message, argptr );
-  va_end( argptr );
-  apg_c_printf_rgba( APG_C_HIST_TEXT_R, APG_C_HIST_TEXT_G, APG_C_HIST_TEXT_B, APG_C_HIST_TEXT_A, "%s", buffer ); // grey text
 }
 
 void apg_c_dump_to_stdout( void ) {
@@ -491,7 +490,7 @@ void apg_c_dump_to_stdout( void ) {
 }
 
 /* =======================================================================================================================
-program <-> console variable and function linkage API
+Program <-> console variable and function linkage API.
 ======================================================================================================================= */
 bool apg_c_register_func( const char* str, bool ( *fptr )( const char* arg_str ) ) {
   assert( str );
@@ -531,64 +530,3 @@ apg_c_var_t* apg_c_get_var( const char* str ) {
   if ( idx < 0 ) { return NULL; }
   return &_c_vars[idx];
 }
-
-/* =======================================================================================================================
-rendering API
-======================================================================================================================= */
-bool apg_c_draw_to_image_mem( uint8_t* img_ptr, int w, int h, int n_channels, uint8_t* background_colour ) {
-  assert( img_ptr );
-
-  const int row_stride    = w * n_channels;
-  const int row_height_px = 16;
-  // text properties
-  const int thickness = 1;
-  const int outlines  = 1;
-
-  if ( row_stride < 1 ) { return false; }
-
-  memset( img_ptr, 0, row_stride * h );
-
-  // draw scrolling text output above the prompt line
-  int n_lines = apg_c_count_lines();
-  for ( int i = 0; i < n_lines; i++ ) {
-    int line_idx = c_output_lines_newest - i;
-    if ( line_idx < 0 ) { line_idx += APG_C_OUTPUT_LINES_MAX; }
-    int row_idx = h * row_stride - ( row_height_px * row_stride ) * ( i + 2 );
-    if ( row_idx < 0 ) { break; } // don't bother if entire row above upper image bound
-
-    uint8_t r = _c_output_lines_rgba[line_idx * 4 + 0];
-    uint8_t g = _c_output_lines_rgba[line_idx * 4 + 1];
-    uint8_t b = _c_output_lines_rgba[line_idx * 4 + 2];
-    uint8_t a = _c_output_lines_rgba[line_idx * 4 + 3];
-
-    apg_pixfont_str_into_image( c_output_lines[line_idx], &img_ptr[row_idx], w, row_height_px, n_channels, r, g, b, a, thickness, outlines, APGPF_STYLE_REGULAR,
-      0, APGPF_TYPEFACE_STANDARD );
-  }
-  { // draw user-entered text on the bottom of the image
-    char uet_str[APG_C_STR_MAX];
-    apg_c_strncpy( uet_str, APG_C_STR_MAX, "> " );
-    apg_c_strncat( uet_str, _c_user_entered_text, APG_C_STR_MAX, APG_C_STR_MAX );
-    int bottom_row_idx = h * row_stride - ( row_height_px * row_stride );
-    if ( bottom_row_idx < 0 ) { return false; } // not even space for one line
-    apg_pixfont_str_into_image( uet_str, &img_ptr[bottom_row_idx], w, row_height_px, n_channels, 0xFF, 0xFF, 0xFF, 0xFF, thickness, outlines,
-      APGPF_STYLE_REGULAR, 0, APGPF_TYPEFACE_STANDARD );
-  }
-
-  // set background colour wherever there is no text/outline
-  // NOTE(Anton) this is not ideal for performance - use a second background image instead and blt onto it or render both
-  for ( int y = 0; y < h; y++ ) {
-    for ( int x = 0; x < w; x++ ) {
-      int sum = 0;
-      for ( int c = 0; c < n_channels; c++ ) {
-        int idx = row_stride * y + x * n_channels + c;
-        sum += img_ptr[idx];
-      }
-      if ( 0 == sum ) { memcpy( &img_ptr[row_stride * y + x * n_channels], background_colour, n_channels ); }
-    }
-  }
-
-  _c_redraw_required = false;
-  return true;
-}
-
-bool apg_c_image_redraw_required( void ) { return _c_redraw_required; }
