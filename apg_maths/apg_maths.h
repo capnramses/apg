@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
 History:
+v0.16.2 2026/08/03 - Frustum API comments and param name fixes.
 v0.16.1 2023/04/19 - Minor tweaks for compiler warnings.
 v0.16  06 Apr 2022 - Added mul_vec2_f().
 v0.15  02 Feb 2022 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
@@ -127,6 +128,7 @@ vec4 vec4_from_vec3f( vec3 v, float w );
 vec2 add_vec2_vec2( vec2 a, vec2 b );
 vec3 add_vec3_f( vec3 a, float b );
 vec3 add_vec3_vec3( vec3 a, vec3 b );
+vec4 add_vec4_vec4( vec4 a, vec4 b );
 
 vec2 sub_vec2_vec2( vec2 a, vec2 b );
 vec2 sub_vec2_f( vec2 v, float f );
@@ -137,6 +139,7 @@ vec2 mul_vec2_f( vec2 v, float f );
 vec2 mul_vec2_vec2( vec2 a, vec2 b );
 vec3 mul_vec3_f( vec3 v, float f );
 vec3 mul_vec3_vec3( vec3 a, vec3 b );
+vec4 mul_vec4_f( vec4 v, float f );
 
 vec3 div_vec3_f( vec3 a, float b );
 vec3 div_vec3_vec3( vec3 a, vec3 b );
@@ -210,6 +213,15 @@ float det_mat4( mat4 mm );
  */
 mat4 inverse_mat4( mat4 mm );
 
+/** "Rigid body" implies scale = 1. */
+mat4 inverse_rigid_body_mat4( mat4 mm );
+
+/** Where a scale is used, not necessarily uniform. */
+mat4 inverse_scaled_mat4( mat4 mm );
+
+/** Where there is a scale but all 3 scale dimensions are the same. */
+mat4 inverse_uniform_scaled_mat4( mat4 mm );
+
 mat4 transpose_mat4( mat4 mm );
 
 mat4 translate_mat4( vec3 vv );
@@ -270,12 +282,12 @@ void frustum_points_from_PV( mat4 PV, vec3* corners_wor );
 /** Fast extraction of 6 clip planes.
  * Based on http://www8.cs.umu.se/kurser/5DV051/HT12/lab/plane_extraction.pdf
  * @param PV               Any world-to-clip space matrix.
- * @param corners          A buffer of 6x vec4 to set world space planes. Must not be NULL. The plane coefficients are in the form: [n|d].
+ * @param planes_xyzd      A buffer of 6x vec4 to set world space planes. Must not be NULL. The plane coefficients are in the form: [n|d].
  * @param normalise_planes Set to false if you only need the planes for in-front/behind tests, and not distance of point from plane.
  *
  * @note That plane normalisation also affects the d component of the plane, but only the xyz normal component is unit-length afterwards.
  */
-void frustum_planes_from_PV( mat4 PV, vec4* planes_xyxd, bool normalise_planes );
+void frustum_planes_from_PV( mat4 PV, vec4* planes_xyzd, bool normalise_planes );
 
 /* ===============================================================================================
    Quaternion Functions
