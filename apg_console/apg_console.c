@@ -1,7 +1,7 @@
 /* =======================================================================================================================
 APG_C - A Quake-style Console mini-library
 Author:   Anton Gerdelan - @capnramses
-Version:  0.18
+Version:  0.19
 Language: C99
 Licence:  See bottom of header file.
 ======================================================================================================================= */
@@ -46,7 +46,7 @@ static char _c_built_in_commands[APG_C_N_BUILT_IN_COMMANDS][APG_C_STR_MAX] = { "
 static int apg_c_strnlen( const char* str, size_t maxlen ) {
   size_t i = 0;
   while ( i < maxlen && str[i] ) { i++; }
-  return i;
+  return (int)i;
 }
 
 static void apg_c_strncat( char* dst, const char* src, const size_t dst_max, const size_t src_max ) {
@@ -192,7 +192,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
       default: {
         apg_c_printf( "%s OTHER", one );
       } break; // some other data type
-      }        // endswitch
+      } // endswitch
       return true;
     }
 
@@ -230,7 +230,7 @@ static bool _parse_user_entered_instruction( const char* str ) {
         *(float*)var_ptr = fval;
       } break;
       default: break; // do nothing for complex data types
-      }               // endswitch
+      } // endswitch
       return true;
     } else {
       apg_c_printf( "ERROR: `%s` is not a recognised variable name.", one );
@@ -439,7 +439,7 @@ void apg_c_autocomplete( void ) {
                   ^ autocomplete up to here in the case
     */
     int up_to_idx = APG_C_MIN( point_of_difference, APG_C_STR_MAX - 1 );
-    for ( int i = 0; i < up_to_idx; i++ ) { _c_user_entered_text[i] = found[i]; }
+    for ( int ii = 0; ii < up_to_idx; ii++ ) { _c_user_entered_text[ii] = found[ii]; }
     _c_user_entered_text[up_to_idx] = '\0';
   }
 }
