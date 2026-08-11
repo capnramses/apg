@@ -35,22 +35,6 @@ int main( void ) {
   apg_c_dump_to_stdout();
   apg_c_append_user_entered_text( "anton_func\n" );
   apg_c_append_user_entered_text( "anton_func 123.456\n" );
-  if ( apg_c_image_redraw_required() ) {
-    printf( "apg_c_image_redraw_required()=TRUE\n" );
-  } else {
-    printf( "apg_c_image_redraw_required()=FALSE\n" );
-  }
-  int w                       = 512;
-  int h                       = 512;
-  int n_channels              = 3;
-  uint8_t* img_ptr            = malloc( w * h * n_channels );
-  uint8_t background_colour[] = {0xFF, 0xFF, 0x00, 0xFF};
-  apg_c_draw_to_image_mem( img_ptr, w, h, n_channels, background_colour ); // NOTE(Anton) img output would be nice but pulls another dependency into test app
-  if ( apg_c_image_redraw_required() ) {
-    printf( "apg_c_image_redraw_required()=TRUE\n" );
-  } else {
-    printf( "apg_c_image_redraw_required()=FALSE\n" );
-  }
   apg_c_append_user_entered_text( "anton_f" );
   apg_c_backspace();
   apg_c_append_user_entered_text( "\n" ); // should output "ERROR" for "anton_" here in text (just testing backspace works)
@@ -60,6 +44,5 @@ int main( void ) {
   apg_c_append_user_entered_text( "\n" );
   apg_c_dump_to_stdout();
   apg_c_reuse_hist( 1 );
-  free( img_ptr );
   return 0;
 }
