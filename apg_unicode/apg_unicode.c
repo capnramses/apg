@@ -22,12 +22,8 @@
 // clang-format on
 
 int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
-  const uint8_t diamond_question_mark_mbs[] = { 0xEF, 0xBF, 0xBD, 0x00 };
-  assert( mbs );
-  if ( !mbs ) {
-    memcpy( mbs, diamond_question_mark_mbs, 4 * sizeof( uint8_t ) );
-    return 4;
-  }
+  if ( !mbs ) { return -1; }
+
   // ASCII
   if ( codepoint <= 0x7F ) {
     mbs[0] = (char)codepoint;
@@ -60,6 +56,7 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
     return 4;
   }
   // Unknown unicode - use diamond question mark.
+  const uint8_t diamond_question_mark_mbs[] = { 0xEF, 0xBF, 0xBD, 0x00 };
   memcpy( mbs, diamond_question_mark_mbs, 4 * sizeof( uint8_t ) );
   return 4;
 }

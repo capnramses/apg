@@ -36,7 +36,7 @@ extern "C" {
 
 /** Converts a unicode codepoint to an UTF-8 encoded multi-byte sequence.
  * @param mbs Pointer to a buffer location that can hold the UTF-8 multi-byte sequence + null terminator (max 5 bytes).
- * @returns Number of bytes in the sequence (1 - 4). On error the function returns 4 and mbs holds the question mark character <?>.
+ * @returns Number of bytes in the sequence (1 - 4). On error the function returns 4 and mbs holds the question mark character <?>, or -1 if mbs is NULL.
  * @note UTF-8 mbs can be used with ASCII string functions that process byte-by-byte.
  */
 int apg_cp_to_utf8( uint32_t codepoint, char* mbs );
