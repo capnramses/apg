@@ -1,28 +1,28 @@
-/* apg_unicode
-Unicode <-> UTF-8 Multibyte String Functions for C & C++
-Anton Gerdelan
-Version: 0.2.3
-Licence: see bottom of file.
-C89 ( Implementation is C99 )
-
-TODO:
-* Find out why some vars in bitwise ops are unused - feels like a copy-paste mistake between versions.
-* Compile with all warnings and address unused vars etc.
-* More tests. Arabic, reversed, etc
-* CI tests.
-
-Not Supported (Yet):
-* Arabic (and other) ligatures
-
-Further Reading:
-* On special unicode "non-spacing" modifier codepoints: http://mts.io/2015/04/21/unicode-symbol-render-text-emoji/
-* Skin tone modifier sequences https://unicode.org/emoji/charts/full-emoji-modifiers.html
-* A good description of Arabic text formatting and styling https://w3c.github.io/alreq/
-* I based Arabic cursive look-up table on the medial and final forms available in https://www.unicode.org/charts/PDF/UFE70.pdf
-
-History:
-* 0.2.0 3 May 2020 Dug up unicode files from Project Storm and brushed off the dust.
-*/
+/** apg_unicode
+ * Unicode <-> UTF-8 Multibyte String Functions for C & C++
+ * Anton Gerdelan
+ * Licence: see bottom of file.
+ * C89 ( Implementation is C99 )
+ *
+ * TODO:
+ * - Find out why some vars in bitwise ops are unused - feels like a copy-paste mistake between versions.
+ * - Compile with all warnings and address unused vars etc.
+ * - More tests. Arabic, reversed, etc
+ * - CI tests.
+ *
+ * Not Supported (Yet):
+ * - Arabic (and other) ligatures
+ *
+ * Further Reading:
+ * - On special unicode "non-spacing" modifier codepoints: http://mts.io/2015/04/21/unicode-symbol-render-text-emoji/
+ * - Skin tone modifier sequences https://unicode.org/emoji/charts/full-emoji-modifiers.html
+ * - A good description of Arabic text formatting and styling https://w3c.github.io/alreq/
+ * - I based Arabic cursive look-up table on the medial and final forms available in https://www.unicode.org/charts/PDF/UFE70.pdf
+ *
+ * Version History:
+ * - 0.2.5 - 14 Aug 2026 - Fixed msvc trunction warnings.
+ * - 0.2.0 -  3 May 2020 - Dug up unicode files from Project Storm and brushed off the dust.
+ */
 
 #pragma once
 
@@ -34,57 +34,52 @@ extern "C" {
 
 #define APG_UNICODE_MAX_STR 2048 // max length of string. for avoiding infinite loops.
 
-/* Converts a unicode codepoint to an UTF-8 encoded multi-byte sequence.
-PARAMS
-mbs - Pointer to a buffer location that can hold the UTF-8 multi-byte sequence + null terminator (max 5 bytes).
-RETURNS: Number of bytes in the sequence (1 - 4). On error the function returns 4 and mbs holds the question mark character <?>.
-NOTE: UTF-8 mbs can be used with ASCII string functions that process byte-by-byte.
-*/
+/** Converts a unicode codepoint to an UTF-8 encoded multi-byte sequence.
+ * @param mbs Pointer to a buffer location that can hold the UTF-8 multi-byte sequence + null terminator (max 5 bytes).
+ * @returns Number of bytes in the sequence (1 - 4). On error the function returns 4 and mbs holds the question mark character <?>.
+ * @note UTF-8 mbs can be used with ASCII string functions that process byte-by-byte.
+ */
 int apg_cp_to_utf8( uint32_t codepoint, char* mbs );
 
-/* Converts part of an utf-8 encoded multi-byte sequence (i.e. a string) to a unicode codepoint.
-PARAMS
-mbs - Pointer to first byte of UTF-8 sequence in a multi-byte array.
-sz  - Sets number of bytes detected in sequence (1 - 4).
-RETURNS: Unicode codepoint, or 0 on error or end of string.
-*/
+/** Converts part of an utf-8 encoded multi-byte sequence (i.e. a string) to a unicode codepoint.
+ * @param mbs Pointer to first byte of UTF-8 sequence in a multi-byte array.
+ * @param sz Sets number of bytes detected in sequence (1 - 4).
+ * @returns Unicode codepoint, or 0 on error or end of string.
+ */
 uint32_t apg_utf8_to_cp( const char* mbs, int* sz );
 
-/* Get number of codepoints in an UTF8-encoded sequence. Note that strlen() on a MBS returns the number of bytes, not codepoints.
-PARAMS
-buf - must be nul-terminated
-RETURNS < 0 on error, or the number of valid code points in the multi-byte sequence */
+/** Get number of codepoints in an UTF8-encoded sequence. Note that strlen() on a MBS returns the number of bytes, not codepoints.
+ * @param buf must be nul-terminated
+ * @returns < 0 on error, or the number of valid code points in the multi-byte sequence.
+ */
 int apg_utf8_count_cp( const char* buf );
 
-/* Reverse an UTF-8 encoded multi-byte string.
-PARAMS
-out - Output multi-byte string.
-in  - Input multi-byte string. Must be nul-terminated.
-*/
+/** Reverse an UTF-8 encoded multi-byte string.
+ * @param out Output multi-byte string.
+ * @param in Input multi-byte string. Must be nul-terminated.
+ */
 void apg_utf8_reverse( char* out, const char* in );
 
-/* Conversion of Arabic codepoint to correct cursive form, based on cursive properties of neighbouring codepoints. Simply put: joins the lines together between
+/** Conversion of Arabic codepoint to correct cursive form, based on cursive properties of neighbouring codepoints. Simply put: joins the lines together between
 characters.
-PARAMS: cp_left and cp_right are in order of writing/reading - right-to-left. So cp_right is the /earlier/ codepoint.
-RETURNS: Unicode codepoint for correct cursive to use for an Arabic codepoint within a string.
-NOTE: Memory order for right-to-left text is usually element [0] => rightmost, [len-1] => leftmost.
+ * @param cp_left,cp_right are in order of writing/reading - right-to-left. So cp_right is the /earlier/ codepoint.
+ * @returns Unicode codepoint for correct cursive to use for an Arabic codepoint within a string.
+ * @note Memory order for right-to-left text is usually element [0] => rightmost, [len-1] => leftmost.
 */
 uint32_t apg_cursive_arabic_cp( uint32_t cp_left, uint32_t cp, uint32_t cp_right );
 
-/* Converts any general Unicode Arabic characters (U+0627 to U+0649) to cursive-aware equivalents.
-PARAMS
-in  - Input must be in standard right-to-left memory arrangement. Must be nul-terminated.
-out - Output will be a string of the same size in range (U+FE70 to U+FEFF ).
-WARNING: You must allow extra space in the output buffer in case bytes required per codepoint increases to 3.
-*/
+/** Converts any general Unicode Arabic characters (U+0627 to U+0649) to cursive-aware equivalents.
+ * @param in  Input must be in standard right-to-left memory arrangement. Must be nul-terminated.
+ * @param out Output will be a string of the same size in range (U+FE70 to U+FEFF ).
+ * @warning You must allow extra space in the output buffer in case bytes required per codepoint increases to 3.
+ */
 void apg_utf8_convert_to_arabic_cursive( char* out, const char* in, int* out_sz );
 
-/* Trims the end n chars from a utf8-encoded string.
-PARAMS
-buf - Must be nul-terminated.
-NOTE: Searches string from front-to-back so not efficient for long strings.
-Could instead be implemented to progressively look at last 4 bytes for unicode indicators.
-*/
+/** Trims the end n chars from a utf8-encoded string.
+ * @param buf - Must be nul-terminated.
+ * @note Searches string from front-to-back so not efficient for long strings.
+ * Could instead be implemented to progressively look at last 4 bytes for unicode indicators.
+ */
 void apg_utf8_trim_end( char* buf, int n );
 
 #ifdef __cplusplus

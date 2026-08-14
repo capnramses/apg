@@ -1,10 +1,10 @@
-/* apg_unicode
-Unicode <-> UTF-8 Multibyte String Functions for C & C++
-Anton Gerdelan
-Version: 0.2.3
-Licence: see apg_unicode.h
-C99
-*/
+/** apg_unicode
+ * Unicode <-> UTF-8 Multibyte String Functions for C & C++
+ * Anton Gerdelan
+ *  Version: 0.2.5
+ * Licence: see apg_unicode.h
+ * C99
+ */
 
 #include "apg_unicode.h"
 #include <assert.h>
@@ -22,16 +22,14 @@ C99
 // clang-format on
 
 int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
+  const uint8_t diamond_question_mark_mbs[] = { 0xEF, 0xBF, 0xBD, 0x00 };
   assert( mbs );
   if ( !mbs ) {
-    mbs[0] = (char)0xEF;
-    mbs[1] = (char)0xBF;
-    mbs[2] = (char)0xBD;
-    mbs[3] = '\0';
+    memcpy( mbs, diamond_question_mark_mbs, 4 * sizeof( uint8_t ) );
     return 4;
   }
-
-  if ( codepoint <= 0x7F ) { // ASCII
+  // ASCII
+  if ( codepoint <= 0x7F ) {
     mbs[0] = (char)codepoint;
     mbs[1] = '\0';
     return 1;
@@ -44,7 +42,7 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
     mbs[2] = '\0';
     return 2;
   }
-  // 3-bytes
+  // 3 bytes.
   if ( codepoint <= 0xFFFF ) {
     mbs[0] = (char)( ( ( codepoint >> 12 ) & 0x0F ) | MASK_FIRST_THREE );
     mbs[1] = (char)( ( ( codepoint >> 6 ) & 0x3F ) | MASK_FIRST_ONE );
@@ -52,7 +50,7 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
     mbs[3] = '\0';
     return 3;
   }
-  // 4-bytes
+  // 4 bytes.
   if ( codepoint <= 0x10FFFF ) {
     mbs[0] = (char)( ( ( codepoint >> 18 ) & 0x07 ) | MASK_FIRST_FOUR );
     mbs[1] = (char)( ( ( codepoint >> 12 ) & 0x3F ) | MASK_FIRST_ONE );
@@ -61,11 +59,8 @@ int apg_cp_to_utf8( uint32_t codepoint, char* mbs ) {
     mbs[4] = '\0';
     return 4;
   }
-  // unknown unicode - use diamond question mark
-  mbs[0] = (char)0xEF;
-  mbs[1] = (char)0xBF;
-  mbs[2] = (char)0xBD;
-  mbs[3] = '\0';
+  // Unknown unicode - use diamond question mark.
+  memcpy( mbs, diamond_question_mark_mbs, 4 * sizeof( uint8_t ) );
   return 4;
 }
 
@@ -174,7 +169,7 @@ int apg_utf8_count_cp( const char* buf ) {
 
   int ncode_points = 0;
   int current_byte = 0;
-  int sz           = strnlen( buf, APG_UNICODE_MAX_STR );
+  int sz           = (int)strnlen( buf, APG_UNICODE_MAX_STR );
   int nbytes       = 0;
   for ( int i = 0; i < sz; i += nbytes ) {
     uint32_t code = apg_utf8_to_cp( &buf[current_byte], &nbytes );
@@ -189,7 +184,7 @@ void apg_utf8_reverse( char* out, const char* in ) {
   assert( out && in );
   if ( !out || !in ) { return; }
 
-  int sz        = strnlen( in, APG_UNICODE_MAX_STR );
+  int sz        = (int)strnlen( in, APG_UNICODE_MAX_STR );
   char* tmp_ptr = malloc( sz + 1 );
   tmp_ptr[sz]   = 0;
 
@@ -328,7 +323,7 @@ void apg_utf8_convert_to_arabic_cursive( char* out, const char* in, int* out_sz 
   assert( in && out && out_sz );
   if ( !out || !in || !out_sz ) { return; }
 
-  int in_sz        = strnlen( in, APG_UNICODE_MAX_STR );
+  int in_sz        = (int)strnlen( in, APG_UNICODE_MAX_STR );
   int in_byte_idx  = 0;
   *out_sz          = 0;
   uint32_t prev_cp = 0;
@@ -358,7 +353,7 @@ void apg_utf8_convert_to_arabic_cursive( char* out, const char* in, int* out_sz 
     prev_cp = code_point;
     in_byte_idx += nbytes;
   }
-  *out_sz = strnlen( out, APG_UNICODE_MAX_STR );
+  *out_sz = (int)strnlen( out, APG_UNICODE_MAX_STR );
 }
 
 void apg_utf8_trim_end( char* buf, int n ) {
@@ -373,7 +368,7 @@ void apg_utf8_trim_end( char* buf, int n ) {
   }
 
   int current_byte       = 0;
-  int sz                 = strnlen( buf, APG_UNICODE_MAX_STR );
+  int sz                 = (int)strnlen( buf, APG_UNICODE_MAX_STR );
   int current_code_point = 0;
   for ( int i = 0; current_byte < sz && i < APG_UNICODE_MAX_STR; i++ ) {
     int nbytes    = 0;

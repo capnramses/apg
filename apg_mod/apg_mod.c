@@ -2,7 +2,7 @@
 apg_mod - description to go here
 Anton Gerdelan <antonofnote at gmail>
 C99
-Version 0.1
+Version 0.1.1
 Licence: see header.
 \*****************************************************************************/
 
@@ -48,7 +48,7 @@ typedef struct record_t {
 } record_t;
 
 // TODO(Anton) if M.K. not there at all assume it's older 15-samples?
-static char _magic_strs[APG_MOD_FMT_MAX][4]    = { "M.K.", "2CHN", "6CHN", "8CHN", "CD81", "FLT4", "FLT8", "M!K!", "OCTA", "TDZx", "????" };
+static char _magic_strs[APG_MOD_FMT_MAX][5]    = { "M.K.", "2CHN", "6CHN", "8CHN", "CD81", "FLT4", "FLT8", "M!K!", "OCTA", "TDZx", "????" };
 static int _magic_str_n_chans[APG_MOD_FMT_MAX] = { 4, 2, 6, 8, 8, 4, 8, 0, 8, 0, 0 };
 
 // clang-format off
