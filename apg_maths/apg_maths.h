@@ -5,6 +5,7 @@ Licence: See bottom of file.
 Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
 History:
+v0.16.3 2026/08/26 - Tweak to wrap for degrees.
 v0.16.2 2026/08/03 - Frustum API comments and param name fixes.
 v0.16.1 2023/04/19 - Minor tweaks for compiler warnings.
 v0.16  06 Apr 2022 - Added mul_vec2_f().

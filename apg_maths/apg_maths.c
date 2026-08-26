@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.16.2
+Version: 0.16.3
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -605,13 +605,8 @@ vec3 heading_to_vec3( float degrees ) {
 }
 
 float wrap_degrees_360( float degrees ) {
-  if ( degrees >= 0.0f && degrees < 360.0f ) { return degrees; }
-  int multiples = (int)( degrees / 360.0f );
-  if ( degrees > 0.0f ) {
-    degrees = degrees - (float)multiples * 360.0f;
-  } else {
-    degrees = degrees + (float)multiples * 360.0f;
-  }
+  degrees = fmodf( degrees, 360.0f );
+  if ( degrees < 0 ) { degrees += 360.0f; }
   return degrees;
 }
 
