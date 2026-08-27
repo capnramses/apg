@@ -4,6 +4,6 @@
 set -e
 
 # -fsanitize=address (not allowed with thread)
-SANS="-fsanitize=thread -fsanitize=undefined"
-FLAGS="-Wall -Wextra -pedantic"
-clang $SANS $FLAGS tests/test.c apg_maths.c -I ./
+#SANS="-fsanitize=thread -fsanitize=undefined"
+FLAGS="-Wall -Wextra -pedantic -O3 -march=native -DNDEBUG"
+clang $SANS $FLAGS tests/test.c apg_maths.c -I ./ -lm

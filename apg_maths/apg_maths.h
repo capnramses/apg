@@ -4,41 +4,41 @@ URL:     https://github.com/capnramses/apg
 Licence: See bottom of file.
 Author:  Anton Gerdelan  <antonofnote at gmail>  @capnramses
 ==================================================================================================
-History:
+BUILD:
+
+Compiling with the following flags makes a 10-30x performance improvement for the function in this library;
+
+GCC / Clang:
+  -O3 -march=native -DNDEBUG       (Optimsations, enable ISA instrinsics).
+
+MSVC cl.exe:
+  /O2 /GL /DNDEBUG /arch:AVX2 /c11 (Consider swapping AVX2 to AVX512).
+
+Do not use -ffast or /fp:fast without first replacing `INFINITY` as a 'biggest size' value in this code.
+
+==================================================================================================
+HISTORY:
+
+v0.16.4 2026/08/27 - Small fused multiply-add auto-vectorisation improvements.
 v0.16.3 2026/08/26 - Tweak to wrap for degrees.
 v0.16.2 2026/08/03 - Frustum API comments and param name fixes.
 v0.16.1 2023/04/19 - Minor tweaks for compiler warnings.
-v0.16  06 Apr 2022 - Added mul_vec2_f().
-v0.15  02 Feb 2022 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
-v0.14  18 Jan 2022 - Added a couple of vec2 functions.
-v0.13   8 Jul 2021 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
-v0.12  18 Feb 2021 - Small fixes to reduce warnings with MSVC.
-v0.11  17 Feb 2021 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
-v0.10   7 Feb 2021 - Tidied docs.
-v0.9 -  2 Feb 2021 - Orthographic.
-v0.8 - 21 May 2020 - AABB intersection and frustum bounds and plane-extraction functions.
-v0.7 - 19 Apr 2020 - Removed M_PI, replaced with APG_PI. Added prefix to macros to avoid redefinition vulnerability.
-v0.6 -  9 Apr 2020 - Frustum extraction functions.
-v0.5 - 20 Nov 2019 - Added a cpp clause.
-v0.4 - 17 Jul 2019 - Updated with maths code from voxel game project.
-v0.3 - 11 Apr 2016 - Compacted.
-v0.2 - 12 Apr 2016 - Switched to .x .y .z notation for vectors and quaternions.
-v0.1 -  5 May 2015 - Branched from C++ original.
-==================================================================================================
-TODO:
-Matrix
-  arbitrary axis rot
-Quaternions
-  conjugates
-Geometry
-  distance point to line
-  distance line to line
-  distance point to plane
-  ~plane reflection matrix
-  line-plane intersect
-  line-sphere intersect
-  line-OBB intersect
-  line-AABB intersect
+v0.16   2022/04/06 - Added mul_vec2_f().
+v0.15   2022/02/02 - Added vec3 projection and rejection, added detail to comments, and tidied code formatting.
+v0.14   2022/01/18 - Added a couple of vec2 functions.
+v0.13   2021/07/08 - Updated some comments. Renamed v4_v3f and v3_v4 for consistency.
+v0.12   2021/02/18 - Small fixes to reduce warnings with MSVC.
+v0.11   2021/02/17 - Bug fix: ray-obb negative face indices reporting correctly. Switched from single-header to 2 files.
+v0.10   2021/02/07 - Tidied docs.
+v0.9    2021/02/02 - Orthographic.
+v0.8    2020/05/21 - AABB intersection and frustum bounds and plane-extraction functions.
+v0.7    2020/04/19 - Removed M_PI, replaced with APG_PI. Added prefix to macros to avoid redefinition vulnerability.
+v0.6    2020/04/09 - Frustum extraction functions.
+v0.5    2019/11/20 - Added a cpp clause.
+v0.4    2019/07/17 - Updated with maths code from voxel game project.
+v0.3    2016/04/11 - Compacted.
+v0.2    2016/04/12 - Switched to .x .y .z notation for vectors and quaternions.
+v0.1    2015/05/05 - Branched from C++ original.
 =============================================================================================== */
 #pragma once
 
@@ -260,13 +260,14 @@ mat4 orthographic( float l, float r, float b, float t, float n, float f );
  */
 mat4 perspective( float fovy, float aspect, float near_plane, float far_plane );
 
-/** Create a standard *asymmetric* perspective projection matrix for special case of a subwindow viewport
+/** Create a standard *asymmetric* perspective projection matrix for special case of a sub-window viewport
 - original viewport from (0,0) with size (vp_w, vp_h)
 - subwindow viewport from (subvp_x,subvp_y) with size (subvp_w,subvp_h)
 - Note: mouse coords, if used, may required a y direction flip.
 - Note: this function does not modify near or far plane. It could do my adding z scaling to M.
 - Note: this function uses an axis-parallel subwindow but it could be modified to a parallelogram shape.
-Code based on excellent problem description here: https://stackoverflow.com/questions/50110934/display-recursively-rendered-scene-into-a-plane
+Code based on excellent problem description here:
+https://stackoverflow.com/questions/50110934/display-recursively-rendered-scene-into-a-plane
 */
 mat4 perspective_offcentre_viewport( int vp_w, int vp_h, int subvp_x, int subvp_y, int subvp_w, int subvp_h, mat4 P_orig );
 
@@ -305,7 +306,7 @@ versor mul_quat_f( versor qq, float s );
  *  t = 2 * cross(q.xyz, v)
  *  v' = v + q.w * t + cross(q.xyz, t)
  * Found https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
- * Attributed to a post by Fabian Giesen (no longer online).
+ * Attributed to a post by Fabian Giesen (original no longer online).
  *
  * @warning This function has not been unit-tested. TODO(Anton)
  */

@@ -1,6 +1,6 @@
 # apg Libraries
 
-Small utility libraries and copy-paste snippets of reusable code.
+Small utility libraries and copy-pastable snippets of reusable code.
 
 ## Contents
 

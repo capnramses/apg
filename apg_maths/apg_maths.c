@@ -1,6 +1,6 @@
 /* ===============================================================================================
 Anton's 3D Maths Library (C99 version)
-Version: 0.16.3
+Version: 0.16.4
 URL:     https://github.com/capnramses/apg
 Licence: See apg_maths.h
 Author:  Anton Gerdelan <antonofnote at gmail> @capnramses
@@ -84,22 +84,17 @@ float length_vec3( vec3 v ) { return sqrtf( v.x * v.x + v.y * v.y + v.z * v.z );
 float length2_vec3( vec3 v ) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 
 vec2 normalise_vec2( vec2 v ) {
-  vec2 vb;
-  float l = length_vec2( v );
-  if ( 0.0f == l ) { return (vec2){ .x = 0.0f, .y = 0.0f }; }
-  vb.x = v.x / l;
-  vb.y = v.y / l;
-  return vb;
+  float len = length_vec2( v );
+  if ( 0.0f == len ) { return (vec2){ .x = 0.0f, .y = 0.0f }; }
+  float l_inv = 1.0f / len;
+  return (vec2){ .x = v.x * l_inv, .y = v.y * l_inv };
 }
 
 vec3 normalise_vec3( vec3 v ) {
-  vec3 vb;
-  float l = length_vec3( v );
-  if ( 0.0f == l ) { return (vec3){ .x = 0.0f, .y = 0.0f, .z = 0.0f }; }
-  vb.x = v.x / l;
-  vb.y = v.y / l;
-  vb.z = v.z / l;
-  return vb;
+  float len = length_vec3( v );
+  if ( 0.0f == len ) { return (vec3){ .x = 0.0f, .y = 0.0f, .z = 0.0f }; }
+  float l_inv = 1.0f / len; // Seems to help compiler reduce div ops in asm.
+  return (vec3){ .x = v.x * l_inv, .y = v.y * l_inv, .z = v.z * l_inv };
 }
 
 float dot_vec3( vec3 a, vec3 b ) { return a.x * b.x + a.y * b.y + a.z * b.z; }
@@ -249,13 +244,13 @@ mat4 inverse_rigid_body_mat4( mat4 mm ) {
 }
 
 mat4 inverse_scaled_mat4( mat4 mm ) {
-  const float epsilon = 0.000001f;
-  float scale_x_sq    = mm.m[0] * mm.m[0] + mm.m[1] * mm.m[1] + mm.m[2] * mm.m[2];
-  float scale_y_sq    = mm.m[4] * mm.m[4] + mm.m[5] * mm.m[5] + mm.m[6] * mm.m[6];
-  float scale_z_sq    = mm.m[8] * mm.m[8] + mm.m[9] * mm.m[9] + mm.m[10] * mm.m[10];
-  float inv_scale_x_sq  = ( scale_x_sq > epsilon ) ? 1.0f / scale_x_sq : 0.0f;
-  float inv_scale_y_sq  = ( scale_y_sq > epsilon ) ? 1.0f / scale_y_sq : 0.0f;
-  float inv_scale_z_sq  = ( scale_z_sq > epsilon ) ? 1.0f / scale_z_sq : 0.0f;
+  const float epsilon  = 0.000001f;
+  float scale_x_sq     = mm.m[0] * mm.m[0] + mm.m[1] * mm.m[1] + mm.m[2] * mm.m[2];
+  float scale_y_sq     = mm.m[4] * mm.m[4] + mm.m[5] * mm.m[5] + mm.m[6] * mm.m[6];
+  float scale_z_sq     = mm.m[8] * mm.m[8] + mm.m[9] * mm.m[9] + mm.m[10] * mm.m[10];
+  float inv_scale_x_sq = ( scale_x_sq > epsilon ) ? 1.0f / scale_x_sq : 0.0f;
+  float inv_scale_y_sq = ( scale_y_sq > epsilon ) ? 1.0f / scale_y_sq : 0.0f;
+  float inv_scale_z_sq = ( scale_z_sq > epsilon ) ? 1.0f / scale_z_sq : 0.0f;
   mat4 inv;
   // Transpose 3D rotation part ( since it is orthogonal ).
   inv.m[0]  = mm.m[0] * inv_scale_x_sq;
@@ -723,20 +718,28 @@ bool aabb_aabb( aabb_t a, aabb_t b ) {
 float distance_plane_point( vec4 plane_xyzd, vec3 point ) { return plane_xyzd.x * point.x + plane_xyzd.y * point.y + plane_xyzd.z * point.z + plane_xyzd.w; }
 
 bool frustum_vs_aabb( const vec4* frustum_planes, aabb_t box ) {
-  assert( frustum_planes );
   if ( !frustum_planes ) { return false; }
 
+  // Extract corners into arrays first.
+  const float cx[8] = { box.min.x, box.min.x, box.min.x, box.min.x, box.max.x, box.max.x, box.max.x, box.max.x };
+  const float cy[8] = { box.min.y, box.min.y, box.max.y, box.max.y, box.min.y, box.min.y, box.max.y, box.max.y };
+  const float cz[8] = { box.min.z, box.max.z, box.min.z, box.max.z, box.min.z, box.max.z, box.min.z, box.max.z };
+
   for ( int i = 0; i < 6; i++ ) {
+    float px = frustum_planes[i].x;
+    float py = frustum_planes[i].y;
+    float pz = frustum_planes[i].z;
+    float pw = frustum_planes[i].w;
+
+    // Encourage FMA-style fused multiply-add patterns. Previously was 8 calls to distance_plane_point().
     int out = 0;
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.min.x, box.min.y, box.min.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.min.x, box.min.y, box.max.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.min.x, box.max.y, box.min.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.min.x, box.max.y, box.max.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.max.x, box.min.y, box.min.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.max.x, box.min.y, box.max.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.max.x, box.max.y, box.min.z } ) < 0.0f ) { out++; }
-    if ( distance_plane_point( frustum_planes[i], (vec3){ box.max.x, box.max.y, box.max.z } ) < 0.0f ) { out++; }
-    if ( 8 == out ) { return false; }
+    for ( int j = 0; j < 8; j++ ) {
+      float d = px * cx[j] + pw; // fmaf( px, cx[j], pw );
+      d       = py * cy[j] + d;  // fmaf( py, cy[j], d );
+      d       = pz * cz[j] + d;  // fmaf( pz, cz[j], d );
+      if ( d < 0.0f ) { out++; }
+      if ( out == 8 ) { return false; } // All 8 corners (j) of box on outside this plane (i) of frustum.
+    }
   }
   return true;
 }
