@@ -52,7 +52,7 @@ int main() {
 
         // WRITE OUTPUT TO FILE
         char tmp[256];
-        snprintf( tmp, 256, "%i.png", s * N_TEST_STRINGS + i );
+        snprintf( tmp, 256, "out_test/tf%i_%i.png", ff, s * N_TEST_STRINGS + i );
         result = stbi_write_png( tmp, w, h, n_chans[i], text_img, w * n_chans[i] );
         if ( !result ) {
           fprintf( stderr, "ERROR: writing string image %i\n", i );

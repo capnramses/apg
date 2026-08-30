@@ -87,6 +87,7 @@
  *
  * History:
  * ==============================================================
+ * 0.5.2 - 2026 Aug 30 - Tweaked '1', and 'i's in source image and spacing.
  * 0.5.1 - 2025 Jun 15 - Tiny font support. Various bug-fixes.
  * 0.4.4 - 2024 Oct 18 - Outline is now a darker shade of text colour, not black.
  * 0.4.0 - 2024 Jun 15 - Most of Latin-1 character set included.
