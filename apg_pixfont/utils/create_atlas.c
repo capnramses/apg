@@ -175,15 +175,7 @@ bool draw_atlas( const char* filename, int thickness, int add_outline, apgpf_sty
     }
 
     // Check widths
-    int max_glyph_w = 0;
-    for ( int ch = 0; ch < cell_dims[1]; ch++ ) {
-      for ( int cw = 0; cw < cell_dims[0]; cw++ ) {
-        int px_idx = ch * cell_dims[0] + cw;
-        if ( subimg_ptr[px_idx * n_chans + 0] > 0 || subimg_ptr[px_idx * n_chans + 1] > 0 || subimg_ptr[px_idx * n_chans + 2] > 0 ) { max_glyph_w = cw > max_glyph_w ? cw : max_glyph_w; }
-      }
-    }
-    widths[i] = max_glyph_w + 1;
-    if ( ' ' == codepoint ) { widths[i] = APGPF_TYPEFACE_STANDARD == typeface ? 5 : 4; } // Space is a special case as nothing is drawn but it is stored in atlas and meta data.
+    widths[i] = apg_pixfont_get_spacing_for_codepoint( codepoint, typeface );
 
     /* uncomment this bit to get a separate image for each glyph:
     char subimg_str[64];

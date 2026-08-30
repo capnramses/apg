@@ -2,7 +2,7 @@
  * @file apg_pixfont.h
  * @brief C Pixel Font Utility
  * @author Anton Gerdelan
- * @version v0.5.2
+ * @version v0.5.3
  *
  * C99 Implementation
  * See header file for licence and instructions.
@@ -164,7 +164,7 @@ static uint32_t _strip_index_for_sequence( const char* sequence, int* bytes_proc
   return _strip_index_for_codepoint( codepoint );
 }
 
-static int _get_spacing_for_codepoint( uint32_t codepoint, apgpf_typeface_t typeface ) {
+int apg_pixfont_get_spacing_for_codepoint( unsigned int codepoint, apgpf_typeface_t typeface ) {
   // Size here includes the blank space pixel following. So a single-column glyph returns 2.
 
   int default_w = 6; // Default to showing whole glyph cell, as it's easier to debug extra spacing that clipped-off pixels.
@@ -263,7 +263,7 @@ int apg_pixfont_image_size_for_str( const char* ascii_str, int* w, int* h, int t
     int bytes_read       = 0;
     uint32_t strip_index = _strip_index_for_sequence( &ascii_str[i], &bytes_read );
     if ( bytes_read > 1 ) { i += ( bytes_read - 1 ); }
-    x_cursor += _get_spacing_for_codepoint( strip_index, typeface );
+    x_cursor += apg_pixfont_get_spacing_for_codepoint( strip_index, typeface );
     x_cursor = ( style != APGPF_STYLE_BOLD ) ? x_cursor : x_cursor + 1;
     max_x    = x_cursor > max_x ? x_cursor : max_x;
     col++;
@@ -348,7 +348,7 @@ int apg_pixfont_str_into_image(                                       //
     int bytes_read     = 0;
     uint32_t codepoint = _strip_index_for_sequence( &ascii_str[i], &bytes_read );
     if ( bytes_read > 1 ) { i += ( bytes_read - 1 ); }
-    int spacing_px         = _get_spacing_for_codepoint( codepoint, typeface );
+    int spacing_px         = apg_pixfont_get_spacing_for_codepoint( codepoint, typeface );
     int white_part_spacing = add_outline ? spacing_px - 1 : spacing_px;
     uint32_t strip_index = codepoint > 32 ? codepoint - 33 : 0; // Strip 'atlas' has no space graphics. Maybe it should. For space this gives a giant number and
                                                                 // this works kinda by accident.
